@@ -7,7 +7,6 @@ import tensorflow as tf
 
 import sys
 sys.path.append('../')
-import systems.cannon as cn
 import model.ring_net as ring_net
 
 FLAGS = tf.app.flags.FLAGS

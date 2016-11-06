@@ -7,7 +7,6 @@ import tensorflow as tf
 
 import sys
 sys.path.append('../')
-import systems.cannon as cn
 import model.ring_net as ring_net
 
 FLAGS = tf.app.flags.FLAGS
@@ -27,30 +26,12 @@ tf.app.flags.DEFINE_bool('load_network', True,
 
 train_dir = FLAGS.train_dir + FLAGS.model + FLAGS.system + "_compression" + FLAGS.compression_loss + "_compression_vae_loss_" + str(FLAGS.compression_vae_loss) + "_sample_compression_" + str(FLAGS.sample_compression) + "_lstm_size_" + str(FLAGS.lstm_size) + "_num_layers_" + str(FLAGS.num_layers)
 
-if FLAGS.model in ("fully_connected_32x32x3", "fully_connected_32x32x9", "fully_connected_84x84x3", "fully_connected_84x84x4"):
-  CURRICULUM_STEPS = [100000, 100000, 100000, 100000, 100000]
-  CURRICULUM_SEQ = [2, 4, 8, 16, 20]
-  CURRICULUM_BATCH_SIZE = [64, 16, 16, 16, 16]
-  CURRICULUM_LEARNING_RATE = [2e-5, 5e-6, 5e-6, 5e-6, 5e-6]
-  CURRICULUM_TRAIN_PIECE = ["compression", "compression", "compression", "compression", "compression"]
-elif FLAGS.model in ("lstm_32x32x3", "lstm_32x32x10", "lstm_84x84x3", "lstm_84x84x4", "lstm_32x32x3_64", "lstm_32x32x3_128", "lstm_32x32x3_256", "lstm_32x32x1"):
-  #CURRICULUM_STEPS = [200000, 250000, 250000, 300000, 500000]
-  #CURRICULUM_STEPS = [1200000, 1600000]
-  CURRICULUM_STEPS = [500000, 500000]
-  #CURRICULUM_STEPS = [8, 8, 8]
-  #CURRICULUM_STEPS = [10, 10, 10, 10, 10]
-  CURRICULUM_SEQ = [10, 15]
-  CURRICULUM_BATCH_SIZE = [128, 128]
-  CURRICULUM_LEARNING_RATE = [1e-5, 1e-5]
-  CURRICULUM_TRAIN_PIECE = ["compression", "compression"]
-  #CURRICULUM_STEPS = [50000, 50000000]
-  #CURRICULUM_SEQ = [1, 20]
-  #CURRICULUM_BATCH_SIZE = [64, 32]
-  #CURRICULUM_LEARNING_RATE = [5e-5, 2e-6]
-  #CURRICULUM_AUTOENCODER = [True, False]
+CURRICULUM_STEPS = [500000, 500000]
+CURRICULUM_SEQ = [10, 15]
+CURRICULUM_BATCH_SIZE = [128, 128]
+CURRICULUM_LEARNING_RATE = [1e-5, 1e-5]
+CURRICULUM_TRAIN_PIECE = ["compression", "compression"]
 
-
-  
 def train(iteration):
   """Train ring_net for a number of steps."""
   with tf.Graph().as_default():

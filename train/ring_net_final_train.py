@@ -34,7 +34,7 @@ if FLAGS.model in ("fully_connected_32x32x3", "fully_connected_84x84x3", "fully_
 elif FLAGS.model in ("lstm_32x32x3", "lstm_84x84x3", "lstm_84x84x4", "lstm_32x32x1", "lstm_32x32x10"):
   CURRICULUM_STEPS = [1000000]
   #CURRICULUM_STEPS = [30, 30, 10]
-  CURRICULUM_SEQ = [15]
+  CURRICULUM_SEQ = [10]
   CURRICULUM_BATCH_SIZE = [32]
   CURRICULUM_LEARNING_RATE = [1e-6]
   CURRICULUM_TRAIN_PIECE = ["all"]
