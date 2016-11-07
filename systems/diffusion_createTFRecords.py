@@ -38,9 +38,9 @@ def generate_tfrecords(seq_length, num_runs, dir_name):
   shape = (32,32)
 
   for run in xrange(num_runs):
-    filename = '../data/tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
+    filename = FLAGS.data_dir + 'tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
   
-    tfrecord_filename = glb('../data/tfrecords/' + dir_name + '/*')  
+    tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*')  
     if filename in tfrecord_filename:
       print('already a tfrecord there! I will skip this one')
     else: 

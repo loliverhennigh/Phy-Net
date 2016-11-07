@@ -14,6 +14,8 @@ FLAGS = tf.app.flags.FLAGS
 # Constants describing the training process.
 tf.app.flags.DEFINE_string('video_dir', 'goldfish_no_filter',
                            """ dir containing the video files """)
+tf.app.flags.DEFINE_string('data_dir', '../data/',
+                           """ dir containing the video files """)
 tf.app.flags.DEFINE_integer('min_queue_examples', 1000,
                            """ min examples to queue up""")
 
@@ -149,7 +151,7 @@ def video_inputs(batch_size, seq_length):
   params_loss = None
 
   # get list of video file names
-  video_filename = glb('../data/videos/'+FLAGS.video_dir+'/*') 
+  video_filename = glb(FLAGS.data_dir + 'videos/'+FLAGS.video_dir+'/*') 
 
   if FLAGS.model in ("fully_connected_84x84x4", "lstm_84x84x4"):
     shape = (84,84)
@@ -184,33 +186,6 @@ def video_inputs(batch_size, seq_length):
  
   return frames
 
-def cannon_inputs(batch_size, seq_length):
-  """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
-  Args:
-    batch_size: Number of images per batch.
-    seq_length: seq of inputs.
-  Returns:
-    images: Images. 4D tensor. Possible of size [batch_size, 28x28x4].
-  """
-  params = None
-  params_loss = None
-
-  # num samples per tfrecord
-  num_samples = 100000
-  
-  cannon_createTFRecords.generate_tfrecords(num_samples, seq_length)
- 
-  tfrecord_filename = glb('../data/tfrecords/cannon/*num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '.tfrecords') 
-  
-  filename_queue = tf.train.string_input_producer(tfrecord_filename) 
-
-  image = read_data(filename_queue, seq_length, (28, 28), 4, False)
-  tf.image_summary('images', image)
-  
-  frames = _generate_image_label_batch(image, batch_size)
-
-  return frames
-
 def balls_inputs(batch_size, seq_length):
   """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
   Args:
@@ -238,7 +213,7 @@ def balls_inputs(batch_size, seq_length):
     balls_createTFRecords.generate_tfrecords(i, num_samples, seq_length, dir_name)
     print('generated record ' + str(i) + ' out of ' + str(run_num))
     
-  tfrecord_filename = glb('../data/tfrecords/' + dir_name + '/*num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '_friction_' + str(FLAGS.friction) + '_num_balls_' + str(FLAGS.num_balls) + '.tfrecords') 
+  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '_friction_' + str(FLAGS.friction) + '_num_balls_' + str(FLAGS.num_balls) + '.tfrecords') 
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename) 
 
@@ -273,7 +248,7 @@ def diffusion_inputs(batch_size, seq_length):
 
   diffusion_createTFRecords.generate_tfrecords(seq_length, run_num, dir_name)
 
-  tfrecord_filename = glb('../data/tfrecords/' + dir_name + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*_seq_length_' + str(seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
@@ -315,7 +290,7 @@ def fluid_inputs(batch_size, seq_length):
  
   fluid_createTFRecords.generate_tfrecords(seq_length, run_num, shape, dir_name)
 
-  tfrecord_filename = glb('../data/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
