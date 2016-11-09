@@ -22,9 +22,9 @@ if FLAGS.system='balls'
   LSTM_SIZE = [64, 128, 256] 
   NUM_LAYERS = [3, 3, 3] 
 
-assert(FLAGS.model in ("fully_connected_84x84x4", "fully_connected_84x84x3", "lstm_84x84x4", "lstm_84x84x3"), "need to use a model thats 84x84, sorry")
+#assert(FLAGS.model in ("fully_connected_84x84x4", "fully_connected_84x84x3", "lstm_84x84x4", "lstm_84x84x3"), "need to use a model thats 84x84, sorry")
 
-NUM_FRAMES = 100
+NUM_FRAMES = 15
 NUM_RUNS = 100
 
 def evaluate(i):
@@ -33,7 +33,7 @@ def evaluate(i):
     # make inputs
     x = ring_net.inputs(1, NUM_FRAMES) 
     # unwrap it
-    output_f_mean, output_f_stddev, output_t_mean, output_t_stddev, output_g = ring_net.unwrap_generate(x, params, 5, NUM_FRAMES-5)
+    output_f, output_t, output_g, output_autoencoder = ring_net.unwrap(x, 1.0, 1.0, 1.0, NUM_FRAMES, "all")
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -52,29 +52,20 @@ def evaluate(i):
     tf.train.start_queue_runners(sess=sess)
 
     # error and stddev to keep track of
-    error = np.zeros(NUM_FRAMES-1)
-    error_mean = np.zeros(NUM_FRAMES-1)
-    if FLAGS.system == "balls":
-      error_blank = np.zeros(NUM_FRAMES)
-    stddev = np.zeros(NUM_FRAMES)
+    error = np.zeros(NUM_FRAMES-6)
 
     # eval a few times
     for step in xrange(NUM_RUNS):
       print("generated_seq")
-      generated_seq, inputs, output_t_stddev_r, f_mean, t_mean = sess.run([output_g, x, output_t_stddev, output_f_mean, output_t_mean],feed_dict={})
-      print(generated_seq[:,:NUM_FRAMES-1,:,:,:].shape)
-      print(inputs[:,1:,:,:,:].shape)
-      error = error + np.sum(np.square(generated_seq[:,:NUM_FRAMES-1,:,:,:] - inputs[:,1:,:,:,:]), axis=(0,2,3,4))
-      error_mean = error_mean + np.sum(np.square(f_mean[:,1:,:] - t_mean[:,:NUM_FRAMES-1,:]), axis=(0,2))
-      if FLAGS.system == "balls":
-        error_blank = error_blank + np.sum(np.square(inputs), axis=(0,2,3,4))
-      stddev = stddev + np.sum(np.square(output_t_stddev_r), axis=(0,2))
+      output_g_g, x_g = sess.run([output_g, x],feed_dict={})
+      error = error + np.sum(np.square(output_g_g[:,5:NUM_FRAMES-1,:,:,:] - x_g[:,6:,:,:,:]), axis=(0,2,3,4))
+      #stddev = stddev + np.sum(np.square(output_t_stddev_r), axis=(0,2))
       #generated_seq = generated_seq[0]
       #inputs = inputs[0]
  
     plt.figure(1)
     plt.plot(error, label="error_" + NETWORKS[i])
-    if FLAGS.system == "balls":
+    '''if FLAGS.system == "balls":
       plt.plot(error_blank, label="error_blank_" + NETWORKS[i])
     plt.legend()
     plt.figure(2)
@@ -82,12 +73,20 @@ def evaluate(i):
     plt.legend()
     plt.figure(3)
     plt.plot(error_mean, label="mean_" + NETWORKS[i])
-    plt.legend()
+    plt.legend()'''
+    return np.sum(error)
 
 def main(argv=None):  # pylint: disable=unused-argument
+  computation = np.zeros(NUM_NETWORKS)
+  error = np.zeros(NUM_NETWORKS)
   for i in xrange(NUM_NETWORKS):
     FLAGS.model = MODELS[i]
-    evaluate(i)
+    FLAGS.lstm_size = LSTM_SIZE[i]
+    FLAGS.num_layers = NUM_LAYERS[i]
+    computation[i] = 3*LSTM_SIZE[i]^2*NUM_LAYERS[i] # just a estimation. possible more details later
+    error[i] = evaluate(i)
+  plt.figure(2)
+  plt.scatter(computation, error)
   plt.show()
 
 

@@ -15,7 +15,7 @@ tf.app.flags.DEFINE_string('train_dir', '../checkpoints/train_store_',
                             """dir to store trained net""")
 tf.app.flags.DEFINE_float('input_keep_prob', 1.0,
                           """ input keep probability """)
-tf.app.flags.DEFINE_float('keep_prob_encoding', .5,
+tf.app.flags.DEFINE_float('keep_prob_encoding', 1.0,
                           """ keep encoding probability """)
 tf.app.flags.DEFINE_float('keep_prob_lstm', 1.0,
                           """ keep lstm probability """)
@@ -26,11 +26,11 @@ tf.app.flags.DEFINE_bool('load_network', True,
 
 train_dir = FLAGS.train_dir + FLAGS.model + FLAGS.system + "_compression" + FLAGS.compression_loss + "_compression_vae_loss_" + str(FLAGS.compression_vae_loss) + "_sample_compression_" + str(FLAGS.sample_compression) + "_lstm_size_" + str(FLAGS.lstm_size) + "_num_layers_" + str(FLAGS.num_layers)
 
-CURRICULUM_STEPS = [100000, 100000]
-CURRICULUM_SEQ = [10, 15]
-CURRICULUM_BATCH_SIZE = [32, 32]
-CURRICULUM_LEARNING_RATE = [1e-5, 1e-5]
-CURRICULUM_TRAIN_PIECE = ["all", "all"]
+CURRICULUM_STEPS = [50000, 50000, 100000]
+CURRICULUM_SEQ = [6, 8, 10]
+CURRICULUM_BATCH_SIZE = [32, 32, 32]
+CURRICULUM_LEARNING_RATE = [1e-4, 1e-4, 1e-4]
+CURRICULUM_TRAIN_PIECE = ["all", "all", "all"]
 
 def train(iteration):
   """Train ring_net for a number of steps."""
@@ -118,7 +118,7 @@ def train(iteration):
 
     for step in xrange(CURRICULUM_STEPS[iteration]):
       t = time.time()
-      _ , loss_r = sess.run([train_op, total_loss],feed_dict={keep_prob_encoding:FLAGS.keep_prob_encoding, keep_prob_lstm:FLAGS.keep_prob_lstm, keep_prob_decoding:FLAGS.keep_prob_decoding, input_keep_prob:FLAGS.input_keep_prob})
+      _ , loss_r, output_f_g = sess.run([train_op, total_loss, output_f],feed_dict={keep_prob_encoding:FLAGS.keep_prob_encoding, keep_prob_lstm:FLAGS.keep_prob_lstm, keep_prob_decoding:FLAGS.keep_prob_decoding, input_keep_prob:FLAGS.input_keep_prob})
       elapsed = time.time() - t
       #print("loss vae value at " + str(loss_vae_r))
       #print("loss value at " + str(loss_r))
@@ -132,6 +132,9 @@ def train(iteration):
       if step%100 == 0:
         print("loss value at " + str(loss_r))
         print("time per batch is " + str(elapsed))
+        print("max ouput f is ")
+        print(np.max(output_f_g))
+        print(np.min(output_f_g))
         summary_str = sess.run(summary_op, feed_dict={keep_prob_encoding:FLAGS.keep_prob_encoding, keep_prob_lstm:FLAGS.keep_prob_lstm, keep_prob_decoding:FLAGS.keep_prob_decoding, input_keep_prob:FLAGS.input_keep_prob})
         summary_writer.add_summary(summary_str, step) 
       
