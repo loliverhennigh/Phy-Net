@@ -28,7 +28,7 @@ def lstm_loss(inputs, output_f, output_t, output_g, output_autoencoding, train_p
       output_f = tf.stop_gradient(output_f)
   
     #loss_t = 100.0*tf.nn.l2_loss(output_f[:,1:,:] - output_t[:,:seq_length-1,:])
-    loss_t = tf.nn.l2_loss(output_f[:,1:,:] - output_t[:,:seq_length-1,:])
+    loss_t = tf.nn.l2_loss(output_f[:,5:,:] - output_t[:,4:seq_length-1,:])
     tf.scalar_summary('loss_t', loss_t)
   else:
     loss_t = 0.0

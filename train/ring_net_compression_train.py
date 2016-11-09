@@ -26,11 +26,11 @@ tf.app.flags.DEFINE_bool('load_network', True,
 
 train_dir = FLAGS.train_dir + FLAGS.model + FLAGS.system + "_compression" + FLAGS.compression_loss + "_compression_vae_loss_" + str(FLAGS.compression_vae_loss) + "_sample_compression_" + str(FLAGS.sample_compression) + "_lstm_size_" + str(FLAGS.lstm_size) + "_num_layers_" + str(FLAGS.num_layers)
 
-CURRICULUM_STEPS = [500000, 500000]
+CURRICULUM_STEPS = [100000, 100000]
 CURRICULUM_SEQ = [10, 15]
-CURRICULUM_BATCH_SIZE = [128, 128]
+CURRICULUM_BATCH_SIZE = [32, 32]
 CURRICULUM_LEARNING_RATE = [1e-5, 1e-5]
-CURRICULUM_TRAIN_PIECE = ["compression", "compression"]
+CURRICULUM_TRAIN_PIECE = ["all", "all"]
 
 def train(iteration):
   """Train ring_net for a number of steps."""
