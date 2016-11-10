@@ -16,8 +16,6 @@ def lstm_unwrap(inputs, keep_prob_encoding, keep_prob_lstm, keep_prob_decoding, 
   output_f.append(y_0)
 
   output_t = []
-  if train_piece == "compression":
-    y_0 = tf.stop_gradient(y_0)
   y_1, hidden = ring_net.lstm_compression(y_0, None, keep_prob_lstm, encode=True)
   output_t.append(y_1)
 
@@ -40,8 +38,6 @@ def lstm_unwrap(inputs, keep_prob_encoding, keep_prob_lstm, keep_prob_decoding, 
   
     # compress
     if i < 4:
-      if train_piece == "compression":
-        y_i = tf.stop_gradient(y_i)
       y_1, hidden = ring_net.lstm_compression(y_i, hidden, keep_prob_lstm, encode=True)
     else:
       y_1, hidden = ring_net.lstm_compression(y_1, hidden, keep_prob_lstm, encode=False)
