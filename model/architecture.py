@@ -208,7 +208,7 @@ def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
 
   return y_2, new_state
 
-def decoding_32x32x3(y_2, keep_prob_decoding):
+def decoding_32x32x3(y_2):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder
@@ -230,7 +230,7 @@ def decoding_32x32x3(y_2, keep_prob_decoding):
   x_2 = tf.reshape(x_2, [-1, 32, 32, 3])
   return x_2
 
-def decoding_32x32x1(y_2, keep_prob_decoding):
+def decoding_32x32x1(y_2):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder

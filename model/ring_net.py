@@ -112,7 +112,7 @@ def lstm_compression(y_1, hidden_state, keep_prob_lstm, encode=True):
     y_2, hidden = architecture.lstm_compression_32x32x1(y_1, hidden_state, keep_prob_lstm, encode)
   return y_2, hidden 
 
-def decoding(y_2, keep_prob_decoding):
+def decoding(y_2):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder
@@ -121,11 +121,19 @@ def decoding(y_2, keep_prob_decoding):
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_2 -> x_2
   if FLAGS.model in ("fully_connected_32x32x3", "lstm_32x32x3", "lstm_32x32x3_256", "lstm_32x32x3_512"): 
-    x_2 = architecture.decoding_32x32x3(y_2, keep_prob_decoding)
+    x_2 = architecture.decoding_32x32x3(y_2)
   elif FLAGS.model in ("fully_connected_32x32x3", "lstm_32x32x1", "lstm_32x32x3_256", "lstm_32x32x3_512"): 
-    x_2 = architecture.decoding_32x32x1(y_2, keep_prob_decoding)
+    x_2 = architecture.decoding_32x32x1(y_2)
 
   return x_2 
+
+def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_lstm):
+  
+  y_1 = encoding(state, keep_prob_encoding)
+  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_encoding)
+  x_2 = decoding(y_2) 
+
+  return x_2, hidden_state
 
 def unwrap(inputs, keep_prob_encoding, keep_prob_lstm, keep_prob_decoding, seq_length, train_piece):
   """Unrap the system for training.
