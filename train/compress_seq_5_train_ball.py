@@ -45,12 +45,17 @@ def train():
     x_2, hidden_state = ring_net.encode_compress_decode(state[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
-    for i in xrange(4):
+    for i in xrange(3):
       x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+    y_1 = ring_net.encoding(state[:,9,:,:,:], keep_prob_encoding)
+    y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, keep_prob_lstm)
+    x_2 = ring_net.decoding(y_2)
+
     x_2_o.append(x_2)
     # now collect values
     for i in xrange(4):
-      x_2, hidden_state = ring_net.encode_compress_decode(x_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
+      y_2, hidden_state = ring_net.lstm_compression(y_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2 = ring_net.decoding(y_2)
       x_2_o.append(x_2)
       tf.image_summary('images_gen_' + str(i), x_2)
     x_2_o = tf.pack(x_2_o)
