@@ -28,6 +28,9 @@ def generate_tfrecords(run_num, num_samples, seq_length, dir_name):
   frame_num = 3
   T = num_samples 
 
+  if not tf.gfile.Exists(FLAGS.data_dir + 'tfrecords/' + dir_name):
+    tf.gfile.MakeDirs(FLAGS.data_dir + 'tfrecords/' + dir_name)
+
   filename = FLAGS.data_dir + 'tfrecords/' + dir_name + '/balls_run_num_' + str(run_num) + '_num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '_friction_' + str(FLAGS.friction) + '_num_balls_' + str(FLAGS.num_balls) + '.tfrecords'
 
   tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*')

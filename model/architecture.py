@@ -132,17 +132,6 @@ def encoding_32x32x3(inputs, keep_prob):
   # y_1 
   y_1 = _fc_layer(conv3, FLAGS.compression_size, "encode_4", True)
   _activation_summary(y_1)
-  """
-  x_1_image = tf.reshape(x_1_image, [-1, 32*32*3])
- 
-  # fc1
-  fc1 = _fc_layer(x_1_image, 1200, "encode_1")
-  # fc2
-  fc2 = _fc_layer(fc1, 1200, "encode_3")
-  # y_1 
-  y_1 = _fc_layer(fc2, FLAGS.compression_size, "encode_4", False, True)
-  _activation_summary(y_1)
-  """
   return y_1
 
 def encoding_32x32x1(inputs, keep_prob):
@@ -155,14 +144,15 @@ def encoding_32x32x1(inputs, keep_prob):
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice x_1 -> y_1
   x_1_image = inputs 
-  x_1_image = tf.reshape(x_1_image, [-1, 32*32])
- 
-  # fc1
-  fc1 = _fc_layer(x_1_image, 1200, "encode_1")
-  # fc2
-  fc2 = _fc_layer(fc1, 1200, "encode_3")
+  
+  # conv1
+  conv1 = _conv_layer(x_1_image, 8, 2, 64, "encode_1")
+  # conv2
+  conv2 = _conv_layer(conv1, 6, 2, 128, "encode_2")
+  # conv3
+  conv3 = _conv_layer(conv2, 6, 2, 128, "encode_3")
   # y_1 
-  y_1 = _fc_layer(fc2, FLAGS.compression_size, "encode_4", False, True)
+  y_1 = _fc_layer(conv3, FLAGS.compression_size, "encode_4", True)
   _activation_summary(y_1)
   return y_1
 
@@ -191,6 +181,9 @@ def lstm_compression_32x32x3(y_1, hidden_state, keep_prob, encode=True):
 
   y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2") 
 
+  # residual connection
+  y_2 = y_2 + y_1
+
   return y_2, new_state
 
 def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
@@ -216,7 +209,10 @@ def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
 
   y_2, new_state = cell(y_1, hidden_state)
 
-  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2") 
+  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
+
+  # residual connection
+  y_2 = y_2 + y_1
 
   return y_2, new_state
 
@@ -239,22 +235,6 @@ def decoding_32x32x3(y_2):
   # conv24
   conv24 = _transpose_conv_layer(conv23, 6, 2, 3, "decode_24")
   x_2 = tf.reshape(conv24, [-1, 32, 32, 3])
-
-
-  """
-  # fc21
-  fc21 = _fc_layer(y_2, 1200, "decode_21")
-  # fc22 
-  fc22 = _fc_layer(fc21, 1200, "decode_22")
-  # fc23 
-  fc23 = _fc_layer(fc22, 1200, "decode_23")
-  # fc24 
-  fc24 = _fc_layer(fc23, 32*32*3, "decode_24", False, True)
-  # x_2 
-  x_2 = fc24
-  x_2 = tf.nn.sigmoid(x_2)
-  x_2 = tf.reshape(x_2, [-1, 32, 32, 3])
-  """
   return x_2
 
 def decoding_32x32x1(y_2):
@@ -265,17 +245,16 @@ def decoding_32x32x1(y_2):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_3 -> x_2
+
   # fc21
-  fc21 = _fc_layer(y_2, 1200, "decode_21")
-  # fc22 
-  fc22 = _fc_layer(fc21, 1200, "decode_22")
-  # fc23 
-  fc23 = _fc_layer(fc22, 1200, "decode_23")
-  # fc24 
-  fc24 = _fc_layer(fc23, 32*32, "decode_24", False, True)
-  # x_2 
-  x_2 = fc24
-  #x_2 = tf.nn.sigmoid(x_2)
-  x_2 = tf.reshape(x_2, [-1, 32, 32, 1])
+  fc21 = _fc_layer(y_2, 2048, "decode_21")
+  conv21 = tf.reshape(fc21, [-1, 4, 4, 128])
+  # conv22
+  conv22 = _transpose_conv_layer(conv21, 6, 2, 128, "decode_22")
+  # conv23
+  conv23 = _transpose_conv_layer(conv22, 6, 2, 64, "decode_23")
+  # conv24
+  conv24 = _transpose_conv_layer(conv23, 6, 2, 1, "decode_24")
+  x_2 = tf.reshape(conv24, [-1, 32, 32, 1])
   return x_2
 

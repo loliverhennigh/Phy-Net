@@ -12,14 +12,16 @@ import model.ring_net as ring_net
 FLAGS = tf.app.flags.FLAGS
 
 # set params for ball train
-model = 'lstm_32x32x3'
-system = 'balls'
+model = 'lstm_32x32x1'
+system = 'diffusion'
 unroll_length = 8
 batch_size = 32
 
 # save file name
 RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+
 SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+
 
 def train():
   """Train ring_net for a number of steps."""
@@ -45,17 +47,12 @@ def train():
     x_2, hidden_state = ring_net.encode_compress_decode(state[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
-    for i in xrange(3):
+    for i in xrange(4):
       x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
-    y_1 = ring_net.encoding(state[:,4,:,:,:], keep_prob_encoding)
-    y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, keep_prob_lstm)
-    x_2 = ring_net.decoding(y_2)
-
     x_2_o.append(x_2)
     # now collect values
     for i in xrange(2):
-      y_2, hidden_state = ring_net.lstm_compression(y_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
-      x_2 = ring_net.decoding(y_2)
+      x_2, hidden_state = ring_net.encode_compress_decode(x_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
       x_2_o.append(x_2)
       tf.image_summary('images_gen_' + str(i), x_2)
     x_2_o = tf.pack(x_2_o)

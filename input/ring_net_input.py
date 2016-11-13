@@ -236,7 +236,7 @@ def diffusion_inputs(batch_size, seq_length):
   """
   # num tf records
   if FLAGS.train == True:
-    run_num = 4990
+    run_num = 1000
   else:
     run_num = 100 
 
@@ -249,16 +249,13 @@ def diffusion_inputs(batch_size, seq_length):
   diffusion_createTFRecords.generate_tfrecords(seq_length, run_num, dir_name)
 
   tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  print(tfrecord_filename)
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
   image = read_data(filename_queue, seq_length, shape, 1, False, 'float32')
   tf.image_summary('images', image[:,:,:,:])
-  #tf.image_summary('boundry', boundry[:,:,:])
-  #tf.image_summary('boundry', tf.reshape(boundry ,[1,32,32,1]))
   
-  #image = tf.div(image, 255.0) 
-
   frames = _generate_image_label_batch(image, batch_size)
 
   return frames

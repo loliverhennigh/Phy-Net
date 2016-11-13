@@ -12,14 +12,14 @@ import model.ring_net as ring_net
 FLAGS = tf.app.flags.FLAGS
 
 # set params for ball train
-model = 'lstm_32x32x3'
-system = 'balls'
-unroll_length = 8
+model = 'lstm_32x32x1'
+system = 'diffusion'
+unroll_length = 10
 batch_size = 32
 
 # save file name
-RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_5' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
 
 def train():
   """Train ring_net for a number of steps."""
@@ -45,17 +45,12 @@ def train():
     x_2, hidden_state = ring_net.encode_compress_decode(state[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
-    for i in xrange(3):
+    for i in xrange(4):
       x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
-    y_1 = ring_net.encoding(state[:,4,:,:,:], keep_prob_encoding)
-    y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, keep_prob_lstm)
-    x_2 = ring_net.decoding(y_2)
-
     x_2_o.append(x_2)
     # now collect values
-    for i in xrange(2):
-      y_2, hidden_state = ring_net.lstm_compression(y_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
-      x_2 = ring_net.decoding(y_2)
+    for i in xrange(4):
+      x_2, hidden_state = ring_net.encode_compress_decode(x_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
       x_2_o.append(x_2)
       tf.image_summary('images_gen_' + str(i), x_2)
     x_2_o = tf.pack(x_2_o)
@@ -66,7 +61,7 @@ def train():
     tf.scalar_summary('loss', error)
 
     # train (hopefuly)
-    train_op = ring_net.train(error, 1e-6)
+    train_op = ring_net.train(error, 1e-5)
     
     # List of all Variables
     variables = tf.all_variables()
@@ -93,7 +88,7 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(20000):
+    for step in xrange(30000):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
       elapsed = time.time() - t

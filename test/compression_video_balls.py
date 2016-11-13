@@ -28,19 +28,20 @@ def evaluate():
     # make inputs
     state_start = ring_net.inputs(1, 5) 
 
-    # unwrap
-    x_2_o = []
     # first step
     x_2, hidden_state = ring_net.encode_compress_decode(state_start[:,0,:,:,:], None, 1.0, 1.0)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
-    for i in xrange(4):
+    for i in xrange(3):
       x_2, hidden_state = ring_net.encode_compress_decode(state_start[:,i+1,:,:,:], hidden_state, 1.0, 1.0)
+    y_1 = ring_net.encoding(state_start[:,4,:,:,:], 1.0)
+    y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, 1.0)
 
     # rename output_t
-    x_1 = x_2
+    y_1 = y_2
     hidden_state_1 = hidden_state
-    x_2, hidden_state_2 = ring_net.encode_compress_decode(x_1, hidden_state_1,  1.0, 1.0)
+    y_2, hidden_state_2 = ring_net.lstm_compression(y_1, hidden_state_1, 1.0)
+    x_2 = ring_net.decoding(y_2)
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -55,14 +56,14 @@ def evaluate():
 
     # get frame
     tf.train.start_queue_runners(sess=sess)
-    x_2_g, hidden_2_g = sess.run([x_1, hidden_state_1], feed_dict={})
+    y_2_g, hidden_2_g = sess.run([y_1, hidden_state_1], feed_dict={})
 
     # Play!!!! 
     for step in xrange(10000):
       print(step)
       #time.sleep(.5)
       # calc generated frame from t
-      x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
+      x_2_g, y_2_g, hidden_2_g = sess.run([x_2, y_2, hidden_state_2],feed_dict={y_1:y_2_g, hidden_state_1:hidden_2_g})
       frame = np.uint8(np.minimum(np.maximum(0, x_2_g*255.0), 255))
       frame = frame[0, :, :, :]
       frame = cv2.resize(frame, (500, 500))

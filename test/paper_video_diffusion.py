@@ -20,8 +20,8 @@ tf.app.flags.DEFINE_string('checkpoint_dir', '../checkpoints/train_store_',
                            """Directory where to read model checkpoints.""")
 
 def evaluate():
-  FLAGS.system = "balls"
-  FLAGS.model = "lstm_32x32x3"
+  FLAGS.system = "diffusion"
+  FLAGS.model = "lstm_32x32x1"
   FLAGS.train = False 
   """ Eval the system"""
   with tf.Graph().as_default():

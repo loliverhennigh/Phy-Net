@@ -19,11 +19,11 @@ import input.ring_net_input as ring_net_input
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_string('model', 'fully_connected_28x28x4',
+tf.app.flags.DEFINE_string('model', 'lstm_32x32x3',
                            """ model name to train """)
 tf.app.flags.DEFINE_bool('train', True,
                            """ model name to train """)
-tf.app.flags.DEFINE_string('system', 'cannon',
+tf.app.flags.DEFINE_string('system', 'balls',
                            """ system to compress """)
 tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
                           """The decay to use for the moving average""")
@@ -35,24 +35,12 @@ tf.app.flags.DEFINE_float('weight_decay', 0.0005,
                           """ """)
 tf.app.flags.DEFINE_float('beta', 0.1,
                           """ beta for loss value """)
-tf.app.flags.DEFINE_integer('lstm_size', 10,
+tf.app.flags.DEFINE_integer('lstm_size', 32,
                           """ size of the lstm""")
-tf.app.flags.DEFINE_integer('num_layers', 4,
+tf.app.flags.DEFINE_integer('num_layers', 1,
                           """ size of the lstm""")
-tf.app.flags.DEFINE_integer('compression_size', 10,
+tf.app.flags.DEFINE_integer('compression_size', 32,
                           """ size of compressed space""")
-tf.app.flags.DEFINE_bool('flow_open', False, 
-                           """ whether flow is open """)
-
-# train param
-tf.app.flags.DEFINE_bool('test_no_sample', False, 
-                           """ whether to sample during testing """)
-tf.app.flags.DEFINE_bool('sample_compression', False, 
-                           """ whether to sample compression """)
-tf.app.flags.DEFINE_string('compression_loss', 'kl',
-                           """ loss for the compression, either l2 or kl """)
-tf.app.flags.DEFINE_bool('compression_vae_loss', False,
-                           """ loss for the compression, either l2 or kl """)
 
 # possible models and systems to train are
 # fully_connected_28x28x4 with cannon
@@ -120,9 +108,9 @@ def decoding(y_2):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_2 -> x_2
-  if FLAGS.model in ("fully_connected_32x32x3", "lstm_32x32x3", "lstm_32x32x3_256", "lstm_32x32x3_512"): 
+  if FLAGS.model in ("lstm_32x32x3"): 
     x_2 = architecture.decoding_32x32x3(y_2)
-  elif FLAGS.model in ("fully_connected_32x32x3", "lstm_32x32x1", "lstm_32x32x3_256", "lstm_32x32x3_512"): 
+  elif FLAGS.model in ("lstm_32x32x1"): 
     x_2 = architecture.decoding_32x32x1(y_2)
 
   return x_2 
@@ -135,99 +123,6 @@ def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_ls
 
   return x_2, hidden_state
 
-def unwrap(inputs, keep_prob_encoding, keep_prob_lstm, keep_prob_decoding, seq_length, train_piece):
-  """Unrap the system for training.
-  Args:
-    inputs: input to system, should be [minibatch, seq_length, image_size]
-    keep_prob: dropout layers
-    seq_length: how far to unravel 
- 
-  Return: 
-    output_t: calculated y values from iterating t'
-    output_g: calculated x values from g
-    output_f: calculated y values from f 
-  """
-
-  if FLAGS.model in ("lstm_28x28x4", "lstm_84x84x4", "lstm_84x84x3", "lstm_32x32x3", "lstm_32x32x10", "lstm_64x64x10","lstm_32x32x3_256", "lstm_32x32x1"):
-    output_f, output_t, output_g, output_autoencoder = unwrap_helper.lstm_unwrap(inputs, keep_prob_encoding, keep_prob_lstm, keep_prob_decoding, seq_length, train_piece)
-
-  return output_f, output_t, output_g, output_autoencoder
-
-def unwrap_generate(inputs, input_seq_length, output_seq_length):
-  """Unrap the system for training.
-  Args:
-    inputs: input to system, should be [minibatch, seq_length, image_size]
-    keep_prob: dropout layers
-    seq_length: how far to unravel 
- 
-  Return: 
-    output_t: calculated y values from iterating t'
-    output_g: calculated x values from g
-    output_f: calculated y values from f 
-  """
-
-  if FLAGS.model in ("lstm_28x28x4", "lstm_84x84x4", "lstm_84x84x3", "lstm_32x32x3", "lstm_32x32x10", "lstm_64x64x10", "lstm_32x32x3_256", "lstm_32x32x1"):
-    output_f, output_t, output_g = unwrap_helper.lstm_unwrap_generate(inputs, input_seq_length, output_seq_length)
-
-  return output_f, output_t, output_g
-
-def unwrap_generate_3_skip(inputs, second_seq, third_seq):
-  """Unrap the system for training.
-  Args:
-    inputs: input to system, should be [minibatch, seq_length, image_size]
-    keep_prob: dropout layers
-    seq_length: how far to unravel 
- 
-  Return: 
-    output_t: calculated y values from iterating t'
-    output_g: calculated x values from g
-    output_f: calculated y values from f 
-  """
-
-  if FLAGS.model in ("lstm_32x32x3", "lstm_32x32x10", "lstm_64x64x10", "lstm_84x84x3", "lstm_84x84x4", "lstm_32x32x3_256", "lstm_32x32x1"): 
-    output_f, output_t, output_g = unwrap_helper.lstm_unwrap_generate_3_skip(inputs, input_seq_length, output_seq_length)
-
-  return output_f, output_t, output_g
-
-def autoencoder(inputs, step=0):
-  """Unrap the system for training.
-  Args:
-    inputs: input to system, should be [minibatch, seq_length, image_size]
-    keep_prob: dropout layers
-    seq_length: how far to unravel 
- 
-  Return: 
-    output_t: calculated y values from iterating t'
-    output_g: calculated x values from g
-    output_f: calculated y values from f 
-  """
-  x_1 = unwrap_helper.autoencoder(inputs, step)
-
-  return x_1 
-
-def loss(inputs, output_f, output_t, output_g, output_autoencoder, train_piece):
-  """Calc loss for unrap output.
-  Args.
-    inputs: true x values
-    output_g: calculated x values from g
-    output_mean: calculated mean values from f 
-    output_stddev: calculated stddev values from f 
-
-  Return:
-    error: loss value
-  """
-
-  if FLAGS.model in ("lstm_84x84x4", "lstm_84x84x3", "lstm_32x32x3", "lstm_32x32x10", "lstm_64x64x10", "lstm_32x32x3_256", "lstm_32x32x1"):
-    total_loss = loss_helper.lstm_loss(inputs, output_f, output_t, output_g, output_autoencoder, train_piece)
-  
-  #return loss_vae, loss_reconstruction_autoencoder, loss_reconstruction_g, loss_t
-  return total_loss
-
-def l2_loss(output, correct_output):
-  """Calcs the loss for the model"""
-  error = tf.nn.l2_loss(output - correct_output)
-  return error
- 
 def train(total_loss, lr):
    #train_op = tf.train.AdamOptimizer(lr, epsilon=1.0).minimize(total_loss)
    optim = tf.train.AdamOptimizer(lr)

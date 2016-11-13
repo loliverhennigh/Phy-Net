@@ -37,6 +37,9 @@ def generate_tfrecords(seq_length, num_runs, dir_name):
   frame_num = 1
   shape = (32,32)
 
+  if not tf.gfile.Exists(FLAGS.data_dir + 'tfrecords/' + dir_name):
+    tf.gfile.MakeDirs(FLAGS.data_dir + 'tfrecords/' + dir_name)
+
   for run in xrange(num_runs):
     filename = FLAGS.data_dir + 'tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
   

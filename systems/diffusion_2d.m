@@ -17,7 +17,7 @@ x=0:dx:2;                        %Range of x(0,2) and specifying the grid points
 y=0:dy:2;                        %Range of y(0,2) and specifying the grid points
 u=zeros(nx,ny);                  %Preallocating u
 un=zeros(nx,ny);                 %Preallocating un
-vis=.09;                         %Diffusion coefficient/viscocity
+vis=0.04;                         %Diffusion coefficient/viscocity
 UW=0;                            %x=0 Dirichlet B.C 
 UE=0;                            %x=L Dirichlet B.C 
 US=0;                            %y=0 Dirichlet B.C 
@@ -27,12 +27,16 @@ UnE=0;                           %x=L Neumann B.C (du/dn=UnE)
 UnS=0;                           %y=0 Neumann B.C (du/dn=UnS)
 UnN=0;                           %y=L Neumann B.C (du/dn=UnN)
 
-num_runs = 5000
+num_runs = 1000;
+
+mkdir('./store_diffusion');
 
 for run = 0:num_runs
     u=zeros(nx,ny);                  %Preallocating u
-    run
-    mkdir(['/data/compressing_physics/systems/store_diffusion/run_', num2str(run)])
+    if rem(run, 100) == 0
+      printf(['number of simulations run out of 1000 is ', num2str(run)]);
+    endif
+    mkdir(['./store_diffusion/run_', num2str(run), '\n']);
     %%
     %Initial Conditions
     %for i=1:nx
@@ -122,7 +126,7 @@ for run = 0:num_runs
         %u(:,1)=u(:,2)-UnS*dy;
         %u(:,ny)=u(:,ny-1)+UnN*dy;
         %}
-        save(['/data/compressing_physics/systems/store_diffusion/run_', num2str(run), '/state_step_', num2str(it), '.mat'],'u', '-v7');
+        save(['./store_diffusion/run_', num2str(run), '/state_step_', num2str(it), '.mat'],'u', '-v7');
     end
 end
 

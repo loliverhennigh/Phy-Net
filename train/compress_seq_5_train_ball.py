@@ -47,7 +47,7 @@ def train():
     # unroll for 9 more steps
     for i in xrange(3):
       x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
-    y_1 = ring_net.encoding(state[:,9,:,:,:], keep_prob_encoding)
+    y_1 = ring_net.encoding(state[:,4,:,:,:], keep_prob_encoding)
     y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, keep_prob_lstm)
     x_2 = ring_net.decoding(y_2)
 

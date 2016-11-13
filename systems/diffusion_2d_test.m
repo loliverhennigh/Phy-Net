@@ -29,10 +29,14 @@ UnN=0;                           %y=L Neumann B.C (du/dn=UnN)
 
 num_runs = 100 
 
+mkdir('./store_diffusion_test');
+
 for run = 0:num_runs
     u=zeros(nx,ny);                  %Preallocating u
-    run
-    mkdir(['./store_diffusion_test/run_', num2str(run)])
+    if rem(run, 10) == 0
+      printf(['number of simulations run out of 100 is ', num2str(run), '\n']);
+    endif
+    mkdir(['./store_diffusion_test/run_', num2str(run)]);
     %%
     %Initial Conditions
     %for i=1:nx
@@ -45,10 +49,10 @@ for run = 0:num_runs
     %    end
     %end
     for i=1:4
-      rand_x = randi([2,31]);
-      rand_y = randi([2,31]);
+      rand_x = randi([4,29]);
+      rand_y = randi([4,29]);
       rand_val = rand(1);
-      u(rand_x-1:rand_x+1, rand_y-1:rand_y+1) = 2*rand_val;
+      u(rand_x-2:rand_x+2, rand_y-2:rand_y+2) = 1.0;
     end
     %%
     %B.C vector
