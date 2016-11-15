@@ -57,17 +57,12 @@ def inputs(batch_size, seq_length):
   Return:
     x: input vector, may be filled 
   """
-  if FLAGS.system == "cannon":
-    x = ring_net_input.cannon_inputs(batch_size, seq_length)
-  elif FLAGS.system == "balls":
-    x = ring_net_input.balls_inputs(batch_size, seq_length)
-  elif FLAGS.system == "video":
-    x = ring_net_input.video_inputs(batch_size, seq_length)
-  elif FLAGS.system == "fluid":
-    x = ring_net_input.fluid_inputs(batch_size, seq_length)
+  if FLAGS.system == "balls":
+    return ring_net_input.balls_inputs(batch_size, seq_length)
   elif FLAGS.system == "diffusion":
-    x = ring_net_input.diffusion_inputs(batch_size, seq_length)
-  return x
+    return ring_net_input.diffusion_inputs(batch_size, seq_length)
+  elif FLAGS.system == "fluid":
+    return ring_net_input.fluid_inputs(batch_size, seq_length)
 
 def encoding(inputs, keep_prob_encoding):
   """Builds encoding part of ring net.
@@ -82,6 +77,8 @@ def encoding(inputs, keep_prob_encoding):
     y_1 = architecture.encoding_32x32x3(inputs, keep_prob_encoding)
   elif FLAGS.model == "lstm_32x32x1":
     y_1 = architecture.encoding_32x32x1(inputs, keep_prob_encoding)
+  elif FLAGS.model == "lstm_401x101x2":
+    y_1 = architecture.encoding_401x101x2(inputs, keep_prob_encoding)
 
   return y_1 
 
@@ -98,6 +95,8 @@ def lstm_compression(y_1, hidden_state, keep_prob_lstm, encode=True):
     y_2, hidden = architecture.lstm_compression_32x32x3(y_1, hidden_state, keep_prob_lstm, encode)
   elif FLAGS.model == "lstm_32x32x1":
     y_2, hidden = architecture.lstm_compression_32x32x1(y_1, hidden_state, keep_prob_lstm, encode)
+  elif FLAGS.model == "lstm_401x101x2":
+    y_2, hidden = architecture.lstm_compression_401x101x2(y_1, hidden_state, keep_prob_lstm, encode)
   return y_2, hidden 
 
 def decoding(y_2):
@@ -112,6 +111,8 @@ def decoding(y_2):
     x_2 = architecture.decoding_32x32x3(y_2)
   elif FLAGS.model in ("lstm_32x32x1"): 
     x_2 = architecture.decoding_32x32x1(y_2)
+  elif FLAGS.model in ("lstm_401x101x2"): 
+    x_2 = architecture.decoding_401x101x2(y_2)
 
   return x_2 
 
