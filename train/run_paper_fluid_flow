@@ -1,0 +1,5 @@
+
+python paper_seq_1_train_fluid_flow.py --lstm_size=1024 --num_layers=1 --compression_size=1024
+python paper_seq_3_train_fluid_flow.py --lstm_size=1024 --num_layers=1 --compression_size=1024
+python paper_seq_5_train_fluid_flow.py --lstm_size=1024 --num_layers=1 --compression_size=1024
+

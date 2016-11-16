@@ -12,13 +12,13 @@ import model.ring_net as ring_net
 FLAGS = tf.app.flags.FLAGS
  
 # set params for ball train
-model = 'lstm_32x32x1'
-system = 'diffusion'
+model = 'lstm_401x101x2'
+system = 'fluid'
 unroll_length = 10
-batch_size = 32
+batch_size = 8
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
 
 
 def train():
@@ -29,12 +29,13 @@ def train():
 
   with tf.Graph().as_default():
     # make inputs
-    print(FLAGS.system)
-    state = ring_net.inputs(batch_size, unroll_length) 
+    flow, boundry = ring_net.inputs(batch_size, unroll_length) 
+    boundry_shape = boundry.get_shape()
+    boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
 
     # possible input dropout 
     input_keep_prob = tf.placeholder("float")
-    state_drop = tf.nn.dropout(state, input_keep_prob)
+    flow_drop = tf.nn.dropout(flow, input_keep_prob)
 
     # possible dropout inside
     keep_prob_encoding = tf.placeholder("float")
@@ -43,22 +44,24 @@ def train():
     # unwrap
     x_2_o = []
     # first step
-    x_2, hidden_state = ring_net.encode_compress_decode(state[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
+    x_2, hidden_state = ring_net.encode_compress_decode(flow[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
-    # unroll for 4 more steps
+    # unroll for 9 more steps
     for i in xrange(int(unroll_length/2)-1):
-      x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
     x_2_o.append(x_2)
     # now collect values
     for i in xrange(int(unroll_length/2)-1):
-      x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+int(unroll_length/2),:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow[:,i+int(unroll_length/2),:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
       x_2_o.append(x_2)
-      tf.image_summary('images_gen_' + str(i), x_2)
+      tf.image_summary('x_gen_' + str(i), x_2[:,:,:,0:1])
+      tf.image_summary('y_gen_' + str(i), x_2[:,:,:,1:2])
     x_2_o = tf.pack(x_2_o)
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
-    error = tf.nn.l2_loss(state[:,int(unroll_length/2):,:,:,:] - x_2_o)
+    x_2_o = x_2_o * boundry
+    error = tf.nn.l2_loss(flow[:,int(unroll_length/2):,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
     # train (hopefuly)

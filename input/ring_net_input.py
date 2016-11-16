@@ -7,6 +7,7 @@ import systems.balls_createTFRecords as balls_createTFRecords
 import systems.fluid_createTFRecords as fluid_createTFRecords
 import systems.diffusion_createTFRecords as diffusion_createTFRecords
 from glob import glob as glb
+from tqdm import *
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -204,9 +205,9 @@ def balls_inputs(batch_size, seq_length):
   if not FLAGS.train:
     dir_name = dir_name + '_test'
  
-  for i in xrange(run_num): 
+  print("begining to generate tf records")
+  for i in tqdm(xrange(run_num)): 
     balls_createTFRecords.generate_tfrecords(i, num_samples, seq_length, dir_name)
-    print('generated record ' + str(i) + ' out of ' + str(run_num))
     
   tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '_friction_' + str(FLAGS.friction) + '_num_balls_' + str(FLAGS.num_balls) + '.tfrecords') 
  
@@ -244,7 +245,6 @@ def diffusion_inputs(batch_size, seq_length):
   diffusion_createTFRecords.generate_tfrecords(seq_length, run_num, dir_name)
 
   tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*_seq_length_' + str(seq_length) + '.tfrecords')
-  print(tfrecord_filename)
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
@@ -285,12 +285,12 @@ def fluid_inputs(batch_size, seq_length):
   flow, boundry = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
   tf.image_summary('x', flow[:,:,:,0:1])
   tf.image_summary('y', flow[:,:,:,1:2])
-  tf.image_summary('boundry', boundry[:,:])
   #tf.image_summary('boundry', tf.reshape(boundry ,[1,32,32,1]))
 
   #image = tf.div(image, 255.0) 
 
   flows, boundrys = _generate_image_label_batch_fluid(flow, boundry, batch_size)
+  tf.image_summary('boundry', boundrys)
 
   return flows, boundrys
 

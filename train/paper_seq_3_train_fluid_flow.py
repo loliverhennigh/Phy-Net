@@ -14,7 +14,7 @@ FLAGS = tf.app.flags.FLAGS
 # set params for ball train
 model = 'lstm_401x101x2'
 system = 'fluid'
-unroll_length = 8
+unroll_length = 10
 batch_size = 32
 
 # save file name
@@ -56,13 +56,14 @@ def train():
     for i in xrange(2):
       x_2, hidden_state = ring_net.encode_compress_decode(x_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
       x_2_o.append(x_2)
-      tf.image_summary('images_gen_' + str(i), x_2)
+      tf.image_summary('x_gen_' + str(i), x_2[:,:,:,0:1])
+      tf.image_summary('y_gen_' + str(i), x_2[:,:,:,1:2])
     x_2_o = tf.pack(x_2_o)
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
     x_2_o = x_2_o * boundry
-    error = tf.nn.l2_loss(flow[:,5:,:,:,:] - x_2_o)
+    error = tf.nn.l2_loss(flow[:,5:8,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
     # train (hopefuly)
@@ -93,7 +94,7 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(20000):
+    for step in xrange(200000):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
       elapsed = time.time() - t

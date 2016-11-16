@@ -203,10 +203,10 @@ def lstm_compression_32x32x3(y_1, hidden_state, keep_prob, encode=True):
 
   y_2, new_state = cell(y_1, hidden_state)
 
-  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2") 
-
   # residual connection
-  y_2 = y_2 + y_1
+  #y_2 = y_2 + y_1
+
+  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2") 
 
   return y_2, new_state
 
@@ -233,10 +233,10 @@ def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
 
   y_2, new_state = cell(y_1, hidden_state)
 
-  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
-
   # residual connection
-  y_2 = y_2 + y_1
+  # y_2 = y_2 + y_1
+
+  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
 
   return y_2, new_state
 
@@ -266,7 +266,7 @@ def lstm_compression_401x101x2(y_1, hidden_state, keep_prob, encode=True):
   y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
 
   # residual connection
-  y_2 = y_2 + y_1
+  #y_2 = y_2 + y_1
 
   return y_2, new_state
 
