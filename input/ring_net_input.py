@@ -265,7 +265,7 @@ def fluid_inputs(batch_size, seq_length):
   """
   # num tf records
   if FLAGS.train == True:
-    run_num = 5
+    run_num = 150
   else:
     run_num = 5
 
@@ -285,7 +285,7 @@ def fluid_inputs(batch_size, seq_length):
   flow, boundry = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
   tf.image_summary('x', flow[:,:,:,0:1])
   tf.image_summary('y', flow[:,:,:,1:2])
-  tf.image_summary('boundry', tf.expand_dims(boundry[:,:],2))
+  tf.image_summary('boundry', boundry[:,:])
   #tf.image_summary('boundry', tf.reshape(boundry ,[1,32,32,1]))
 
   #image = tf.div(image, 255.0) 
