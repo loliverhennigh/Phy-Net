@@ -51,16 +51,17 @@ def generate_tfrecords(seq_length, num_runs, dir_name):
    
       writer = tf.python_io.TFRecordWriter(filename)
   
-      mat_filenames = glb('/data/compressing_physics/systems/store_' + dir_name + '/run_' + str(run) + '/state_step_*')
+      mat_filenames = glb('../systems/store_' + dir_name + '/run_' + str(run) + '/state_step_*')
       #mat_filenames = glb('../systems/store_' + dir_name + '/run_' + str(run) + '/state_step_*')
       #mat_filenames = nat_filenames.sort(key=alphanum_key)
       num_samples = len(mat_filenames)
       
       ind_dat = 0
+      print(mat_filenames)
       while ind_dat < (num_samples - seq_length):
         seq_frames = np.zeros((seq_length,shape[0],shape[1],frame_num))
         for i in xrange(seq_length):
-          diff_state = scipy.io.loadmat('/data/compressing_physics/systems/store_' + dir_name + '/run_' + str(run) + '/state_step_' + str(i+ind_dat+1) + '.mat')
+          diff_state = scipy.io.loadmat('../systems/store_' + dir_name + '/run_' + str(run) + '/state_step_' + str(i+ind_dat+1) + '.mat')
           diff_state = np.array(diff_state['u'])
           diff_state = np.float32(diff_state)
           diff_state = diff_state.reshape([32,32,1])

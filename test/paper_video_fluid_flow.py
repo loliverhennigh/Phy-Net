@@ -28,18 +28,19 @@ def evaluate():
   with tf.Graph().as_default():
     # make inputs
     flow, boundry = ring_net.inputs(1, 5) 
+    flow_boundry = tf.concat(4, [flow, boundry])
 
     # unwrap
     x_2_o = []
     # first step
-    x_2, hidden_state = ring_net.encode_compress_decode(flow[:,0,:,:,:], None, 1.0, 1.0)
+    x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,0,:,:,:], None, 1.0, 1.0)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
     for i in xrange(4):
-      x_2, hidden_state = ring_net.encode_compress_decode(flow[:,i+1,:,:,:], hidden_state, 1.0, 1.0)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,i+1,:,:,:], hidden_state, 1.0, 1.0)
 
     # rename output_t
-    x_1 = x_2
+    x_1 = tf.concat(3, [x_2, boundry[:,0,:,:,:]])
     hidden_state_1 = hidden_state
     x_2, hidden_state_2 = ring_net.encode_compress_decode(x_1, hidden_state_1,  1.0, 1.0)
 
@@ -56,7 +57,12 @@ def evaluate():
 
     # get frame
     tf.train.start_queue_runners(sess=sess)
-    x_2_g, hidden_2_g = sess.run([x_1, hidden_state_1], feed_dict={})
+    x_2_g, hidden_2_g, boundry_1 = sess.run([x_1, hidden_state_1, boundry], feed_dict={})
+    boundry_1 = boundry_1[:,0,:,:,:]
+    boundry_max = np.maximum(boundry_1, 0.0)
+    boundry_max = np.minimum(boundry_max, 1.0)
+    print(np.max(boundry_max))
+    print(np.min(boundry_max))
 
     # Play!!!! 
     for step in xrange(10000):
@@ -65,8 +71,11 @@ def evaluate():
       # calc generated frame from t
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
       frame = x_2_g
+      x_2_g = np.concatenate((x_2_g, boundry_1), 3)
       frame = frame[0, :, :, :]
-      pl.imshow(frame[:,:,0])
+      
+      pl.imshow(np.sqrt(np.square(frame[:,:,0]) + np.square(frame[:,:,1]))*boundry_max[0,:,:,0])
+      #pl.imshow(boundry_max[0,:,:,0])
       pl.show()
       #cv2.imshow('frame', frame)
       #cv2.waitKey(0)

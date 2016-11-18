@@ -30,14 +30,15 @@ def train():
   with tf.Graph().as_default():
     # make inputs
     flow, boundry = ring_net.inputs(batch_size, unroll_length) 
-    boundry_shape = boundry.get_shape()
-    boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
+    flow_boundry = tf.concat(4, [flow, boundry])
+    #boundry_shape = boundry.get_shape()
+    #boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
 
 
 
     # possible input dropout 
     input_keep_prob = tf.placeholder("float")
-    flow_drop = tf.nn.dropout(flow, input_keep_prob)
+    flow_drop = tf.nn.dropout(flow_boundry, input_keep_prob)
 
     # possible dropout inside
     keep_prob_encoding = tf.placeholder("float")
@@ -46,15 +47,15 @@ def train():
     # unwrap
     x_2_o = []
     # first step
-    x_2, hidden_state = ring_net.encode_compress_decode(flow[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
+    x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
     # unroll for 9 more steps
     for i in xrange(int(unroll_length/2)-1):
-      x_2, hidden_state = ring_net.encode_compress_decode(flow[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
     x_2_o.append(x_2)
     # now collect values
     for i in xrange(int(unroll_length/2)-1):
-      x_2, hidden_state = ring_net.encode_compress_decode(flow[:,i+int(unroll_length/2),:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,i+int(unroll_length/2),:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
       x_2_o.append(x_2)
       tf.image_summary('x_gen_' + str(i), x_2[:,:,:,0:1])
       tf.image_summary('y_gen_' + str(i), x_2[:,:,:,1:2])
@@ -62,12 +63,12 @@ def train():
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
-    x_2_o = x_2_o * boundry
+    x_2_o = x_2_o * boundry[:,5:,:,:,:]
     error = tf.nn.l2_loss(flow[:,int(unroll_length/2):,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
     # train (hopefuly)
-    train_op = ring_net.train(error, 1e-4)
+    train_op = ring_net.train(error, 1e-5)
     
     # List of all Variables
     variables = tf.all_variables()
