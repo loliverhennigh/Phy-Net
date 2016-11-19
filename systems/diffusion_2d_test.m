@@ -9,7 +9,7 @@
 %Specifying parameters
 nx=32;                           %Number of steps in space(x)
 ny=32;                           %Number of steps in space(y)       
-nt=60;                           %Number of time steps 
+nt=120;                           %Number of time steps 
 dt=0.01;                         %Width of each time step
 dx=2/(nx-1);                     %Width of space step(x)
 dy=2/(ny-1);                     %Width of space step(y)
