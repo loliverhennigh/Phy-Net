@@ -10,16 +10,16 @@ sys.path.append('../')
 import model.ring_net as ring_net
 
 FLAGS = tf.app.flags.FLAGS
- 
+
 # set params for ball train
 model = 'lstm_32x32x1'
 system = 'diffusion'
-unroll_length = 10
+unroll_length = 8
 batch_size = 32
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
-
+RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_3' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
 
 def train():
   """Train ring_net for a number of steps."""
@@ -29,7 +29,6 @@ def train():
 
   with tf.Graph().as_default():
     # make inputs
-    print(FLAGS.system)
     state = ring_net.inputs(batch_size, unroll_length) 
 
     # possible input dropout 
@@ -46,23 +45,28 @@ def train():
     x_2, hidden_state = ring_net.encode_compress_decode(state[:,0,:,:,:], None, keep_prob_encoding, keep_prob_lstm)
     tf.get_variable_scope().reuse_variables()
     # unroll for 4 more steps
-    for i in xrange(int(unroll_length/2)-1):
+    for i in xrange(3):
       x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+    y_1 = ring_net.encoding(state[:,4,:,:,:], keep_prob_encoding)
+    y_2, hidden_state = ring_net.lstm_compression(y_1, hidden_state, keep_prob_lstm)
+    x_2 = ring_net.decoding(y_2)
+
     x_2_o.append(x_2)
     # now collect values
-    for i in xrange(int(unroll_length/2)-1):
-      x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+int(unroll_length/2),:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+    for i in xrange(2):
+      y_2, hidden_state = ring_net.lstm_compression(y_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2 = ring_net.decoding(y_2)
       x_2_o.append(x_2)
       tf.image_summary('images_gen_' + str(i), x_2)
     x_2_o = tf.pack(x_2_o)
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
-    error = tf.nn.l2_loss(state[:,int(unroll_length/2):,:,:,:] - x_2_o)
+    error = tf.nn.l2_loss(state[:,5:,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
     # train (hopefuly)
-    train_op = ring_net.train(error, 1e-4)
+    train_op = ring_net.train(error, 1e-6)
     
     # List of all Variables
     variables = tf.all_variables()
@@ -73,15 +77,14 @@ def train():
     # Summary op
     summary_op = tf.merge_all_summaries()
  
-    # Build an initialization operation to run below.
-    init = tf.initialize_all_variables()
-
     # Start running operations on the Graph.
     sess = tf.Session()
 
-    # init if this is the very time training
-    print("init network from scratch")
-    sess.run(init)
+    # init from seq 1 model
+    print("init from " + RESTORE_DIR)
+    saver_restore = tf.train.Saver(variables)
+    ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
+    saver_restore.restore(sess, ckpt.model_checkpoint_path)
 
     # Start que runner
     tf.train.start_queue_runners(sess=sess)
@@ -90,9 +93,9 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(400000):
+    for step in xrange(200000):
       t = time.time()
-      _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:0.8})
+      _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
       elapsed = time.time() - t
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
@@ -100,7 +103,7 @@ def train():
       if step%100 == 0:
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
-        summary_str = sess.run(summary_op, feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:0.8})
+        summary_str = sess.run(summary_op, feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
         summary_writer.add_summary(summary_str, step) 
 
       if step%1000 == 0:

@@ -9,6 +9,7 @@ from glob import glob as glb
 
 import bouncing_balls as b
 
+from tqdm import *
 
 FLAGS = tf.app.flags.FLAGS
 

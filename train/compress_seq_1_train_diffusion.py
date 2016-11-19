@@ -18,8 +18,7 @@ unroll_length = 10
 batch_size = 32
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
-
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
 
 def train():
   """Train ring_net for a number of steps."""

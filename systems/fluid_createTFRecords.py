@@ -9,8 +9,8 @@ import tensorflow as tf
 from glob import glob as glb
 
 import bouncing_balls as b
-import pylab as pl
 
+from tqdm import *
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -77,21 +77,19 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
   if not tf.gfile.Exists(FLAGS.data_dir + 'tfrecords/' + dir_name):
     tf.gfile.MakeDirs(FLAGS.data_dir + 'tfrecords/' + dir_name)
 
-  for run in xrange(num_runs):
+  print('generating records')
+  for run in tqdm(xrange(num_runs)):
     filename = FLAGS.data_dir + 'tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
   
     tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*')  
-    if filename in tfrecord_filename:
-      print('already a tfrecord there! I will skip this one')
-    else: 
+
+    if filename not in tfrecord_filename:
    
       writer = tf.python_io.TFRecordWriter(filename)
   
-      print('now generating tfrecords ' + filename)
     
       mat_filenames = glb('../systems/store_' + dir_name + '/sam' + str(run) + '/run*')
       num_samples = len(mat_filenames)
-      print('../systems/store_' + dir_name + '/sam' + str(run))
       
       # first calc boundry
       boundry_cond = load_boundry('../systems/store_' + dir_name + '/sam' + str(run) + '/run', shape, frame_num)

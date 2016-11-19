@@ -88,7 +88,7 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(300000):
+    for step in xrange(400000):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
       elapsed = time.time() - t
