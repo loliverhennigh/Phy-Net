@@ -17,7 +17,7 @@ tf.app.flags.DEFINE_string('video_dir', 'goldfish_no_filter',
                            """ dir containing the video files """)
 tf.app.flags.DEFINE_string('data_dir', '../data/',
                            """ dir containing the video files """)
-tf.app.flags.DEFINE_integer('min_queue_examples', 1000,
+tf.app.flags.DEFINE_integer('min_queue_examples', 300,
                            """ min examples to queue up""")
 
 def read_data(filename_queue, seq_length, shape, num_frames, color, raw_type='uint8'):
@@ -267,7 +267,7 @@ def fluid_inputs(batch_size, seq_length):
   """
   # num tf records
   if FLAGS.train == True:
-    run_num = 150
+    run_num = 25
   else:
     run_num = 5
 

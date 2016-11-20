@@ -26,7 +26,7 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state_start = ring_net.inputs(1, 5) 
+    state_start = ring_net.inputs(32, 10) 
 
     # unwrap
     x_2_o = []
@@ -55,17 +55,20 @@ def evaluate():
 
     # get frame
     tf.train.start_queue_runners(sess=sess)
-    x_2_g, hidden_2_g = sess.run([x_1, hidden_state_1], feed_dict={})
+    x_2_g, hidden_2_g, state_start_o = sess.run([x_1, hidden_state_1, state_start], feed_dict={})
 
     # Play!!!! 
     for step in xrange(10000):
       print(step)
       #time.sleep(.5)
       # calc generated frame from t
+      #x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
       frame = np.uint8(np.minimum(np.maximum(0, x_2_g*255.0), 255))
       frame = frame[0, :, :, :]
       frame = cv2.resize(frame, (500, 500))
+      #frame = np.uint8(np.minimum(np.maximum(0, state_start_o[0,step,:,:,:]*255.0), 255))
+      #frame = cv2.resize(frame, (500, 500))
       cv2.imshow('frame', frame)
       cv2.waitKey(0)
       if cv2.waitKey(1) & 0xFF == ord('q'):

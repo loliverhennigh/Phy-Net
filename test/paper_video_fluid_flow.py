@@ -27,7 +27,7 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    flow, boundry = ring_net.inputs(1, 5) 
+    flow, boundry = ring_net.inputs(1, 10) 
     flow_boundry = tf.concat(4, [flow, boundry])
 
     # unwrap
@@ -42,6 +42,7 @@ def evaluate():
     # rename output_t
     x_1 = tf.concat(3, [x_2, boundry[:,0,:,:,:]])
     hidden_state_1 = hidden_state
+    print("this far")
     x_2, hidden_state_2 = ring_net.encode_compress_decode(x_1, hidden_state_1,  1.0, 1.0)
 
     # restore network
@@ -71,16 +72,18 @@ def evaluate():
       # calc generated frame from t
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
       frame = x_2_g
+      frame = np.uint8(np.minimum(np.maximum(0, x_2_g*2550.0*8), 255))
       x_2_g = np.concatenate((x_2_g, boundry_1), 3)
+      #frame = flow_o[0, step, :, :, :]
       frame = frame[0, :, :, :]
       
-      pl.imshow(np.sqrt(np.square(frame[:,:,0]) + np.square(frame[:,:,1]))*boundry_max[0,:,:,0])
+      #pl.imshow(np.sqrt(np.square(frame[:,:,0]) + np.square(frame[:,:,1]))*boundry_max[0,:,:,0])
       #pl.imshow(boundry_max[0,:,:,0])
-      pl.show()
-      #cv2.imshow('frame', frame)
-      #cv2.waitKey(0)
-      #if cv2.waitKey(1) & 0xFF == ord('q'):
-      #  break
+      #pl.show()
+      cv2.imshow('frame', frame[:,:,1:2])
+      cv2.waitKey(0)
+      if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
     #cv2.destroyAllWindows()
 

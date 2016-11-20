@@ -18,7 +18,7 @@ unroll_length = 10
 batch_size = 32
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
 
 
 def train():
@@ -90,7 +90,7 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(400000):
+    for step in xrange(40000):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:0.8})
       elapsed = time.time() - t

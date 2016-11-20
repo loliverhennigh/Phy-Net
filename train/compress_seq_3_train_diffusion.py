@@ -18,8 +18,8 @@ unroll_length = 8
 batch_size = 32
 
 # save file name
-RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_1' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_3' + '_num_layers_' + str(FLAGS.num_layers) + '_lstm_size_' + str(FLAGS.lstm_size)
+RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_1'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_compress_' + 'seq_length_3'
 
 def train():
   """Train ring_net for a number of steps."""
@@ -93,7 +93,7 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.train.SummaryWriter(SAVE_DIR, graph_def=graph_def)
 
-    for step in xrange(200000):
+    for step in xrange(20000):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
       elapsed = time.time() - t

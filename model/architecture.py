@@ -4,6 +4,7 @@
 
 import tensorflow as tf
 import numpy as np
+import BasicConvLSTMCell
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -112,6 +113,22 @@ def _fc_layer(inputs, hiddens, idx, flat = False, linear = False):
     ip = tf.add(tf.matmul(inputs_processed,weights),biases)
     return tf.nn.elu(ip,name=str(idx)+'_fc')
 
+def _phase_shift(I, r):
+    bsize, a, b, c = I.get_shape().as_list()
+    bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
+    X = tf.reshape(I, (bsize, a, b, r, r))
+    X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
+    X = tf.split(1, a, X)  # a, [bsize, b, r, r]
+    X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
+    X = tf.split(1, b, X)  # b, [bsize, a*r, r]
+    X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
+    return tf.reshape(X, (bsize, a*r, b*r, 1))
+
+def PS(X, r, depth):
+    Xc = tf.split(3, depth, X)
+    X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
+    return X
+
 def encoding_32x32x3(inputs, keep_prob):
   """Builds encoding part of ring net.
   Args:
@@ -146,13 +163,11 @@ def encoding_32x32x1(inputs, keep_prob):
   x_1_image = inputs 
   
   # conv1
-  conv1 = _conv_layer(x_1_image, 8, 2, 64, "encode_1")
+  conv1 = _conv_layer(x_1_image, 3, 2, 8, "encode_1")
   # conv2
-  conv2 = _conv_layer(conv1, 6, 2, 128, "encode_2")
-  # conv3
-  conv3 = _conv_layer(conv2, 6, 2, 128, "encode_3")
+  conv2 = _conv_layer(conv1, 3, 1, 16, "encode_2")
   # y_1 
-  y_1 = _fc_layer(conv3, FLAGS.compression_size, "encode_4", True)
+  y_1 = conv2
   _activation_summary(y_1)
   return y_1
 
@@ -168,16 +183,16 @@ def encoding_401x101x2(inputs, keep_prob):
   x_1_image = inputs 
   
   # conv1
-  conv1 = _conv_layer(x_1_image, 8, 4, 64, "encode_1")
+  conv1 = _conv_layer(inputs, 3, 2, 64, "encode_1")
   # conv2
-  conv2 = _conv_layer(conv1, 8, 3, 128, "encode_2")
+  conv2 = _conv_layer(conv1, 3, 1, 128, "encode_2")
   # conv3
-  conv3 = _conv_layer(conv2, 6, 2, 128, "encode_3")
-  print(conv3.get_shape())
-  # y_1 
-  y_1 = _fc_layer(conv3, FLAGS.compression_size, "encode_4", True)
-  _activation_summary(y_1)
-  return y_1
+  conv3 = _conv_layer(conv2, 3, 2, 256, "encode_3")
+  # conv4
+  conv4 = _conv_layer(conv3, 3, 1, 128, "encode_4")
+
+  return conv4
+
 
 
 def lstm_compression_32x32x3(y_1, hidden_state, keep_prob, encode=True):
@@ -218,27 +233,18 @@ def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_1 -> y_2
-  num_layers = FLAGS.num_layers
-
-  y_1 = _fc_layer(y_1, FLAGS.lstm_size, "compression_1") 
-
   with tf.variable_scope("compress_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
     with tf.device('/gpu:0'):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size, forget_bias=1.0)
-      lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
-      cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_layers)
+      lstm_cell = BasicConvLSTMCell.BasicConvLSTMCell([int(y_1.get_shape()[1]),int(y_1.get_shape()[2])], [3,3], 16)
       if hidden_state == None:
         batch_size = y_1.get_shape()[0]
-        hidden_state = cell.zero_state(batch_size, tf.float32)
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32) 
 
-  y_2, new_state = cell(y_1, hidden_state)
-
-  # residual connection
-  # y_2 = y_2 + y_1
-
-  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
+  y_2, new_state = lstm_cell(y_1, hidden_state)
 
   return y_2, new_state
+
+
 
 def lstm_compression_401x101x2(y_1, hidden_state, keep_prob, encode=True):
   """Builds compressed dynamical system part of the net.
@@ -248,27 +254,17 @@ def lstm_compression_401x101x2(y_1, hidden_state, keep_prob, encode=True):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_1 -> y_2
-  num_layers = FLAGS.num_layers
-
-  y_1 = _fc_layer(y_1, FLAGS.lstm_size, "compression_1") 
-
   with tf.variable_scope("compress_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
     with tf.device('/gpu:0'):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size, forget_bias=1.0)
-      lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=keep_prob)
-      cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_layers)
+      lstm_cell = BasicConvLSTMCell.BasicConvLSTMCell([int(y_1.get_shape()[1]),int(y_1.get_shape()[2])], [3,3], 128)
       if hidden_state == None:
         batch_size = y_1.get_shape()[0]
-        hidden_state = cell.zero_state(batch_size, tf.float32)
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32) 
 
-  y_2, new_state = cell(y_1, hidden_state)
-
-  y_2 = _fc_layer(y_2, FLAGS.compression_size, "compression_2")
-
-  # residual connection
-  #y_2 = y_2 + y_1
+  y_2, new_state = lstm_cell(y_1, hidden_state)
 
   return y_2, new_state
+
 
 def decoding_32x32x3(y_2):
   """Builds decoding part of ring net.
@@ -300,23 +296,18 @@ def decoding_32x32x1(y_2):
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_3 -> x_2
 
-  # fc21
-  fc21 = _fc_layer(y_2, 2048, "decode_21")
-  conv21 = tf.reshape(fc21, [-1, 4, 4, 128])
-  # conv22
-  conv22 = _transpose_conv_layer(conv21, 6, 2, 128, "decode_22")
-  # conv23
-  conv23 = _transpose_conv_layer(conv22, 6, 2, 64, "decode_23")
-  # conv24
-  conv24 = _transpose_conv_layer(conv23, 6, 2, 1, "decode_24")
-  x_2 = tf.reshape(conv24, [-1, 32, 32, 1])
+  # conv21
+  conv21 = _transpose_conv_layer(y_2, 3, 1, 4, "decode_21")
+  conv21 = tf.reshape(conv21, [-1, 16, 16, 4])
+  conv21 = PS(conv21, 2, 1)
+  #x_2 = x_2[:,:401,:101,:]
+  x_2 = conv21
   return x_2
 
 def decoding_401x101x2(y_2):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder
-  """
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_3 -> x_2
@@ -332,5 +323,22 @@ def decoding_401x101x2(y_2):
   conv24 = _transpose_conv_layer(conv23, 8, 4, 2, "decode_24")
   x_2 = tf.reshape(conv24, [-1, 17*4*3*2, 5*4*3*2, 2])
   x_2 = x_2[:,:401,:101,:]
+  return x_2
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_3 -> x_2
+  # conv21
+  conv21 = _transpose_conv_layer(y_2, 3, 1, 128, "decode_21")
+  # conv22
+  conv22 = _transpose_conv_layer(conv21, 3, 1, 128, "decode_22")
+  # conv23
+  conv23 = _transpose_conv_layer(conv22, 3, 1, 64, "decode_23")
+  # conv24
+  conv24 = _transpose_conv_layer(conv23, 3, 1, 32, "decode_24")
+  conv24 = tf.reshape(conv24, [-1, 101, 26, 32])
+  conv24 = PS(conv24, 4, 2)
+  #x_2 = x_2[:,:401,:101,:]
+  x_2 = conv24[:,:401,:101,:]
   return x_2
 
