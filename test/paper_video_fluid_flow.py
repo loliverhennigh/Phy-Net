@@ -20,14 +20,20 @@ tf.app.flags.DEFINE_string('eval_dir', '../checkpoints/ring_net_eval_store',
 tf.app.flags.DEFINE_string('checkpoint_dir', '../checkpoints/train_store_',
                            """Directory where to read model checkpoints.""")
 
+fourcc = cv2.cv.CV_FOURCC('m', 'p', '4', 'v') 
+video = cv2.VideoWriter()
+
+success = video.open('fluid_flow.mov', fourcc, 4, (101, 401), True)
+
 def evaluate():
   FLAGS.system = "fluid"
   FLAGS.model = "lstm_401x101x2"
   #FLAGS.train = False 
+  FLAGS.train = True
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    flow, boundry = ring_net.inputs(1, 10) 
+    flow, boundry = ring_net.inputs(2, 10) 
     flow_boundry = tf.concat(4, [flow, boundry])
 
     # unwrap
@@ -54,7 +60,7 @@ def evaluate():
       saver.restore(sess, ckpt.model_checkpoint_path)
       print("restored file from " + ckpt.model_checkpoint_path)
     else:
-      print("no chekcpoint file found from " + FLAGS.checkpoint_dir + FLAGS.model + FLAGS.atari_game + ", this is an error")
+      print("no chekcpoint file found from " + FLAGS.checkpoint_dir + ", this is an error")
 
     # get frame
     tf.train.start_queue_runners(sess=sess)
@@ -66,25 +72,25 @@ def evaluate():
     print(np.min(boundry_max))
 
     # Play!!!! 
-    for step in xrange(10000):
+    for step in xrange(500):
       print(step)
       #time.sleep(.5)
       # calc generated frame from t
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
-      frame = x_2_g
-      frame = np.uint8(np.minimum(np.maximum(0, x_2_g*2550.0*8), 255))
+      frame = np.sqrt(np.square(x_2_g[0,:,:,0:1]) + np.square(x_2_g[0,:,:,1:2]))*boundry_max[0,:,:,0:1]
+      frame = np.uint8(np.minimum(np.maximum(0, frame*255.0*40.0), 255)) # scale
       x_2_g = np.concatenate((x_2_g, boundry_1), 3)
-      #frame = flow_o[0, step, :, :, :]
-      frame = frame[0, :, :, :]
-      
-      #pl.imshow(np.sqrt(np.square(frame[:,:,0]) + np.square(frame[:,:,1]))*boundry_max[0,:,:,0])
-      #pl.imshow(boundry_max[0,:,:,0])
-      #pl.show()
-      cv2.imshow('frame', frame[:,:,1:2])
-      cv2.waitKey(0)
-      if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+      frame = np.concatenate([frame, frame, frame], axis=2)
+      print(frame.shape)
+      video.write(frame)
 
+      #cv2.imshow('frame', frame)
+      #cv2.waitKey(0)
+      #if cv2.waitKey(1) & 0xFF == ord('q'):
+      #  break
+
+    video.release()
+    cv2.destroyAllWindows()
     #cv2.destroyAllWindows()
 
        

@@ -19,6 +19,11 @@ tf.app.flags.DEFINE_string('eval_dir', '../checkpoints/ring_net_eval_store',
 tf.app.flags.DEFINE_string('checkpoint_dir', '../checkpoints/train_store_',
                            """Directory where to read model checkpoints.""")
 
+fourcc = cv2.cv.CV_FOURCC('m', 'p', '4', 'v') 
+video = cv2.VideoWriter()
+
+success = video.open('diffusion.mov', fourcc, 4, (500, 500), True)
+
 def evaluate():
   FLAGS.system = "diffusion"
   FLAGS.model = "lstm_32x32x1"
@@ -58,7 +63,7 @@ def evaluate():
     x_2_g, hidden_2_g, state_start_o = sess.run([x_1, hidden_state_1, state_start], feed_dict={})
 
     # Play!!!! 
-    for step in xrange(10000):
+    for step in xrange(100):
       print(step)
       #time.sleep(.5)
       # calc generated frame from t
@@ -66,14 +71,18 @@ def evaluate():
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g})
       frame = np.uint8(np.minimum(np.maximum(0, x_2_g*255.0), 255))
       frame = frame[0, :, :, :]
+      print(frame.shape)
+      frame = np.concatenate([frame, frame, frame], axis=2)
       frame = cv2.resize(frame, (500, 500))
       #frame = np.uint8(np.minimum(np.maximum(0, state_start_o[0,step,:,:,:]*255.0), 255))
       #frame = cv2.resize(frame, (500, 500))
-      cv2.imshow('frame', frame)
-      cv2.waitKey(0)
-      if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+      video.write(frame)
+      #cv2.imshow('frame', frame)
+      #cv2.waitKey(0)
+      #if cv2.waitKey(1) & 0xFF == ord('q'):
+      #  break
 
+    video.release()
     cv2.destroyAllWindows()
 
        

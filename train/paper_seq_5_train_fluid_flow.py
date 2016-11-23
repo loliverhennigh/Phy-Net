@@ -15,12 +15,12 @@ FLAGS = tf.app.flags.FLAGS
 model = 'lstm_401x101x2'
 system = 'fluid'
 unroll_length = 10
-batch_size = 32
+batch_size = 8
 
 # save file name
-RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
+RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3'
 
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_5'
 
 
 def train():

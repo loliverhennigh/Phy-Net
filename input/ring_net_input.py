@@ -267,9 +267,9 @@ def fluid_inputs(batch_size, seq_length):
   """
   # num tf records
   if FLAGS.train == True:
-    run_num = 25
+    run_num = 50
   else:
-    run_num = 5
+    run_num = 1
 
   shape=(401,101)
   num_frames = 2
