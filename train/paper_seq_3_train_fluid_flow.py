@@ -33,6 +33,7 @@ def train():
     # make inputs
     flow, boundry = ring_net.inputs(batch_size, unroll_length) 
     flow_boundry = tf.concat(4, [flow, boundry])
+    boundry_kill = tf.minimum(tf.maximum(boundry, 0.0), 1.0)
     #boundry_shape = boundry.get_shape()
     #boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
 
@@ -64,7 +65,7 @@ def train():
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
-    #x_2_o = x_2_o * boundry
+    x_2_o = x_2_o * boundry_kill[:,5:,:,:,:]
     error = tf.nn.l2_loss(flow[:,5:8,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
