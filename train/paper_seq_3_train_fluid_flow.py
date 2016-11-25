@@ -53,11 +53,13 @@ def train():
     # unroll for 9 more steps
     for i in xrange(4):
       x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,i+1,:,:,:], hidden_state, keep_prob_encoding, keep_prob_lstm)
+    x_2 = x_2 * boundry_kill[:,0,:,:,:]
     x_2_o.append(x_2)
     # now collect values
     for i in xrange(2):
       x_2 = tf.concat(3, [x_2, boundry[:,0,:,:,:]])
       x_2, hidden_state = ring_net.encode_compress_decode(x_2, hidden_state, keep_prob_encoding, keep_prob_lstm)
+      x_2 = x_2 * boundry_kill[:,0,:,:,:]
       x_2_o.append(x_2)
       tf.image_summary('x_gen_' + str(i), x_2[:,:,:,0:1])
       tf.image_summary('y_gen_' + str(i), x_2[:,:,:,1:2])
@@ -65,7 +67,7 @@ def train():
     x_2_o = tf.transpose(x_2_o, perm=[1,0,2,3,4])
 
     # error
-    x_2_o = x_2_o * boundry_kill[:,5:,:,:,:]
+    x_2_o = x_2_o * boundry_kill[:,5:8,:,:,:]
     error = tf.nn.l2_loss(flow[:,5:8,:,:,:] - x_2_o)
     tf.scalar_summary('loss', error)
 
