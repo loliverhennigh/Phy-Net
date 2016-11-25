@@ -7,6 +7,7 @@ import scipy.io
 import random
 import tensorflow as tf 
 from glob import glob as glb
+import pylab as pl
 
 import bouncing_balls as b
 
@@ -52,7 +53,7 @@ def load_boundry(filename, shape, frame_num):
   b4y = ball_location[7]
 
   # calc signed distance function.
-  boundry = np.zeros((shape[0], shape[1]))
+  boundry = np.zeros((shape[0], shape[1], 2))
   for x in xrange(shape[0]):
     for y in xrange(shape[1]):
       # distance ball 1
@@ -60,13 +61,18 @@ def load_boundry(filename, shape, frame_num):
       d2 = np.sqrt(np.square(b2x - x) + np.square(b2y - y))
       d3 = np.sqrt(np.square(b3x - x) + np.square(b3y - y))
       d4 = np.sqrt(np.square(b4x - x) + np.square(b4y - y))
-      min_d = np.min([d1, d2, d3, d4]) - 10
+      dw1 = y
+      dw2 = shape[1] - y
+      min_d = np.min([np.min([d1, d2, d3, d4]) - 10, dw1, dw2])
       #if min_d < 0: # 10 because the balls are size 10
       #  min_d = -min_d 
-      boundry[x,y] = min_d
+      boundry[x,y,0] = min_d
+      boundry[x,y,1] = x
   #print(boundry[b1x,b1y])
   #print(boundry[b1x-10,b1y])
-  #pl.imshow(boundry)
+  #pl.imshow(boundry[:,:,0])
+  #pl.show()
+  #pl.imshow(boundry[:,:,1])
   #pl.show()
       
   return boundry
@@ -94,7 +100,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       # first calc boundry
       boundry_cond = load_boundry('../systems/store_' + dir_name + '/sam' + str(run) + '/run', shape, frame_num)
       boundry_cond = np.float32(boundry_cond)
-      boundry_flat = boundry_cond.reshape([1,shape[0]*shape[1]])
+      boundry_flat = boundry_cond.reshape([1,shape[0]*shape[1]*2])
       boundry_raw = boundry_flat.tostring()
 
       # save tf records

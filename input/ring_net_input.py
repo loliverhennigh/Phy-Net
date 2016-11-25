@@ -71,7 +71,7 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
   # reshape
   flow = tf.reshape(flow, [seq_length, shape[0], shape[1], num_frames])
   flow = tf.to_float(flow)
-  boundry = tf.reshape(boundry, [1, shape[0], shape[1], 1]) 
+  boundry = tf.reshape(boundry, [1, shape[0], shape[1], 2]) 
   boundry = tf.to_float(boundry)
   boundry = tf.concat(0, [boundry]*seq_length)
   print(boundry.get_shape())
@@ -288,7 +288,7 @@ def fluid_inputs(batch_size, seq_length):
   #
   tf.image_summary('x', flow[:,:,:,0:1])
   tf.image_summary('y', flow[:,:,:,1:2])
-  tf.image_summary('boundry', boundry)
+  tf.image_summary('boundry', boundry[:,:,:,0:1])
 
   #image = tf.div(image, 255.0) 
 
