@@ -104,7 +104,7 @@ def _generate_image_label_batch(image, batch_size):
       [image],
       batch_size=batch_size,
       num_threads=num_preprocess_threads,
-      capacity=FLAGS.min_queue_examples + 3 * batch_size)
+      capacity=3 * batch_size)
   return frames
 
 def _generate_image_label_batch_fluid(flow, boundry, batch_size):
@@ -133,7 +133,7 @@ def _generate_image_label_batch_fluid(flow, boundry, batch_size):
       [flow, boundry],
       batch_size=batch_size,
       num_threads=num_preprocess_threads,
-      capacity=FLAGS.min_queue_examples + 3 * batch_size)
+      capacity=3 * batch_size)
   return flows, boundrys
 
 

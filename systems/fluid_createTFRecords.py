@@ -106,6 +106,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       # save tf records
       ind_dat = 0
       while ind_dat < (num_samples - seq_length - 1):
+        print("read!")
         seq_frames = np.zeros((seq_length,shape[0],shape[1],frame_num))
         for i in xrange(seq_length):
           flow_state = load_flow('../systems/store_' + dir_name + '/sam' + str(run) + '/run' + str(i+ind_dat+1) + '.data', shape, frame_num)
