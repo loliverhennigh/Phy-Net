@@ -335,7 +335,7 @@ def decoding_401x101x2(y_2):
   # conv23
   conv23 = _transpose_conv_layer(conv22, 3, 1, 64, "decode_23")
   # conv24
-  conv24 = _transpose_conv_layer(conv23, 3, 1, 32, "decode_24")
+  conv24 = _transpose_conv_layer(conv23, 3, 1, 32, "decode_24", True)
   conv24 = tf.reshape(conv24, [-1, 101, 26, 32])
   conv24 = PS(conv24, 4, 2)
   #x_2 = x_2[:,:401,:101,:]
