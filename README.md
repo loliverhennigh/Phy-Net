@@ -8,7 +8,7 @@ Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/N57BvSspLtU/0.jpg)](https://www.youtube.com/watch?v=N57BvSspLtU)
 
 ## Lattice Boltzmann Fluid flow
-Compressing non-laminar fluid flow around objects. The fluid flow was generated with the open source [palabos library](http://www.palabos.org/). The cpu time for each simulation is approximatly 155 seconds. The approximate time for the neural network is .78 seconds. Total speed up so far is roughly 198 x. The video bellow was not in the training set.
+Compressing non-laminar fluid flow around objects. The fluid flow was generated with the open source [palabos library](http://www.palabos.org/). The cpu time for each simulation is approximatly 155 seconds. The approximate time for the neural network is .78 seconds. Total speed up so far is roughly 198 x. The video bellow was not in the training set. The left is true, middle generated, right difference.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/AAQCuJM67RE/0.jpg)](https://www.youtube.com/watch?v=AAQCuJM67RE=54s)
 
