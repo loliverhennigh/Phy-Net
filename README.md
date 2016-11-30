@@ -10,7 +10,7 @@ Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki
 ## Lattice Boltzmann Fluid flow
 Compressing non-laminar fluid flow around objects. The fluid flow was generated with the open source [palabos library](http://www.palabos.org/). The cpu time for each simulation is approximatly 155 seconds. The approximate time for the neural network is .78 seconds. Total speed up so far is roughly 198 x. The video bellow was not in the training set.
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/H0we2VPDNbg/0.jpg)](https://www.youtube.com/watch?v=H0we2VPDNbg=54s)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/AAQCuJM67RE/0.jpg)](https://www.youtube.com/watch?v=AAQCuJM67RE=54s)
 
 ## Network Details
 The network is kept all convolutional and uses an [convolutional lstm](https://github.com/loliverhennigh/Convolutional-LSTM-in-Tensorflow). Up sampling using Deconvolution is replased with computationaly effeicent [Phase Shifts](https://github.com/Tetrachrome/subpixel). Keeping the network convolutional allows the trained model to be used on simulations of different sizes allowing the network to focus on just learning compressed representations of the dynamics.
