@@ -124,6 +124,8 @@ def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_ls
 
   return x_2, hidden_state
 
+def discriminator(
+
 def train(total_loss, lr):
    #train_op = tf.train.AdamOptimizer(lr, epsilon=1.0).minimize(total_loss)
    optim = tf.train.AdamOptimizer(lr)

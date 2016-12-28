@@ -342,3 +342,37 @@ def decoding_401x101x2(y_2):
   x_2 = conv24[:,:401,:101,:]
   return x_2
 
+# GAN Stuff
+def discriminator_lstm(x, hidden_state):
+  """Builds discriminator.
+  Args:
+    inputs: i
+  """
+  #--------- Making the net -----------
+  # x_2 -> hidden_state
+  # conv1
+  conv1 = _conv_layer(x, 3, 2, 64, "discriminator_1")
+  # conv2
+  conv2 = _conv_layer(conv1, 3, 2, 128, "discriminator_2")
+  # conv3
+  conv3 = _conv_layer(conv2, 3, 2, 256, "discriminator_3")
+  # conv4
+  conv4 = _conv_layer(conv3, 3, 2, 128, "discriminator_4")
+  
+  y_1 = _fc_layer(conv4, 256, "discriminator_5", True)
+ 
+  with tf.variable_scope("compress_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+    with tf.device('/gpu:0'):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(256, forget_bias=1.0)
+      if hidden_state == None:
+        batch_size = y_1.get_shape()[0]
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+
+  y_2, new_state = lstm_cell(y_1, hidden_state)
+
+  label = _fc_layer(y_2, 2, "discriminator_6")
+
+  return label, new_state
+
+
+
