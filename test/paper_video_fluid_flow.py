@@ -11,7 +11,7 @@ import model.ring_net as ring_net
 import model.unwrap_helper_test as unwrap_helper_test 
 import random
 import time
-import pylab as pl
+#import pylab as pl
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -35,7 +35,7 @@ def evaluate():
     # make inputs
     flow, boundry = ring_net.inputs(2, 200) 
     flow_boundry = tf.concat(4, [flow, boundry])
-    boundry_kill = tf.minimum(tf.maximum(boundry, 0.0), 1.0)
+    boundry_kill = tf.minimum(tf.maximum(boundry[:,:,:,:,0:1], 0.0), 1.0)
 
     # unwrap
     x_2_o = []
@@ -74,33 +74,40 @@ def evaluate():
     boundry_max = np.minimum(boundry_max, 1.0)
     print(np.max(boundry_max))
     print(np.min(boundry_max))
+    #pl.plot(np.sum(flow_true[0,:,:,:,1], axis=(1,2)))
+    #pl.show()
+    
 
     # Play!!!! 
-    for step in xrange(199):
+    for step in xrange(150):
       print(step)
       #time.sleep(.5)
       # calc generated frame from t
       x_2_g, hidden_2_g = sess.run([x_2, hidden_state_2],feed_dict={x_1:x_2_g, hidden_state_1:hidden_2_g, boundry_kill:boundry_kill_1})
 
       frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1]) + np.square(x_2_g[0,:,:,1:2])) #*boundry_max[0,:,:,0:1]
-      frame_true = np.sqrt(np.square(flow_true[0,step,:,:,0:1]) + np.square(flow_true[0,step,:,:,1:2])) #*boundry_max[0,:,:,0:1]
-      frame_generated = np.uint8(np.minimum(np.maximum(0, frame_generated*255.0*40.0), 255)) # scale
-      frame_true = np.uint8(np.minimum(np.maximum(0, frame_true*255.0*40.0), 255)) # scale
-      frame_diff = np.uint8(np.minimum(np.maximum(0, np.absolute(frame_generated-frame_true)), 255)) # scale
-      print(np.max(frame_true))
-      print(np.max(frame_generated))
-      print(np.max(frame_diff))
+      frame_true = np.sqrt(np.square(flow_true[0,step+5,:,:,0:1]) + np.square(flow_true[0,step+5,:,:,1:2])) #*boundry_max[0,:,:,0:1]
+      #frame_generated = np.square(x_2_g[0,:,:,0:1])*10.0 #*boundry_max[0,:,:,0:1]
+      #frame_true = np.square(flow_true[0,step+5,:,:,0:1])*10.0 #*boundry_max[0,:,:,0:1]
+      frame_diff = np.abs(frame_true - frame_generated)
+      frame_generated = np.uint8(np.minimum(np.maximum(0, frame_generated*255.0*20.0), 255)) # scale
+      frame_true = np.uint8(np.minimum(np.maximum(0, frame_true*255.0*20.0), 255)) # scale
+      frame_diff = np.uint8(np.minimum(np.maximum(0, frame_diff*255.0*20.0), 255)) # scale
+      #print(np.sum(flow_true[0,step+5,:,:,0:1]))
+      #print(np.sum(flow_true[0,step+5,:,:,1:2]))
+      #print(np.sum(x_2_g[0,:,:,0:1]))
+      #print(np.sum(x_2_g[0,:,:,1:2]))
       x_2_g = np.concatenate((x_2_g, boundry_1), 3)
       frame = np.concatenate([frame_true, frame_generated, frame_diff], axis=1)
       frame = np.concatenate([frame, frame, frame], axis=2)
       print(frame.shape)
+      print(type(frame))
       video.write(frame)
 
       #cv2.imshow('frame', frame)
       #cv2.waitKey(0)
       #if cv2.waitKey(1) & 0xFF == ord('q'):
       #  break
-
     video.release()
     cv2.destroyAllWindows()
     #cv2.destroyAllWindows()

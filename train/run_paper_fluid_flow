@@ -1,5 +1,5 @@
 
-python paper_seq_1_train_fluid_flow.py
+#python paper_seq_1_train_fluid_flow.py
 python paper_seq_3_train_fluid_flow.py
 python paper_seq_5_train_fluid_flow.py
 

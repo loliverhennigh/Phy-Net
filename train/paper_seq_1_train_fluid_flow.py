@@ -18,7 +18,7 @@ unroll_length = 10
 batch_size = 8
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1_d'
 
 
 def train():
@@ -30,7 +30,9 @@ def train():
   with tf.Graph().as_default():
     # make inputs
     flow, boundry = ring_net.inputs(batch_size, unroll_length) 
-    flow_boundry = tf.concat(4, [flow, boundry])
+    boundry_1, boundry_2 = tf.split(4, 2, boundry)
+    boundry = tf.concat(4, [boundry_1, boundry_1])
+    flow_boundry = tf.concat(4, [flow, boundry_1])
     boundry_kill = tf.minimum(tf.maximum(boundry[:,:,:,:,0:1], 0.0), 1.0)
     #boundry_shape = boundry.get_shape()
     #boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
