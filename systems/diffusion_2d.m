@@ -34,7 +34,7 @@ mkdir('./store_diffusion');
 for run = 0:num_runs
     u=zeros(nx,ny);                  %Preallocating u
     if rem(run, 100) == 0
-      printf(['number of simulations run out of 1000 is ', num2str(run)]);
+      printf(['number of simulations run out of 1000 is ', num2str(run), '\n']);
     endif
     mkdir(['./store_diffusion/run_', num2str(run)]);
     %%

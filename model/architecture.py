@@ -304,6 +304,29 @@ def decoding_32x32x1(y_2):
   x_2 = conv21
   return x_2
 
+def decoding_gan_32x32x1(y_2, z):
+  """Builds decoding part of ring net.
+  Args:
+    inputs: input to decoder
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_3 -> x_2
+
+  # make z the right shape
+  z_conv =  _fc_layer(z, 16*16, "decode_z")
+  z_conv = tf.reshape(z_conv, [-1, 16, 16, 1])
+  
+  # concat z onto y_2
+  y_2 = tf.concat(3, [y_2, z_conv])
+
+  # one more layer and then do phase shift to get it out
+  conv21 = _transpose_conv_layer(y_2, 3, 1, 4, "decode_21", True)
+  conv21 = tf.reshape(conv21, [-1, 16, 16, 4])
+  conv21 = PS(conv21, 2, 1)
+  x_2 = conv21
+  return x_2
+
 def decoding_401x101x2(y_2):
   """Builds decoding part of ring net.
   Args:
@@ -312,18 +335,6 @@ def decoding_401x101x2(y_2):
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_3 -> x_2
 
-  # fc21
-  fc21 = _fc_layer(y_2, 17*5*128, "decode_21")
-  conv21 = tf.reshape(fc21, [-1, 17, 5, 128])
-  # conv22
-  conv22 = _transpose_conv_layer(conv21, 6, 2, 128, "decode_22")
-  # conv23
-  conv23 = _transpose_conv_layer(conv22, 6, 3, 64, "decode_23")
-  # conv24
-  conv24 = _transpose_conv_layer(conv23, 8, 4, 2, "decode_24")
-  x_2 = tf.reshape(conv24, [-1, 17*4*3*2, 5*4*3*2, 2])
-  x_2 = x_2[:,:401,:101,:]
-  return x_2
   """
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
@@ -343,7 +354,34 @@ def decoding_401x101x2(y_2):
   return x_2
 
 # GAN Stuff
-def discriminator_lstm(x, hidden_state):
+def discriminator_32x32x1(x, hidden_state):
+  """Builds discriminator.
+  Args:
+    inputs: i
+  """
+  #--------- Making the net -----------
+  # x_2 -> hidden_state
+  # conv1
+  conv1 = _conv_layer(x, 3, 2, 8, "discriminator_1")
+  # conv2
+  conv2 = _conv_layer(conv1, 3, 1, 16, "discriminator_2")
+  
+  y_1 = _fc_layer(conv2, 64, "discriminator_5", True)
+ 
+  with tf.variable_scope("discriminator_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+    with tf.device('/gpu:0'):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(64, forget_bias=1.0)
+      if hidden_state == None:
+        batch_size = y_1.get_shape()[0]
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+
+  y_2, new_state = lstm_cell(y_1, hidden_state)
+
+  label = _fc_layer(y_2, 2, "discriminator_6")
+
+  return label, new_state
+
+def discriminator_401x101x2(x, hidden_state):
   """Builds discriminator.
   Args:
     inputs: i

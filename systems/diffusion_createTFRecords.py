@@ -57,7 +57,6 @@ def generate_tfrecords(seq_length, num_runs, dir_name):
       num_samples = len(mat_filenames)
       
       ind_dat = 0
-      print(mat_filenames)
       while ind_dat < (num_samples - seq_length):
         seq_frames = np.zeros((seq_length,shape[0],shape[1],frame_num))
         for i in xrange(seq_length):

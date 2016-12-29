@@ -116,6 +116,23 @@ def decoding(y_2):
 
   return x_2 
 
+def decoding_gan(y_2, z):
+  """Builds decoding part of ring net.
+  Args:
+    inputs: input to decoder
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_2 -> x_2
+  if FLAGS.model in ("lstm_32x32x3"): 
+    x_2 = architecture.decoding_gan_32x32x3(y_2, z)
+  elif FLAGS.model in ("lstm_32x32x1"): 
+    x_2 = architecture.decoding_gan_32x32x1(y_2, z)
+  elif FLAGS.model in ("lstm_401x101x2"): 
+    x_2 = architecture.decoding_gan_401x101x2(y_2, z)
+
+  return x_2 
+
 def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_lstm):
   
   y_1 = encoding(state, keep_prob_encoding)
@@ -124,7 +141,24 @@ def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_ls
 
   return x_2, hidden_state
 
-def discriminator(
+def encode_compress_decode_gan(state, hidden_state, z, keep_prob_encoding, keep_prob_lstm):
+  
+  y_1 = encoding(state, keep_prob_encoding)
+  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_encoding)
+  x_2 = decoding_gan(y_2, z) 
+
+  return x_2, hidden_state
+
+def discriminator(output, hidden_state):
+
+  if FLAGS.model in ("lstm_32x32x3"):
+    label, hidden_state = architecture.discriminator_32x32x3(output, hidden_state)
+  elif FLAGS.model in ("lstm_32x32x1"):
+    label, hidden_state = architecture.discriminator_32x32x1(output, hidden_state)
+  elif FLAGS.model in ("lstm_401x101x2"):
+    label, hidden_state = architecture.discriminator_401x101x2(output, hidden_state)
+  return label, hidden_state 
+  
 
 def train(total_loss, lr):
    #train_op = tf.train.AdamOptimizer(lr, epsilon=1.0).minimize(total_loss)
