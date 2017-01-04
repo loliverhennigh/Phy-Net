@@ -136,7 +136,7 @@ def decoding_gan(y_2, z):
 def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_lstm):
   
   y_1 = encoding(state, keep_prob_encoding)
-  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_encoding)
+  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_lstm)
   x_2 = decoding(y_2) 
 
   return x_2, hidden_state
@@ -144,19 +144,19 @@ def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_ls
 def encode_compress_decode_gan(state, hidden_state, z, keep_prob_encoding, keep_prob_lstm):
   
   y_1 = encoding(state, keep_prob_encoding)
-  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_encoding)
+  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_lstm)
   x_2 = decoding_gan(y_2, z) 
 
   return x_2, hidden_state
 
-def discriminator(output, hidden_state):
+def discriminator(output, hidden_state, keep_prob_discriminator):
 
   if FLAGS.model in ("lstm_32x32x3"):
-    label, hidden_state = architecture.discriminator_32x32x3(output, hidden_state)
+    label, hidden_state = architecture.discriminator_32x32x3(output, hidden_state, keep_prob_discriminator)
   elif FLAGS.model in ("lstm_32x32x1"):
-    label, hidden_state = architecture.discriminator_32x32x1(output, hidden_state)
+    label, hidden_state = architecture.discriminator_32x32x1(output, hidden_state, keep_prob_discriminator)
   elif FLAGS.model in ("lstm_401x101x2"):
-    label, hidden_state = architecture.discriminator_401x101x2(output, hidden_state)
+    label, hidden_state = architecture.discriminator_401x101x2(output, hidden_state, keep_prob_discriminator)
   return label, hidden_state 
   
 

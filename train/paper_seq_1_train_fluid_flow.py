@@ -30,9 +30,7 @@ def train():
   with tf.Graph().as_default():
     # make inputs
     flow, boundry = ring_net.inputs(batch_size, unroll_length) 
-    boundry_1, boundry_2 = tf.split(4, 2, boundry)
-    boundry = tf.concat(4, [boundry_1, boundry_1])
-    flow_boundry = tf.concat(4, [flow, boundry_1])
+    flow_boundry = tf.concat(4, [flow, boundry])
     boundry_kill = tf.minimum(tf.maximum(boundry[:,:,:,:,0:1], 0.0), 1.0)
     #boundry_shape = boundry.get_shape()
     #boundry = tf.reshape(boundry, [int(boundry_shape[0]),1,int(boundry.get_shape()[1]),int(boundry.get_shape()[2]),1])
@@ -111,7 +109,7 @@ def train():
       if step%100 == 0:
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
-        summary_str = sess.run(summary_op, feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:0.8})
+        summary_str = sess.run(summary_op, feed_dict={keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
         summary_writer.add_summary(summary_str, step) 
 
       if step%1000 == 0:

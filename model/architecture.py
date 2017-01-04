@@ -36,8 +36,8 @@ def _variable_on_cpu(name, shape, initializer):
   Returns:
     Variable Tensor
   """
-  with tf.device('/gpu:0'):
-    var = tf.get_variable(name, shape, initializer=initializer)
+  #with tf.device('/gpu:0'):
+  var = tf.get_variable(name, shape, initializer=initializer)
   return var
 
 
@@ -59,10 +59,10 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
   """
   var = _variable_on_cpu(name, shape,
                          tf.truncated_normal_initializer(stddev=stddev))
-  if wd:
-    weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
-    weight_decay.set_shape([])
-    tf.add_to_collection('losses', weight_decay)
+  #if wd:
+  #  weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
+  #  weight_decay.set_shape([])
+  #  tf.add_to_collection('losses', weight_decay)
   return var
 
 def _conv_layer(inputs, kernel_size, stride, num_features, idx, linear = False):
@@ -233,6 +233,8 @@ def lstm_compression_32x32x1(y_1, hidden_state, keep_prob, encode=True):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_1 -> y_2
+  y_1 = tf.nn.dropout(y_1, keep_prob)
+
   with tf.variable_scope("compress_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
     with tf.device('/gpu:0'):
       lstm_cell = BasicConvLSTMCell.BasicConvLSTMCell([int(y_1.get_shape()[1]),int(y_1.get_shape()[2])], [3,3], 16)
@@ -353,62 +355,116 @@ def decoding_401x101x2(y_2):
   x_2 = conv24[:,:401,:101,:]
   return x_2
 
+def decoding_gan_401x101x2(y_2, z):
+  """Builds decoding part of ring net.
+  Args:
+    inputs: input to decoder
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_3 -> x_2
+
+  """
+
+  # make z the right shape
+  y_shape = y_2.get_shape()
+  z_conv =  _fc_layer(z, int(y_shape[1])*int(y_shape[2]), "decode_z")
+  z_conv = tf.reshape(z_conv, [-1, int(y_shape[1]), int(y_shape[2]), 1])
+
+  # concat z onto y_2
+  y_2 = tf.concat(3, [y_2, z_conv])
+
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_3 -> x_2
+  # conv21
+  conv21 = _transpose_conv_layer(y_2, 3, 1, 128, "decode_21")
+  # conv22
+  conv22 = _transpose_conv_layer(conv21, 3, 1, 128, "decode_22")
+  # conv23
+  conv23 = _transpose_conv_layer(conv22, 3, 1, 64, "decode_23")
+  # conv24
+  conv24 = _transpose_conv_layer(conv23, 3, 1, 32, "decode_24", True)
+  conv24 = tf.reshape(conv24, [-1, 101, 26, 32])
+  conv24 = PS(conv24, 4, 2)
+  #x_2 = x_2[:,:401,:101,:]
+  x_2 = conv24[:,:401,:101,:]
+  return x_2
+
 # GAN Stuff
-def discriminator_32x32x1(x, hidden_state):
+def discriminator_32x32x1(x, hidden_state, keep_prob):
   """Builds discriminator.
   Args:
     inputs: i
   """
   #--------- Making the net -----------
   # x_2 -> hidden_state
-  # conv1
-  conv1 = _conv_layer(x, 3, 2, 8, "discriminator_1")
-  # conv2
-  conv2 = _conv_layer(conv1, 3, 1, 16, "discriminator_2")
-  
-  y_1 = _fc_layer(conv2, 64, "discriminator_5", True)
- 
-  with tf.variable_scope("discriminator_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-    with tf.device('/gpu:0'):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(64, forget_bias=1.0)
+
+  # split x
+  num_of_d = 8
+  x_split = tf.split(0,num_of_d, x)
+  label = []
+
+  for i in xrange(num_of_d):
+    # conv1
+    conv1 = _conv_layer(x_split[i], 5, 2, 32, "discriminator_1_" + str(i))
+    # conv2
+    conv2 = _conv_layer(conv1, 5, 2, 64, "discriminator_2_" + str(i))
+    
+    y_1 = _fc_layer(conv2, 128, "discriminator_5_" + str(i), True)
+    y_1 = tf.nn.dropout(y_1, keep_prob)
+   
+    with tf.variable_scope("discriminator_LSTM_" + str(i), initializer = tf.random_uniform_initializer(-0.01, 0.01)) as scope:
+      #with tf.device('/gpu:0'):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(128, forget_bias=1.0)
       if hidden_state == None:
         batch_size = y_1.get_shape()[0]
         hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+  
+      y_2, new_state = lstm_cell(y_1, hidden_state)
+  
+    label.append(_fc_layer(y_2, 1, "discriminator_6_" + str(i), False, True))
 
-  y_2, new_state = lstm_cell(y_1, hidden_state)
-
-  label = _fc_layer(y_2, 2, "discriminator_6")
-
+  label = tf.pack(label)
+  
   return label, new_state
 
-def discriminator_401x101x2(x, hidden_state):
+def discriminator_401x101x2(x, hidden_state, keep_prob):
   """Builds discriminator.
   Args:
     inputs: i
   """
   #--------- Making the net -----------
   # x_2 -> hidden_state
-  # conv1
-  conv1 = _conv_layer(x, 3, 2, 64, "discriminator_1")
-  # conv2
-  conv2 = _conv_layer(conv1, 3, 2, 128, "discriminator_2")
-  # conv3
-  conv3 = _conv_layer(conv2, 3, 2, 256, "discriminator_3")
-  # conv4
-  conv4 = _conv_layer(conv3, 3, 2, 128, "discriminator_4")
+
+  # split x
+  num_of_d = 4
+  x_split = tf.split(0,num_of_d, x)
+  label = []
+
+  for i in xrange(num_of_d):
+    # conv1
+    conv1 = _conv_layer(x, 3, 2, 64, "discriminator_1_" + str(i))
+    # conv2
+    conv2 = _conv_layer(conv1, 3, 2, 128, "discriminator_2_" + str(i))
+    # conv3
+    conv3 = _conv_layer(conv2, 3, 2, 256, "discriminator_3_" + str(i))
+    # conv4
+    conv4 = _conv_layer(conv3, 3, 2, 128, "discriminator_4_" + str(i))
   
-  y_1 = _fc_layer(conv4, 256, "discriminator_5", True)
+    y_1 = _fc_layer(conv4, 256, "discriminator_5_" + str(i), True)
  
-  with tf.variable_scope("compress_LSTM", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-    with tf.device('/gpu:0'):
+    with tf.variable_scope("compress_LSTM_" + str(i), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+      #with tf.device('/gpu:0'):
       lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(256, forget_bias=1.0)
       if hidden_state == None:
         batch_size = y_1.get_shape()[0]
         hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
 
-  y_2, new_state = lstm_cell(y_1, hidden_state)
+      y_2, new_state = lstm_cell(y_1, hidden_state)
 
-  label = _fc_layer(y_2, 2, "discriminator_6")
+    label.append(_fc_layer(y_2, 1, "discriminator_6_" + str(i), False, True))
+
+  label = tf.pack(label)
 
   return label, new_state
 
