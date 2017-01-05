@@ -19,12 +19,12 @@ tf.app.flags.DEFINE_float('gan_lr', 1e-5,
 # set params for fluid train
 model = 'lstm_401x101x2'
 system = 'fluid'
-unroll_length = 10
+unroll_length = 15
 batch_size = 4
 
 # save file name
-RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_3_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_5_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)
+RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_5_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_10_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)
 
 
 def train():
@@ -86,15 +86,15 @@ def train():
     gan_g_label, gan_g_hidden_state = ring_net.discriminator(x_2, gan_g_hidden_state, keep_prob_discriminator)
 
     # now collect values
-    for i in xrange(4):
+    for i in xrange(9):
       # unroll generator network 
       x_2 = tf.concat(3, [x_2, boundry[:,0,:,:,:]])
-      x_2, hidden_state = ring_net.encode_compress_decode_gan(x_2, hidden_state, z[:,i+int(unroll_length/2),:], keep_prob_encoding, keep_prob_lstm)
+      x_2, hidden_state = ring_net.encode_compress_decode_gan(x_2, hidden_state, z[:,i+5,:], keep_prob_encoding, keep_prob_lstm)
       x_2 = x_2 * boundry_kill[:,0,:,:,:]
       x_2_o.append(x_2)
  
       # unroll discriminator network on true
-      gan_t_label, gan_t_hidden_state = ring_net.discriminator(flow[:,i+int(unroll_length/2)+1,:,:,:], gan_t_hidden_state, keep_prob_discriminator)
+      gan_t_label, gan_t_hidden_state = ring_net.discriminator(flow[:,i+6,:,:,:], gan_t_hidden_state, keep_prob_discriminator)
 
       # unroll discriminator network on generated
       gan_g_label, gan_g_hidden_state = ring_net.discriminator(x_2, gan_g_hidden_state, keep_prob_discriminator)

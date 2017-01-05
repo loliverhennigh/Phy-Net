@@ -118,7 +118,7 @@ def _generate_image_label_batch_fluid(flow, boundry, batch_size):
     images: Images. 5D tensor of [batch_size, seq_lenght, height, width, frame_num] size.
   """
 
-  num_preprocess_threads = 1
+  num_preprocess_threads = 2
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.

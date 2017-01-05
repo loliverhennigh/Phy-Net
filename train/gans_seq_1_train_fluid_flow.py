@@ -11,14 +11,19 @@ import model.ring_net as ring_net
 
 FLAGS = tf.app.flags.FLAGS
  
+tf.app.flags.DEFINE_bool('train_gan', True,
+                           """ whether to train gan as well """)
+tf.app.flags.DEFINE_float('gan_lr', 5e-5,
+                           """ learning rate of gan""")
+
 # set params for fluid train
 model = 'lstm_401x101x2'
 system = 'fluid'
 unroll_length = 10
-batch_size = 8
+batch_size = 4
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_1'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_1_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)
 
 
 def train():
@@ -122,8 +127,8 @@ def train():
     g_vars = [var for var in t_vars if "discriminator" not in var.name] 
 
     # make optimizers
-    d_optim = tf.train.AdamOptimizer(5e-5).minimize(error_d, var_list=d_vars)
-    g_optim = tf.train.AdamOptimizer(5e-5).minimize(error_g, var_list=g_vars)
+    d_optim = tf.train.AdamOptimizer(FLAGS.gan_lr).minimize(error_d, var_list=d_vars)
+    g_optim = tf.train.AdamOptimizer(FLAGS.gan_lr).minimize(error_g, var_list=g_vars)
     r_optim = tf.train.AdamOptimizer(5e-5).minimize(error_reconstruction)
 
     # List of all Variables
@@ -158,49 +163,31 @@ def train():
 
       # run train step and record time
       t = time.time()
-      #_, _,  loss_reconstruction, loss_g, loss_d = sess \
-      #    .run([r_optim, d_optim, error_reconstruction, error_g, error_d],
-      #    feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
-      #_,  loss_reconstruction, loss_g, loss_d = sess \
-      #    .run([d_optim, error_reconstruction, error_g, error_d],
-      #    feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
-      #_, loss_reconstruction, loss_g, loss_d = sess \
-      #    .run([d_optim, error_reconstruction, error_g, error_d],
-      #    feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
-      #_, loss_reconstruction, loss_g, loss_d = sess \
-      #    .run([g_optim, error_reconstruction, error_g, error_d],
-      #    feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0})
-      #loss_g, loss_d = sess \
-      #    .run([error_g, error_d],
-      #    feed_dict={z:z_sample, keep_prob_encoding:0.5, keep_prob_lstm:0.5, input_keep_prob:1.0, keep_prob_discriminator:.5})
-      #if loss_g > loss_d:
-      if True:
-        _ = sess \
-            .run([g_optim],
+      if FLAGS.train_gan:
+        _, loss_g = sess \
+            .run([g_optim, error_g],
             feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
-      #else:
-      if True:
-        _, loss_reconstruction, loss_g, loss_d = sess \
-            .run([d_optim, error_reconstruction, error_g, error_d],
+        _, loss_d = sess \
+            .run([d_optim, error_d],
             feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
-        #_, loss_reconstruction, loss_g, loss_d = sess \
-        #    .run([d_optim, error_reconstruction, error_g, error_d],
-        #    feed_dict={z:z_sample, keep_prob_encoding:0.5, keep_prob_lstm:0.5, input_keep_prob:1.0})
-      if True:
-        _ = sess \
-            .run([r_optim],
-            feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
+
+      # train reconstruction
+      _, loss_reconstruction = sess \
+          .run([r_optim, error_reconstruction],
+          feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
 
       elapsed = time.time() - t
 
       assert not np.isnan(loss_reconstruction), 'Model diverged with loss reconstruction = NaN'
-      assert not np.isnan(loss_g), 'Model diverged with loss generative = NaN'
-      assert not np.isnan(loss_d), 'Model diverged with loss discriminator = NaN'
+      if FLAGS.train_gan:
+        assert not np.isnan(loss_g), 'Model diverged with loss generative = NaN'
+        assert not np.isnan(loss_d), 'Model diverged with loss discriminator = NaN'
 
       if step%100 == 0:
         print("loss reconstruction " + str(loss_reconstruction))
-        print("loss generated " + str(loss_g))
-        print("loss discriminator " + str(loss_d))
+        if FLAGS.train_gan:
+          print("loss generated " + str(loss_g))
+          print("loss discriminator " + str(loss_d))
         print("time per batch is " + str(elapsed))
         summary_str = sess.run(summary_op, feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
         summary_writer.add_summary(summary_str, step) 
