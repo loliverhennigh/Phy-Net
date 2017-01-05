@@ -19,7 +19,6 @@ batch_size = 8
 
 # save file name
 RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
-
 SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_3'
 
 

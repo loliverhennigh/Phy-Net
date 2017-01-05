@@ -18,7 +18,7 @@ unroll_length = 10
 batch_size = 128
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gans_' + 'seq_length_1'
 
 
 def train():

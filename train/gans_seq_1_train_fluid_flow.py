@@ -18,7 +18,7 @@ unroll_length = 10
 batch_size = 8
 
 # save file name
-SAVE_DIR = '../checkpoints/' + model + '_' + system + '_paper_' + 'seq_length_1'
+SAVE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_1'
 
 
 def train():
@@ -122,9 +122,9 @@ def train():
     g_vars = [var for var in t_vars if "discriminator" not in var.name] 
 
     # make optimizers
-    d_optim = tf.train.AdamOptimizer(3e-5).minimize(error_d, var_list=d_vars)
-    g_optim = tf.train.AdamOptimizer(3e-5).minimize(error_g, var_list=g_vars)
-    r_optim = tf.train.AdamOptimizer(1e-4).minimize(error_reconstruction)
+    d_optim = tf.train.AdamOptimizer(5e-5).minimize(error_d, var_list=d_vars)
+    g_optim = tf.train.AdamOptimizer(5e-5).minimize(error_g, var_list=g_vars)
+    r_optim = tf.train.AdamOptimizer(5e-5).minimize(error_reconstruction)
 
     # List of all Variables
     variables = tf.all_variables()
@@ -174,9 +174,9 @@ def train():
       #    .run([error_g, error_d],
       #    feed_dict={z:z_sample, keep_prob_encoding:0.5, keep_prob_lstm:0.5, input_keep_prob:1.0, keep_prob_discriminator:.5})
       #if loss_g > loss_d:
-      if step > 40000:
-        _, loss_reconstruction, loss_g, loss_d = sess \
-            .run([g_optim, error_reconstruction, error_g, error_d],
+      if True:
+        _ = sess \
+            .run([g_optim],
             feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
       #else:
       if True:
@@ -186,9 +186,9 @@ def train():
         #_, loss_reconstruction, loss_g, loss_d = sess \
         #    .run([d_optim, error_reconstruction, error_g, error_d],
         #    feed_dict={z:z_sample, keep_prob_encoding:0.5, keep_prob_lstm:0.5, input_keep_prob:1.0})
-      if step < 20000:
-        _, loss_reconstruction, loss_g, loss_d = sess \
-            .run([r_optim, error_reconstruction, error_g, error_d],
+      if True:
+        _ = sess \
+            .run([r_optim],
             feed_dict={z:z_sample, keep_prob_encoding:1.0, keep_prob_lstm:1.0, input_keep_prob:1.0, keep_prob_discriminator:.5})
 
       elapsed = time.time() - t
