@@ -13,14 +13,14 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_bool('train_gan', True,
                            """ whether to train gan as well """)
-tf.app.flags.DEFINE_float('gan_lr', 1e-5
+tf.app.flags.DEFINE_float('gan_lr', 1e-5,
                            """ learning rate of gan""")
 
 # set params for fluid train
 model = 'lstm_401x101x2'
 system = 'fluid'
 unroll_length = 10
-batch_size = 8
+batch_size = 4
 
 # save file name
 RESTORE_DIR = '../checkpoints/' + model + '_' + system + '_gan_' + 'seq_length_1_train_gan_' + str(FLAGS.train_gan) + '_gan_rl_' + str(FLAGS.gan_lr)

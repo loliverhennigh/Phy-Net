@@ -69,7 +69,7 @@ def _conv_layer(inputs, kernel_size, stride, num_features, idx, linear = False):
   with tf.variable_scope('{0}_conv'.format(idx)) as scope:
     input_channels = inputs.get_shape()[3]
 
-    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01, wd=FLAGS.weight_decay)
+    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01, wd=False)
     biases = _variable_on_cpu('biases',[num_features],tf.constant_initializer(0.01))
 
     conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
@@ -83,7 +83,7 @@ def _transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, linear
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
     input_channels = inputs.get_shape()[3]
     
-    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01, wd=FLAGS.weight_decay)
+    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01, wd=False)
     biases = _variable_on_cpu('biases',[num_features],tf.constant_initializer(0.01))
     batch_size = tf.shape(inputs)[0]
     output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
@@ -105,7 +105,7 @@ def _fc_layer(inputs, hiddens, idx, flat = False, linear = False):
       dim = input_shape[1]
       inputs_processed = inputs
     
-    weights = _variable_with_weight_decay('weights', shape=[dim,hiddens],stddev=0.01, wd=FLAGS.weight_decay)
+    weights = _variable_with_weight_decay('weights', shape=[dim,hiddens],stddev=0.01, wd=False)
     biases = _variable_on_cpu('biases', [hiddens], tf.constant_initializer(0.01))
     if linear:
       return tf.add(tf.matmul(inputs_processed,weights),biases,name=str(idx)+'_fc')
@@ -436,7 +436,7 @@ def discriminator_401x101x2(x, hidden_state, keep_prob):
   # x_2 -> hidden_state
 
   # split x
-  num_of_d = 4
+  num_of_d = 2
   x_split = tf.split(0,num_of_d, x)
   label = []
 
