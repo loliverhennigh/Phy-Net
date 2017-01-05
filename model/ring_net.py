@@ -22,25 +22,10 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('model', 'lstm_32x32x3',
                            """ model name to train """)
 tf.app.flags.DEFINE_bool('train', True,
-                           """ model name to train """)
-tf.app.flags.DEFINE_string('system', 'balls',
+                           """ train or test """)
+tf.app.flags.DEFINE_string('system', 'diffusion',
                            """ system to compress """)
-tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
-                          """The decay to use for the moving average""")
-tf.app.flags.DEFINE_float('momentum', 0.9,
-                          """momentum of learning rate""")
-tf.app.flags.DEFINE_float('alpha', 0.1,
-                          """Leaky RElu param""")
-tf.app.flags.DEFINE_float('weight_decay', 0.0005,
-                          """ """)
-tf.app.flags.DEFINE_float('beta', 0.1,
-                          """ beta for loss value """)
-tf.app.flags.DEFINE_integer('lstm_size', 32,
-                          """ size of the lstm""")
-tf.app.flags.DEFINE_integer('num_layers', 1,
-                          """ size of the lstm""")
-tf.app.flags.DEFINE_integer('compression_size', 32,
-                          """ size of compressed space""")
+
 
 # possible models and systems to train are
 # fully_connected_28x28x4 with cannon
