@@ -13,7 +13,7 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_bool('train_gan', True,
                            """ whether to train gan as well """)
-tf.app.flags.DEFINE_float('gan_lr', 1e-5,
+tf.app.flags.DEFINE_float('gan_lr', 2e-5,
                            """ learning rate of gan""")
 
 # set params for fluid train

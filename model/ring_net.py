@@ -19,12 +19,64 @@ import input.ring_net_input as ring_net_input
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_string('model', 'lstm_32x32x3',
-                           """ model name to train """)
-tf.app.flags.DEFINE_bool('train', True,
-                           """ train or test """)
+
+# system params
 tf.app.flags.DEFINE_string('system', 'diffusion',
                            """ system to compress """)
+tf.app.flags.DEFINE_string('representation', 'lattice',
+                           """ train on lattice state or possibly velocity or magnetic/electric fields """)
+tf.app.flags.DEFINE_integer('lattice_size', 9,
+                           """ size of lattice """)
+tf.app.flags.DEFINE_string('dimension', '2d',
+                           """ dimension of simulation (2d or 3d) """)
+
+# model params
+tf.app.flags.DEFINE_bool('lstm', True,
+                           """ lstm or just fully connected""")
+tf.app.flags.DEFINE_integer('nr_lstm_layer', 1,
+                           """ number of lstm layers """)
+tf.app.flags.DEFINE_bool('residual', False,
+                           """ residual connections """)
+tf.app.flags.DEFINE_bool('residual_lstm', False,
+                           """ residual connections around lstm """)
+tf.app.flags.DEFINE_integer('nr_residual', 1,
+                           """ number of residual blocks before down sizing """)
+tf.app.flags.DEFINE_bool('multi_resolution', False,
+                           """ skip connections over resolutions """)
+tf.app.flags.DEFINE_bool('gan', False,
+                           """ use gan training """)
+tf.app.flags.DEFINE_integer('nr_discriminators', 1,
+                           """ number of discriminators to train """)
+tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
+                           """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
+
+# optimize params
+tf.app.flags.DEFINE_sting('optimizer', "adam",
+                           """ what optimizer to use """)
+tf.app.flags.DEFINE_float('learning_rate_reconstruction', 1e-5,
+                           """ learning rete for reconstruction """)
+tf.app.flags.DEFINE_float('learning_rate_gan', 2e-5,
+                           """ learning rate for training gan """)
+tf.app.flags.DEFINE_float('lambda_reconstruction', 1.0,
+                           """ weight of reconstruction error """) 
+tf.app.flags.DEFINE_float('lambda_divergence', 0.2,
+                           """ weight of divergence error """)
+
+
+
+# train params
+tf.app.flags.DEFINE_integer('unroll_length', 5,
+                           """ unroll length """)
+tf.app.flags.DEFINE_bool('unroll_true', True,
+                           """ use the true data when unrolling the network (probably just used for unroll_length 1 when doing curriculum learning""")
+tf.app.flags.DEFINE_integer('restore_unroll_length', 0,
+                           """ what to unroll length to restore from. (if 0 then initialize from scratch """)
+tf.app.flags.DEFINE_integer('batch_size', 4,
+                           """ batch size """)
+
+# input params
+tf.app.flags.DEFINE_bool('train', True,
+                           """ train or test """)
 
 
 # possible models and systems to train are
