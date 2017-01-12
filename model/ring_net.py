@@ -20,7 +20,7 @@ FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
 
-# system params
+################# system params
 tf.app.flags.DEFINE_string('system', 'diffusion',
                            """ system to compress """)
 tf.app.flags.DEFINE_string('representation', 'lattice',
@@ -30,27 +30,37 @@ tf.app.flags.DEFINE_integer('lattice_size', 9,
 tf.app.flags.DEFINE_string('dimension', '2d',
                            """ dimension of simulation (2d or 3d) """)
 
-# model params
-tf.app.flags.DEFINE_bool('lstm', True,
-                           """ lstm or just fully connected""")
-tf.app.flags.DEFINE_integer('nr_lstm_layer', 1,
-                           """ number of lstm layers """)
+################# model params
+## resnet params
 tf.app.flags.DEFINE_bool('residual', False,
                            """ residual connections """)
 tf.app.flags.DEFINE_bool('residual_lstm', False,
                            """ residual connections around lstm """)
 tf.app.flags.DEFINE_integer('nr_residual', 1,
                            """ number of residual blocks before down sizing """)
+tf.app.flags.DEFINE_integer('nr_downsamples', 3,
+                           """ numper of downsamples """)
 tf.app.flags.DEFINE_bool('multi_resolution', False,
                            """ skip connections over resolutions """)
+tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
+                           """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
+## gan params
 tf.app.flags.DEFINE_bool('gan', False,
                            """ use gan training """)
 tf.app.flags.DEFINE_integer('nr_discriminators', 1,
                            """ number of discriminators to train """)
-tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
-                           """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
+tf.app.flags.DEFINE_integer('z_size', 50,
+                           """ size of z vector """)
+## compression train
+tf.app.flags.DEFINE_bool('compression', False,
+                           """ train in compression style """)
+## lstm params
+tf.app.flags.DEFINE_bool('lstm', True,
+                           """ lstm or just fully connected""")
+tf.app.flags.DEFINE_integer('nr_lstm_layer', 1,
+                           """ number of lstm layers """)
 
-# optimize params
+################# optimize params
 tf.app.flags.DEFINE_sting('optimizer', "adam",
                            """ what optimizer to use """)
 tf.app.flags.DEFINE_float('learning_rate_reconstruction', 1e-5,
@@ -62,32 +72,21 @@ tf.app.flags.DEFINE_float('lambda_reconstruction', 1.0,
 tf.app.flags.DEFINE_float('lambda_divergence', 0.2,
                            """ weight of divergence error """)
 
-
-
-# train params
+################# train params
+tf.app.flags.DEFINE_integer('init_unroll_length', 5,
+                           """ unroll length to initialize network """)
 tf.app.flags.DEFINE_integer('unroll_length', 5,
                            """ unroll length """)
 tf.app.flags.DEFINE_bool('unroll_true', True,
                            """ use the true data when unrolling the network (probably just used for unroll_length 1 when doing curriculum learning""")
 tf.app.flags.DEFINE_integer('restore_unroll_length', 0,
-                           """ what to unroll length to restore from. (if 0 then initialize from scratch """)
+                           """ what to unroll length to restore from. (if 0 then initialize from scratch) """)
 tf.app.flags.DEFINE_integer('batch_size', 4,
                            """ batch size """)
 
-# input params
+################# input params
 tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
-
-
-# possible models and systems to train are
-# fully_connected_28x28x4 with cannon
-# lstm_28x28x4 with cannon
-# fully_connected_28x28x3 video with rgb
-# lstm_28x28x3 video with rgb
-# fully_connected_84x84x4 black and white video with 4 frames
-# lstm_84x84x3 black and white video with 4 frames
-# fully_connected_84x84x3 video with rgb
-# lstm_84x84x3 video with rgb
 
 def inputs(batch_size, seq_length):
   """makes input vector

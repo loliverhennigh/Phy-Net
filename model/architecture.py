@@ -8,8 +8,6 @@ import BasicConvLSTMCell
 
 FLAGS = tf.app.flags.FLAGS
 
-
-
 def _activation_summary(x):
   """Helper to create summaries for activations.
 
@@ -25,8 +23,8 @@ def _activation_summary(x):
   tf.histogram_summary(tensor_name + '/activations', x)
   tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
-def _variable_on_cpu(name, shape, initializer):
-  """Helper to create a Variable stored on CPU memory.
+def _variable(name, shape, stddev):
+  """Helper to create a Variable.
 
   Args:
     name: name of the variable
@@ -36,66 +34,37 @@ def _variable_on_cpu(name, shape, initializer):
   Returns:
     Variable Tensor
   """
-  #with tf.device('/gpu:0'):
-  var = tf.get_variable(name, shape, initializer=initializer)
+  var = tf.get_variable(name, shape, tf.truncated_normal_initializer(stddev=stddev))
   return var
 
-
-def _variable_with_weight_decay(name, shape, stddev, wd):
-  """Helper to create an initialized Variable with weight decay.
-
-  Note that the Variable is initialized with a truncated normal distribution.
-  A weight decay is added only if one is specified.
-
-  Args:
-    name: name of the variable
-    shape: list of ints
-    stddev: standard deviation of a truncated Gaussian
-    wd: add L2Loss weight decay multiplied by this float. If None, weight
-        decay is not added for this Variable.
-
-  Returns:
-    Variable Tensor
-  """
-  var = _variable_on_cpu(name, shape,
-                         tf.truncated_normal_initializer(stddev=stddev))
-  #if wd:
-  #  weight_decay = tf.mul(tf.nn.l2_loss(var), wd, name='weight_loss')
-  #  weight_decay.set_shape([])
-  #  tf.add_to_collection('losses', weight_decay)
-  return var
-
-def _conv_layer(inputs, kernel_size, stride, num_features, idx, linear = False):
+def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_conv'.format(idx)) as scope:
     input_channels = inputs.get_shape()[3]
 
-    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01, wd=False)
-    biases = _variable_on_cpu('biases',[num_features],tf.constant_initializer(0.01))
+    weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01)
+    biases = _variable('biases',[num_features],stddev=0.01)
 
     conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
     conv_biased = tf.nn.bias_add(conv, biases)
-    if linear:
-      return conv_biased
-    conv_rect = tf.nn.elu(conv_biased,name='{0}_conv'.format(idx))
-    return conv_rect
+    if nonlinearity is not None:
+      conv_biased = nonlinearity(conv_biased)
+    return conv_biased
 
-def _transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, linear = False):
+def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
     input_channels = inputs.get_shape()[3]
     
-    weights = _variable_with_weight_decay('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01, wd=False)
-    biases = _variable_on_cpu('biases',[num_features],tf.constant_initializer(0.01))
+    weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01)
+    biases = _variable('biases',[num_features],stddev=0.01)
     batch_size = tf.shape(inputs)[0]
     output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
     conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
     conv_biased = tf.nn.bias_add(conv, biases)
-    if linear:
-      return conv_biased
-    conv_rect = tf.nn.elu(conv_biased,name='{0}_transpose_conv'.format(idx))
-    return conv_rect
-     
+    if nonlinearity is not None:
+      conv_biased = nonlinearity(conv_biased)
+    return conv_biased
 
-def _fc_layer(inputs, hiddens, idx, flat = False, linear = False):
+def fc_layer(inputs, hiddens, idx, flat = False, linear = False):
   with tf.variable_scope('{0}_fc'.format(idx)) as scope:
     input_shape = inputs.get_shape().as_list()
     if flat:
@@ -105,29 +74,53 @@ def _fc_layer(inputs, hiddens, idx, flat = False, linear = False):
       dim = input_shape[1]
       inputs_processed = inputs
     
-    weights = _variable_with_weight_decay('weights', shape=[dim,hiddens],stddev=0.01, wd=False)
+    weights = _variable('weights', shape=[dim,hiddens],stddev=0.01)
     biases = _variable_on_cpu('biases', [hiddens], tf.constant_initializer(0.01))
-    if linear:
-      return tf.add(tf.matmul(inputs_processed,weights),biases,name=str(idx)+'_fc')
-  
-    ip = tf.add(tf.matmul(inputs_processed,weights),biases)
-    return tf.nn.elu(ip,name=str(idx)+'_fc')
+    output_biased = tf.add(tf.matmul(inputs_processed,weights),biases,name=str(idx)+'_fc')
+    if nonlinearity is not None:
+      ouput_biased = nonlinearity(ouput_biased)
+    return ouput_biased
 
 def _phase_shift(I, r):
-    bsize, a, b, c = I.get_shape().as_list()
-    bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
-    X = tf.reshape(I, (bsize, a, b, r, r))
-    X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
-    X = tf.split(1, a, X)  # a, [bsize, b, r, r]
-    X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
-    X = tf.split(1, b, X)  # b, [bsize, a*r, r]
-    X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
-    return tf.reshape(X, (bsize, a*r, b*r, 1))
+  bsize, a, b, c = I.get_shape().as_list()
+  bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
+  X = tf.reshape(I, (bsize, a, b, r, r))
+  X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
+  X = tf.split(1, a, X)  # a, [bsize, b, r, r]
+  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
+  X = tf.split(1, b, X)  # b, [bsize, a*r, r]
+  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
+  return tf.reshape(X, (bsize, a*r, b*r, 1))
 
 def PS(X, r, depth):
-    Xc = tf.split(3, depth, X)
-    X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
-    return X
+  Xc = tf.split(3, depth, X)
+  X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
+  return X
+
+def int_shape(x):
+  return list(map(int, x.get_shape()))
+
+def nin(x, num_units, **kwargs):
+    """ a network in network layer (1x1 CONV) """
+    s = int_shape(x)
+    x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
+    x = dense(x, num_units, **kwargs)
+    return tf.reshape(x, s[:-1]+[num_units])
+
+def res_block(x, a=None, nonlinearity=concat_elu, keep_p=1.0, stride=1, name="resnet"):
+  xs = int_shape(x)
+  filter_size = xs[-1]
+  orig_x = x
+  x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
+  if a is not None
+    
+    x_1 += nin(nonlinearity(a), filter_size)
+  x_1 = nonlinearity(x_1)
+  if keep_p < 1.0:
+    x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
+  x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
+  return orig_x + x_2
+
 
 def encoding_32x32x3(inputs, keep_prob):
   """Builds encoding part of ring net.
