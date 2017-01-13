@@ -107,9 +107,7 @@ def nin(x, num_units, **kwargs):
     x = dense(x, num_units, **kwargs)
     return tf.reshape(x, s[:-1]+[num_units])
 
-def res_block(x, a=None, nonlinearity=concat_elu, keep_p=1.0, stride=1, name="resnet"):
-  xs = int_shape(x)
-  filter_size = xs[-1]
+def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
   orig_x = x
   x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
   if a is not None
@@ -118,8 +116,14 @@ def res_block(x, a=None, nonlinearity=concat_elu, keep_p=1.0, stride=1, name="re
   x_1 = nonlinearity(x_1)
   if keep_p < 1.0:
     x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
-  x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
-  return orig_x + x_2
+  if not gated:
+    x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
+    return orig_x + x_2
+  else:
+    x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
+    x_2_1, x_2_2 = tf.split(3,2,x_2)
+    x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
+    return orig_x + x_2
 
 
 def encoding_32x32x3(inputs, keep_prob):

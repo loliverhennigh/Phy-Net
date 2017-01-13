@@ -44,6 +44,12 @@ tf.app.flags.DEFINE_bool('multi_resolution', False,
                            """ skip connections over resolutions """)
 tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
+tf.app.flags.DEFINE_float('keep_p', 1.0,
+                           """ keep probability for res blocks """)
+tf.app.flags.DEFINE_bool('gated', False,
+                           """ gated res blocks """)
+tf.app.flags.DEFINE_integer('filter_size', 16,
+                           """ filter size for first res block. the rest of the filters are 2x every downsample """)
 ## gan params
 tf.app.flags.DEFINE_bool('gan', False,
                            """ use gan training """)
@@ -59,6 +65,9 @@ tf.app.flags.DEFINE_bool('lstm', True,
                            """ lstm or just fully connected""")
 tf.app.flags.DEFINE_integer('nr_lstm_layer', 1,
                            """ number of lstm layers """)
+tf.app.flags.DEFINE_integer('lstm_size', 3,
+                           """ size of lstm conv kernel """)
+
 
 ################# optimize params
 tf.app.flags.DEFINE_sting('optimizer', "adam",
@@ -109,14 +118,22 @@ def encoding(inputs, keep_prob_encoding):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice x_1 -> y_1
-  if FLAGS.model == "lstm_32x32x3":
-    y_1 = architecture.encoding_32x32x3(inputs, keep_prob_encoding)
-  elif FLAGS.model == "lstm_32x32x1":
-    y_1 = architecture.encoding_32x32x1(inputs, keep_prob_encoding)
-  elif FLAGS.model == "lstm_401x101x2":
-    y_1 = architecture.encoding_401x101x2(inputs, keep_prob_encoding)
+  x_i = inputs
 
-  return y_1 
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  if FLAGS.multi_resolution:
+    skip_connections = []
+  for i in xrange(FLAGS.nr_downsamples):
+    x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(0) + "_nr_residual_0") 
+    skip_connections.append(x_i)
+    for j in xrange(FLAGS.nr_residual - 1):
+      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(0) + "_nr_residual_" + str(j+1)) 
+
+  if FLAGS.multi_resolution:
+    return skip_connections
+  else:
+    return x_i
 
 def lstm_compression(y_1, hidden_state, keep_prob_lstm, encode=True):
   """Builds compressed dynamical system part of the net.
