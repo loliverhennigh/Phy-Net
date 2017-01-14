@@ -118,12 +118,42 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
     x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
   if not gated:
     x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
-    return orig_x + x_2
   else:
     x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
     x_2_1, x_2_2 = tf.split(3,2,x_2)
     x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
-    return orig_x + x_2
+
+  if int(orig_x.get_shape()[3]) != filter_size:
+    orig_x = tf.nn.ave_pooling(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
+
+  return orig_x + x_2
+
+
+def res_block_lstm(x, hidden_state_1=None, hidden_state_2=None, keep_p=1.0, name="resnet_lstm"):
+
+  orig_x = x
+  filter_size = orig_x.get_shape()
+
+  with tf.variable_scope(name + "_conv_LSTM_1", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+    lstm_cell_1 = BasicConvLSTMCell.BasicConvLSTMCell([int(x.get_shape()[1]),int(x.get_shape()[2])], [3,3], filter_size)
+    if hidden_state_1 == None:
+      batch_size = x.get_shape()[0]
+      hidden_state_1 = lstm_cell_1.zero_state(batch_size, tf.float32) 
+
+  x_1, hidden_state_1 = lstm_cell_1(x, hidden_state_1)
+    
+  if keep_p < 1.0:
+    x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
+
+  with tf.variable_scope(name + "_conv_LSTM_2", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+    lstm_cell_2 = BasicConvLSTMCell.BasicConvLSTMCell([int(x_1.get_shape()[1]),int(x_1.get_shape()[2])], [3,3], filter_size)
+    if hidden_state_2 == None:
+      batch_size = x_1.get_shape()[0]
+      hidden_state_2 = lstm_cell_2.zero_state(batch_size, tf.float32) 
+
+  x_2, hidden_state_2 = lstm_cell_2(x_1, hidden_state_2)
+
+  return orig_x + x_2, hidden_state_1, hidden_state_2
 
 
 def encoding_32x32x3(inputs, keep_prob):
