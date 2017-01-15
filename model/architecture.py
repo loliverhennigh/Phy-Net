@@ -420,8 +420,6 @@ def discriminator_32x32x1(x, hidden_state, keep_prob):
     
     y_1 = _fc_layer(conv2, 128, "discriminator_5_" + str(i), True)
     y_1 = tf.nn.dropout(y_1, keep_prob)
-   
-    with tf.variable_scope("discriminator_LSTM_" + str(i), initializer = tf.random_uniform_initializer(-0.01, 0.01)) as scope:
       #with tf.device('/gpu:0'):
       lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(128, forget_bias=1.0)
       if hidden_state == None:
