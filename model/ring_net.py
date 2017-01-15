@@ -63,10 +63,8 @@ tf.app.flags.DEFINE_bool('compression', False,
 ## lstm params
 tf.app.flags.DEFINE_bool('lstm', True,
                            """ lstm or just fully connected""")
-tf.app.flags.DEFINE_integer('nr_lstm_layer', 1,
+tf.app.flags.DEFINE_integer('nr_residual_compression', 1,
                            """ number of lstm layers """)
-tf.app.flags.DEFINE_integer('lstm_size', 3,
-                           """ size of lstm conv kernel """)
 
 
 ################# optimize params
@@ -109,7 +107,7 @@ def inputs(batch_size, seq_length):
   elif FLAGS.system == "fluid":
     return ring_net_input.fluid_inputs(batch_size, seq_length)
 
-def encoding(inputs, keep_prob_encoding):
+def encoding(inputs):
   """Builds encoding part of ring net.
   Args:
     inputs: input to encoder
@@ -125,17 +123,17 @@ def encoding(inputs, keep_prob_encoding):
   if FLAGS.multi_resolution:
     skip_connections = []
   for i in xrange(FLAGS.nr_downsamples):
-    x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(0) + "_nr_residual_0") 
+    x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_0") 
     skip_connections.append(x_i)
     for j in xrange(FLAGS.nr_residual - 1):
-      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(0) + "_nr_residual_" + str(j+1)) 
+      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1)) 
 
   if FLAGS.multi_resolution:
     return skip_connections
   else:
     return x_i
 
-def lstm_compression(y_1, hidden_state, keep_prob_lstm, encode=True):
+def compression(y):
   """Builds compressed dynamical system part of the net.
   Args:
     inputs: input to system
@@ -144,15 +142,74 @@ def lstm_compression(y_1, hidden_state, keep_prob_lstm, encode=True):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_1 -> y_2
-  if FLAGS.model == "lstm_32x32x3":
-    y_2, hidden = architecture.lstm_compression_32x32x3(y_1, hidden_state, keep_prob_lstm, encode)
-  elif FLAGS.model == "lstm_32x32x1":
-    y_2, hidden = architecture.lstm_compression_32x32x1(y_1, hidden_state, keep_prob_lstm, encode)
-  elif FLAGS.model == "lstm_401x101x2":
-    y_2, hidden = architecture.lstm_compression_401x101x2(y_1, hidden_state, keep_prob_lstm, encode)
-  return y_2, hidden 
 
-def decoding(y_2):
+  y_i = y
+
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  if FLAGS.multi_resolution:
+    y_i_store = []
+    for i in xrange(FLAGS.nr_downsamples):
+      y_i_j = y_i[i]
+      for j in xrange(FLAGS.nr_residual_compression):
+        y_i_j = res_block(y_i_j, filter_size=int(y_i_j.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_" + str(j))
+      y_i_store.append(y_i_j)
+    y_i = y_i_store 
+
+  else:
+    for i in xrange(FLAGS.nr_residual_compression):
+      y_i = res_block(y_i, filter_size=int(y_i.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="_resnet_" + str(i))
+
+  return y_i
+
+# not functional yet!!!
+def compression_lstm(y, hidden_state=None):
+  """Builds compressed dynamical system part of the net.
+  Args:
+    inputs: input to system
+    keep_prob: dropout layer
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_1 -> y_2
+
+  y_i = y
+  if hidden_state is not None:
+    hidden_state_1_i = hidden_state[0] 
+    hidden_state_2_i = hidden_state[1]
+
+  hidden_state_1_i_new = []
+  hidden_state_2_i_new = []
+
+  if FLAGS.multi_resolution:
+    for i in xrange(FLAGS.nr_downsamples):
+      hidden_state_1_i_j_new = []
+      hidden_state_2_i_j_new = []
+      y_i_new = []
+      for j in xrange(FLAGS.nr_residual_compression):
+        if hidden is not None:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i][j], hidden_state_2_i[i][j], FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        else:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        hidden_state_1_i_j_new.append(hidden_state_1_store)
+        hidden_state_2_i_j_new.append(hidden_state_2_store)
+      hidden_state_1_i_new.append(hidden_state_1_i_j_new) 
+      hidden_state_2_i_new.append(hidden_state_2_i_j_new) 
+
+  else:
+    for i in xrange(FLAGS.nr_residual_compression):
+      if hidden is not None:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i], hidden_state_2_i[i], FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      else:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      hidden_state_1_i_new.append(hidden_state_1_store)
+      hidden_state_2_i_new.append(hidden_state_2_store)
+
+  hidden = [hidden_state_1_i_new, hidden_state_2_i_new]
+
+  return y_i, hidden 
+
+def decoding(y):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder
@@ -160,12 +217,11 @@ def decoding(y_2):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_2 -> x_2
-  if FLAGS.model in ("lstm_32x32x3"): 
-    x_2 = architecture.decoding_32x32x3(y_2)
-  elif FLAGS.model in ("lstm_32x32x1"): 
-    x_2 = architecture.decoding_32x32x1(y_2)
-  elif FLAGS.model in ("lstm_401x101x2"): 
-    x_2 = architecture.decoding_401x101x2(y_2)
+  y_i = y
+ 
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+ 
+  for i in xrange(FLAGS.nr_downsamples): 
 
   return x_2 
 

@@ -128,7 +128,6 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
 
   return orig_x + x_2
 
-
 def res_block_lstm(x, hidden_state_1=None, hidden_state_2=None, keep_p=1.0, name="resnet_lstm"):
 
   orig_x = x
