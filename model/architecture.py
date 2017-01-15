@@ -314,23 +314,6 @@ def decoding_32x32x3(y_2):
   x_2 = tf.reshape(conv24, [-1, 32, 32, 3])
   return x_2
 
-def decoding_32x32x1(y_2):
-  """Builds decoding part of ring net.
-  Args:
-    inputs: input to decoder
-  """
-  #--------- Making the net -----------
-  # x_1 -> y_1 -> y_2 -> x_2
-  # this peice y_3 -> x_2
-
-  # conv21
-  conv21 = _transpose_conv_layer(y_2, 3, 1, 4, "decode_21")
-  conv21 = tf.reshape(conv21, [-1, 16, 16, 4])
-  conv21 = PS(conv21, 2, 1)
-  #x_2 = x_2[:,:401,:101,:]
-  x_2 = conv21
-  return x_2
-
 def decoding_gan_32x32x1(y_2, z):
   """Builds decoding part of ring net.
   Args:
