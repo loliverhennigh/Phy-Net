@@ -32,15 +32,13 @@ tf.app.flags.DEFINE_string('dimension', '2d',
 
 ################# model params
 ## resnet params
-tf.app.flags.DEFINE_bool('residual', False,
-                           """ residual connections """)
-tf.app.flags.DEFINE_bool('residual_lstm', False,
-                           """ residual connections around lstm """)
 tf.app.flags.DEFINE_integer('nr_residual', 1,
                            """ number of residual blocks before down sizing """)
 tf.app.flags.DEFINE_integer('nr_downsamples', 3,
                            """ numper of downsamples """)
 tf.app.flags.DEFINE_bool('multi_resolution', False,
+                           """ multi resolutions """)
+tf.app.flags.DEFINE_bool('multi_resolution_skip', False,
                            """ skip connections over resolutions """)
 tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
@@ -50,6 +48,14 @@ tf.app.flags.DEFINE_bool('gated', False,
                            """ gated res blocks """)
 tf.app.flags.DEFINE_integer('filter_size', 16,
                            """ filter size for first res block. the rest of the filters are 2x every downsample """)
+## compression train
+tf.app.flags.DEFINE_bool('compression', False,
+                           """ train in compression style """)
+## lstm params
+tf.app.flags.DEFINE_bool('lstm', True,
+                           """ lstm or non recurrent""")
+tf.app.flags.DEFINE_integer('nr_residual_compression', 1,
+                           """ number of residual compression layers """)
 ## gan params
 tf.app.flags.DEFINE_bool('gan', False,
                            """ use gan training """)
@@ -57,14 +63,17 @@ tf.app.flags.DEFINE_integer('nr_discriminators', 1,
                            """ number of discriminators to train """)
 tf.app.flags.DEFINE_integer('z_size', 50,
                            """ size of z vector """)
-## compression train
-tf.app.flags.DEFINE_bool('compression', False,
-                           """ train in compression style """)
-## lstm params
-tf.app.flags.DEFINE_bool('lstm', True,
-                           """ lstm or just fully connected""")
-tf.app.flags.DEFINE_integer('nr_residual_compression', 1,
-                           """ number of lstm layers """)
+tf.app.flags.DEFINE_integer('nr_residual_discriminator', 1,
+                           """ number of residual blocks before down sizing """)
+tf.app.flags.DEFINE_integer('nr_downsamples_discriminator', 3,
+                           """ numper of downsamples """)
+tf.app.flags.DEFINE_float('keep_p_discriminator', 1.0,
+                           """ keep probability for res blocks """)
+tf.app.flags.DEFINE_integer('filter_size_discriminator', 32,
+                           """ filter size for first res block of discriminator """)
+ tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
+                           """ size of lstm cell in discriminator """)
+ 
 
 
 ################# optimize params
@@ -123,10 +132,18 @@ def encoding(inputs):
   if FLAGS.multi_resolution:
     skip_connections = []
   for i in xrange(FLAGS.nr_downsamples):
-    x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_0") 
-    skip_connections.append(x_i)
+
+    filter_size = FLAGS.filter_size*(2^(i))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+
+    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_0") 
+
+
     for j in xrange(FLAGS.nr_residual - 1):
-      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1)) 
+      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1))
+
+    if FLAGS.mulit_resolution:
+      skip_connections.append(x_i)
 
   if FLAGS.multi_resolution:
     return skip_connections
@@ -217,57 +234,94 @@ def decoding(y):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_2 -> x_2
-  y_i = y
+  if FLAGS.multi_resolution:
+    y_i = y[-1]
+  else:
+    y_i = y
  
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
- 
-  for i in xrange(FLAGS.nr_downsamples): 
 
-  return x_2 
+  for i in xrange(FLAGS.nr_downsamples-1):
+    filter_size = FLAGS.filter_size*(2^(FLAGS.nr_downsamples-i-2))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
 
-def decoding_gan(y_2, z):
-  """Builds decoding part of ring net.
-  Args:
-    inputs: input to decoder
-  """
-  #--------- Making the net -----------
-  # x_1 -> y_1 -> y_2 -> x_2
-  # this peice y_2 -> x_2
-  if FLAGS.model in ("lstm_32x32x3"): 
-    x_2 = architecture.decoding_gan_32x32x3(y_2, z)
-  elif FLAGS.model in ("lstm_32x32x1"): 
-    x_2 = architecture.decoding_gan_32x32x1(y_2, z)
-  elif FLAGS.model in ("lstm_401x101x2"): 
-    x_2 = architecture.decoding_gan_401x101x2(y_2, z)
+    if i != 0 and FLAGS.multi_resolution_skip:
+      y_i = res_block(y_i, a=y[-1-i], filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
+    else:
+      y_i = res_block(y_i, filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
+    y_i = PS(y_i, 2, filter_size)
 
-  return x_2 
 
-def encode_compress_decode(state, hidden_state, keep_prob_encoding, keep_prob_lstm):
+    for j in xrange(FLAGS.nr_residual - 1):
+      y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_" + str(i) + "_nr_residual_" + str(j+1))
+
+  return y_i
+
+def add_z(y, z):
+
+  if FLAGS.multi_resolution:
+    y_new = []
+    for i in xrange(FLAGS.nr_downsamples):
+      y_shape = int_shape(y[i]) 
+      z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+      z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+      z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+      y_new.append(y[i] + z)
+  else:
+    y_shape = int_shape(y]) 
+    z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+    z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+    z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+    y_new = y + z
+
+  return y_new
+
+def discriminator(output, hidden_state=None):
+
+  x_i = output
+
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  label = []
+
+  for split in xrange(FLAGS.nr_discriminators):
+    for i in xrange(FLAGS.nr_downsamples):
+      filter_size = FLAGS.filter_size_discriminator*(2^(i))
+      print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
+      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
+      for j in xrange(FLAGS.nr_residual - 1):
+        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
   
-  y_1 = encoding(state, keep_prob_encoding)
-  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_lstm)
+    with tf.variable_scope("discriminator_LSTM_" + str(split), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size_discriminator, forget_bias=1.0)
+      if hidden_state == None:
+        batch_size = x_i.get_shape()[0]
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+  
+      x_i, new_state = lstm_cell(x_i, hidden_state)
+
+      x_i = fc_layer(x_i, 1, "discriminator_fc_" + str(split), False, True)
+  
+      label.append(x_i)
+
+  label = tf.pack(label)
+
+  return label
+
+def encode_compress_decode(state, hidden_state=None):
+  
+  y_1 = encoding(state)
+  if FLAGS.lstm:
+    y_2, hidden_state = lstm_compression(y_1, hidden_state)
+  else:
+    y_2 = compression(y_1)
+  if FLAGS.gan:
+    y_2 = add_z(y_2)
   x_2 = decoding(y_2) 
 
   return x_2, hidden_state
 
-def encode_compress_decode_gan(state, hidden_state, z, keep_prob_encoding, keep_prob_lstm):
-  
-  y_1 = encoding(state, keep_prob_encoding)
-  y_2, hidden_state = lstm_compression(y_1, hidden_state, keep_prob_lstm)
-  x_2 = decoding_gan(y_2, z) 
-
-  return x_2, hidden_state
-
-def discriminator(output, hidden_state, keep_prob_discriminator):
-
-  if FLAGS.model in ("lstm_32x32x3"):
-    label, hidden_state = architecture.discriminator_32x32x3(output, hidden_state, keep_prob_discriminator)
-  elif FLAGS.model in ("lstm_32x32x1"):
-    label, hidden_state = architecture.discriminator_32x32x1(output, hidden_state, keep_prob_discriminator)
-  elif FLAGS.model in ("lstm_401x101x2"):
-    label, hidden_state = architecture.discriminator_401x101x2(output, hidden_state, keep_prob_discriminator)
-  return label, hidden_state 
-  
+def unroll(state
 
 def train(total_loss, lr):
    #train_op = tf.train.AdamOptimizer(lr, epsilon=1.0).minimize(total_loss)
