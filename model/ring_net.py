@@ -79,9 +79,9 @@ tf.app.flags.DEFINE_integer('filter_size_discriminator', 32,
 ################# optimize params
 tf.app.flags.DEFINE_sting('optimizer', "adam",
                            """ what optimizer to use """)
-tf.app.flags.DEFINE_float('learning_rate_reconstruction', 1e-5,
+tf.app.flags.DEFINE_float('reconstruction_rl', 1e-5,
                            """ learning rete for reconstruction """)
-tf.app.flags.DEFINE_float('learning_rate_gan', 2e-5,
+tf.app.flags.DEFINE_float('gan_rl', 2e-5,
                            """ learning rate for training gan """)
 tf.app.flags.DEFINE_float('lambda_reconstruction', 1.0,
                            """ weight of reconstruction error """) 
@@ -104,17 +104,18 @@ tf.app.flags.DEFINE_integer('batch_size', 4,
 tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
 
-def inputs(batch_size, seq_length):
+def inputs():
   """makes input vector
   Return:
     x: input vector, may be filled 
   """
-  if FLAGS.system == "balls":
-    return ring_net_input.balls_inputs(batch_size, seq_length)
-  elif FLAGS.system == "diffusion":
-    return ring_net_input.diffusion_inputs(batch_size, seq_length)
-  elif FLAGS.system == "fluid":
-    return ring_net_input.fluid_inputs(batch_size, seq_length)
+  state, boundry = ring_net_input.inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length)
+ 
+  if FLAGS.gan:
+    z = tf.placeholder("float", [None, total_unroll_length, FLAGS.z_size])
+    return state, boundry, z
+  else:
+    return state, boundry
 
 def encoding(inputs):
   """Builds encoding part of ring net.
@@ -191,6 +192,7 @@ def compression_lstm(y, hidden_state=None):
   # this peice y_1 -> y_2
 
   y_i = y
+
   if hidden_state is not None:
     hidden_state_1_i = hidden_state[0] 
     hidden_state_2_i = hidden_state[1]
@@ -325,14 +327,9 @@ def encode_compress_decode(state, boundry, hidden_state=None, z=None):
 
   return x_2, hidden_state
 
-def train_unroll():
+def unroll(state, boundry, z=None):
 
   total_unroll_length = FLAGS.init_unroll_length + FLAGS.unroll_length 
-
-  if FLAGS.gan:
-    z = tf.placeholder("float", [None, total_unroll_length, FLAGS.z_size])
-
-  state, boundry = inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length)
   
   x_2_o = []
   if FLAGS.gan:
@@ -395,34 +392,9 @@ def train_unroll():
   x_2_o = tf.pack(x_2_o)
   x_2_o = tf.transpose(x_2_o, perm[1,0])
 
+  if FLAGS.gan
+    return x_2_o, gan_t_label, gan_g_label
+  else:
+    return x_2_o
 
-
-def loss_mse(true, generated):
-  loss = tf.nn.l2_loss(true - generated)
-  tf.scalar_summary('reconstruction_loss', loss)
-  return loss
-   
-def loss_gan_true(true_label, generated_label):
-  loss_d_true = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(true_label, tf.ones_like(true_label)))
-  loss_d_generated = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(generated_label, tf.ones_like(generated_label)))
-  loss_d = loss_d_true + loss_d_generated
-  tf.scalar_summary('error discriminator true', loss_d_true)
-  tf.scalar_summary('error discriminator generated', loss_d_generated)
-  tf.scalar_summary('error discriminator', loss_d)
-  return loss_d
- 
-def loss_gan_generated(generated_label):
-  error_g = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(generated_label, tf.ones_like(generated_label))) 
-  tf.scalar_summary('error generated', error_g)
-  return loss_g
-
-def loss(
-
-
-
-def train(total_loss, lr):
-   #train_op = tf.train.AdamOptimizer(lr, epsilon=1.0).minimize(total_loss)
-   optim = tf.train.AdamOptimizer(lr)
-   train_op = optim.minimize(total_loss)
-   return train_op
 

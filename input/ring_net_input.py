@@ -13,10 +13,6 @@ from tqdm import *
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_string('video_dir', 'goldfish_no_filter',
-                           """ dir containing the video files """)
-tf.app.flags.DEFINE_string('data_dir', '../data/',
-                           """ dir containing the video files """)
 tf.app.flags.DEFINE_integer('min_queue_examples', 300,
                            """ min examples to queue up""")
 

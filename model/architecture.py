@@ -4,254 +4,217 @@
 
 import tensorflow as tf
 import numpy as np
-import BasicConvLSTMCell
+import nn 
 
 FLAGS = tf.app.flags.FLAGS
 
-def _activation_summary(x):
-  """Helper to create summaries for activations.
-
-  Creates a summary that provides a histogram of activations.
-  Creates a summary that measure the sparsity of activations.
-
+def encoding(inputs, nonlinearity=nn.concat_elu, multi_resolution=True, filter_size=32, keep_p=1.0, gated=True,):
+  """Builds encoding part of ring net.
   Args:
-    x: Tensor
-  Returns:
-    nothing
-  """
-  tensor_name = x.op.name
-  tf.histogram_summary(tensor_name + '/activations', x)
-  tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
-
-def _variable(name, shape, stddev):
-  """Helper to create a Variable.
-
-  Args:
-    name: name of the variable
-    shape: list of ints
-    initializer: initializer for Variable
-
-  Returns:
-    Variable Tensor
-  """
-  var = tf.get_variable(name, shape, tf.truncated_normal_initializer(stddev=stddev))
-  return var
-
-def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
-  with tf.variable_scope('{0}_conv'.format(idx)) as scope:
-    input_channels = inputs.get_shape()[3]
-
-    weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01)
-    biases = _variable('biases',[num_features],stddev=0.01)
-
-    conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
-    conv_biased = tf.nn.bias_add(conv, biases)
-    if nonlinearity is not None:
-      conv_biased = nonlinearity(conv_biased)
-    return conv_biased
-
-def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
-  with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
-    input_channels = inputs.get_shape()[3]
-    
-    weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01)
-    biases = _variable('biases',[num_features],stddev=0.01)
-    batch_size = tf.shape(inputs)[0]
-    output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
-    conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
-    conv_biased = tf.nn.bias_add(conv, biases)
-    if nonlinearity is not None:
-      conv_biased = nonlinearity(conv_biased)
-    return conv_biased
-
-def fc_layer(inputs, hiddens, idx, flat = False, linear = False):
-  with tf.variable_scope('{0}_fc'.format(idx)) as scope:
-    input_shape = inputs.get_shape().as_list()
-    if flat:
-      dim = input_shape[1]*input_shape[2]*input_shape[3]
-      inputs_processed = tf.reshape(inputs, [-1,dim])
-    else:
-      dim = input_shape[1]
-      inputs_processed = inputs
-    
-    weights = _variable('weights', shape=[dim,hiddens],stddev=0.01)
-    biases = _variable_on_cpu('biases', [hiddens], tf.constant_initializer(0.01))
-    output_biased = tf.add(tf.matmul(inputs_processed,weights),biases,name=str(idx)+'_fc')
-    if nonlinearity is not None:
-      ouput_biased = nonlinearity(ouput_biased)
-    return ouput_biased
-
-def _phase_shift(I, r):
-  bsize, a, b, c = I.get_shape().as_list()
-  bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
-  X = tf.reshape(I, (bsize, a, b, r, r))
-  X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
-  X = tf.split(1, a, X)  # a, [bsize, b, r, r]
-  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
-  X = tf.split(1, b, X)  # b, [bsize, a*r, r]
-  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
-  return tf.reshape(X, (bsize, a*r, b*r, 1))
-
-def PS(X, r, depth):
-  Xc = tf.split(3, depth, X)
-  X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
-  return X
-
-def int_shape(x):
-  return list(map(int, x.get_shape()))
-
-def concat_elu(x):
-    """ like concatenated ReLU (http://arxiv.org/abs/1603.05201), but then with ELU """
-    axis = len(x.get_shape())-1
-    return tf.nn.elu(tf.concat(axis, [x, -x]))
-
-def set_nonlinearity(name):
-  if name == 'concat_elu':
-    return convat_elu
-  elif name == 'elu':
-    return tf.nn.elu
-  elif name == 'relu':
-    return tf.nn.relu
-  else:
-    raise('nonlinearity ' + name + ' is not supported')
-
-def nin(x, num_units, **kwargs):
-    """ a network in network layer (1x1 CONV) """
-    s = int_shape(x)
-    x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
-    x = dense(x, num_units, **kwargs)
-    return tf.reshape(x, s[:-1]+[num_units])
-
-def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
-  orig_x = x
-  x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
-  if a is not None
-    x_1 += nin(nonlinearity(a), filter_size)
-  x_1 = nonlinearity(x_1)
-  if keep_p < 1.0:
-    x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
-  if not gated:
-    x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
-  else:
-    x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
-    x_2_1, x_2_2 = tf.split(3,2,x_2)
-    x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
-
-  if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
-    assert(int(orig_x.get_shape()[2]) == 2*int(x_2.get_shape()[2]), "res net block only supports stirde 2")
-    orig_x = tf.nn.ave_pooling(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
-
-  # pad it
-  out_filter = filter_size
-  in_filter = int(orig_x.get_shape()[3])
-  orig_x = tf.pad(
-      orig_x, [[0, 0], [0, 0], [0, 0],
-      [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
-
-  return orig_x + x_2
-
-def res_block_lstm(x, hidden_state_1=None, hidden_state_2=None, keep_p=1.0, name="resnet_lstm"):
-
-  orig_x = x
-  filter_size = orig_x.get_shape()
-
-  with tf.variable_scope(name + "_conv_LSTM_1", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-    lstm_cell_1 = BasicConvLSTMCell.BasicConvLSTMCell([int(x.get_shape()[1]),int(x.get_shape()[2])], [3,3], filter_size)
-    if hidden_state_1 == None:
-      batch_size = x.get_shape()[0]
-      hidden_state_1 = lstm_cell_1.zero_state(batch_size, tf.float32) 
-
-  x_1, hidden_state_1 = lstm_cell_1(x, hidden_state_1)
-    
-  if keep_p < 1.0:
-    x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
-
-  with tf.variable_scope(name + "_conv_LSTM_2", initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-    lstm_cell_2 = BasicConvLSTMCell.BasicConvLSTMCell([int(x_1.get_shape()[1]),int(x_1.get_shape()[2])], [3,3], filter_size)
-    if hidden_state_2 == None:
-      batch_size = x_1.get_shape()[0]
-      hidden_state_2 = lstm_cell_2.zero_state(batch_size, tf.float32) 
-
-  x_2, hidden_state_2 = lstm_cell_2(x_1, hidden_state_2)
-
-  return orig_x + x_2, hidden_state_1, hidden_state_2
-
-
-# GAN Stuff
-def discriminator_32x32x1(x, hidden_state, keep_prob):
-  """Builds discriminator.
-  Args:
-    inputs: i
+    inputs: input to encoder
+    keep_prob: dropout layer
   """
   #--------- Making the net -----------
-  # x_2 -> hidden_state
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice x_1 -> y_1
+  x_i = inputs
 
-  # split x
-  num_of_d = 8
-  x_split = tf.split(0,num_of_d, x)
-  label = []
+  if FLAGS.multi_resolution:
+    skip_connections = []
+  for i in xrange(FLAGS.nr_downsamples):
 
-  for i in xrange(num_of_d):
-    # conv1
-    conv1 = _conv_layer(x_split[i], 5, 2, 32, "discriminator_1_" + str(i))
-    # conv2
-    conv2 = _conv_layer(conv1, 5, 2, 64, "discriminator_2_" + str(i))
-    
-    y_1 = _fc_layer(conv2, 128, "discriminator_5_" + str(i), True)
-    y_1 = tf.nn.dropout(y_1, keep_prob)
-      #with tf.device('/gpu:0'):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(128, forget_bias=1.0)
-      if hidden_state == None:
-        batch_size = y_1.get_shape()[0]
-        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
-  
-      y_2, new_state = lstm_cell(y_1, hidden_state)
-  
-    label.append(_fc_layer(y_2, 1, "discriminator_6_" + str(i), False, True))
+    filter_size = FLAGS.filter_size*(2^(i))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
 
-  label = tf.pack(label)
-  
-  return label, new_state
+    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_0") 
 
-def discriminator_401x101x2(x, hidden_state, keep_prob):
-  """Builds discriminator.
+
+    for j in xrange(FLAGS.nr_residual - 1):
+      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1))
+
+    if FLAGS.mulit_resolution:
+      skip_connections.append(x_i)
+
+  if FLAGS.multi_resolution:
+    return skip_connections
+  else:
+    return x_i
+
+def compression(y):
+  """Builds compressed dynamical system part of the net.
   Args:
-    inputs: i
+    inputs: input to system
+    keep_prob: dropout layer
   """
   #--------- Making the net -----------
-  # x_2 -> hidden_state
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_1 -> y_2
 
-  # split x
-  num_of_d = 2
-  x_split = tf.split(0,num_of_d, x)
-  label = []
+  y_i = y
 
-  for i in xrange(num_of_d):
-    # conv1
-    conv1 = _conv_layer(x, 5, 2, 64, "discriminator_1_" + str(i))
-    # conv2
-    conv2 = _conv_layer(conv1, 3, 2, 128, "discriminator_2_" + str(i))
-    # conv3
-    conv3 = _conv_layer(conv2, 3, 2, 256, "discriminator_3_" + str(i))
-    # conv4
-    conv4 = _conv_layer(conv3, 3, 2, 128, "discriminator_4_" + str(i))
-  
-    y_1 = _fc_layer(conv4, 256, "discriminator_5_" + str(i), True)
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  if FLAGS.multi_resolution:
+    y_i_store = []
+    for i in xrange(FLAGS.nr_downsamples):
+      y_i_j = y_i[i]
+      for j in xrange(FLAGS.nr_residual_compression):
+        y_i_j = res_block(y_i_j, filter_size=int(y_i_j.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_" + str(j))
+      y_i_store.append(y_i_j)
+    y_i = y_i_store 
+
+  else:
+    for i in xrange(FLAGS.nr_residual_compression):
+      y_i = res_block(y_i, filter_size=int(y_i.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="_resnet_" + str(i))
+
+  return y_i
+
+# not functional yet!!!
+def compression_lstm(y, hidden_state=None):
+  """Builds compressed dynamical system part of the net.
+  Args:
+    inputs: input to system
+    keep_prob: dropout layer
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_1 -> y_2
+
+  y_i = y
+  if hidden_state is not None:
+    hidden_state_1_i = hidden_state[0] 
+    hidden_state_2_i = hidden_state[1]
+
+  hidden_state_1_i_new = []
+  hidden_state_2_i_new = []
+
+  if FLAGS.multi_resolution:
+    for i in xrange(FLAGS.nr_downsamples):
+      hidden_state_1_i_j_new = []
+      hidden_state_2_i_j_new = []
+      y_i_new = []
+      for j in xrange(FLAGS.nr_residual_compression):
+        if hidden is not None:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i][j], hidden_state_2_i[i][j], FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        else:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        hidden_state_1_i_j_new.append(hidden_state_1_store)
+        hidden_state_2_i_j_new.append(hidden_state_2_store)
+      hidden_state_1_i_new.append(hidden_state_1_i_j_new) 
+      hidden_state_2_i_new.append(hidden_state_2_i_j_new) 
+
+  else:
+    for i in xrange(FLAGS.nr_residual_compression):
+      if hidden is not None:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i], hidden_state_2_i[i], FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      else:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      hidden_state_1_i_new.append(hidden_state_1_store)
+      hidden_state_2_i_new.append(hidden_state_2_store)
+
+  hidden = [hidden_state_1_i_new, hidden_state_2_i_new]
+
+  return y_i, hidden 
+
+def decoding(y):
+  """Builds decoding part of ring net.
+  Args:
+    inputs: input to decoder
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_2 -> x_2
+  if FLAGS.multi_resolution:
+    y_i = y[-1]
+  else:
+    y_i = y
  
-    with tf.variable_scope("discriminator_LSTM_" + str(i), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-      #with tf.device('/gpu:0'):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(256, forget_bias=1.0)
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  for i in xrange(FLAGS.nr_downsamples-1):
+    filter_size = FLAGS.filter_size*(2^(FLAGS.nr_downsamples-i-2))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+
+    if i != 0 and FLAGS.multi_resolution_skip:
+      y_i = res_block(y_i, a=y[-1-i], filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
+    else:
+      y_i = res_block(y_i, filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
+    y_i = PS(y_i, 2, filter_size)
+
+
+    for j in xrange(FLAGS.nr_residual - 1):
+      y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_" + str(i) + "_nr_residual_" + str(j+1))
+
+  return y_i
+
+def add_z(y, z):
+
+  if FLAGS.multi_resolution:
+    y_new = []
+    for i in xrange(FLAGS.nr_downsamples):
+      y_shape = int_shape(y[i]) 
+      z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+      z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+      z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+      y_new.append(y[i] + z)
+  else:
+    y_shape = int_shape(y]) 
+    z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+    z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+    z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+    y_new = y + z
+
+  return y_new
+
+def discriminator(output, hidden_state=None):
+
+  x_i = output
+
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  label = []
+
+  for split in xrange(FLAGS.nr_discriminators):
+    for i in xrange(FLAGS.nr_downsamples):
+      filter_size = FLAGS.filter_size_discriminator*(2^(i))
+      print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
+      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
+      for j in xrange(FLAGS.nr_residual - 1):
+        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
+  
+    with tf.variable_scope("discriminator_LSTM_" + str(split), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size_discriminator, forget_bias=1.0)
       if hidden_state == None:
-        batch_size = y_1.get_shape()[0]
+        batch_size = x_i.get_shape()[0]
         hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+  
+      x_i, new_state = lstm_cell(x_i, hidden_state)
 
-      y_2, new_state = lstm_cell(y_1, hidden_state)
-
-    label.append(_fc_layer(y_2, 1, "discriminator_6_" + str(i), False, True))
+      x_i = fc_layer(x_i, 1, "discriminator_fc_" + str(split), False, True)
+  
+      label.append(x_i)
 
   label = tf.pack(label)
 
-  return label, new_state
+  return label
+
+def encode_compress_decode(state, boundry, hidden_state=None, z=None):
+ 
+  state = add_boundry(state, boundry)
+ 
+  y_1 = encoding(state)
+  if FLAGS.lstm:
+    y_2, hidden_state = lstm_compression(y_1, hidden_state)
+  else:
+    y_2 = compression(y_1)
+  if FLAGS.gan:
+    y_2 = add_z(y_2, z)
+  x_2 = decoding(y_2) 
+
+  state = apply_boundry(state, boundry)
+
+  return x_2, hidden_state
+
 
 
 
