@@ -4,7 +4,7 @@ This repository is a perliminary looks at compressing physics simulations onto n
 This Repository is currently being expanded with more complex architectures, better datasets (including electromagnetic) and generative adversarial training in the gans branch.
 
 ## Diffusion
-Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion.
+Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion. No speed ups are seen because diffusion extremely simple. This is just to test architectures.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/N57BvSspLtU/0.jpg)](https://www.youtube.com/watch?v=N57BvSspLtU)
 
