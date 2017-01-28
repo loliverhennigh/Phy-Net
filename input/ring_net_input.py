@@ -15,6 +15,8 @@ FLAGS = tf.app.flags.FLAGS
 # Constants describing the training process.
 tf.app.flags.DEFINE_integer('min_queue_examples', 300,
                            """ min examples to queue up""")
+tf.app.flags.DEFINE_string('data_dir', '/data',
+                           """ base dir for all data""")
 
 def read_data(filename_queue, seq_length, shape, num_frames, color, raw_type='uint8'):
   """ reads data from tfrecord files.
@@ -65,13 +67,11 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
   boundry = tf.decode_raw(features['boundry'], tf.float32)
 
   # reshape
-  flow = tf.reshape(flow, [seq_length, shape[0], shape[1], num_frames])
+  flow = tf.reshape(flow, [seq_length] + shape + [num_frames])
   flow = tf.to_float(flow)
-  boundry = tf.reshape(boundry, [1, shape[0], shape[1], 2]) 
+  boundry = tf.reshape(boundry, [1] + shape + [1]) 
   boundry = tf.to_float(boundry)
-  boundry = tf.concat(0, [boundry]*seq_length)
-  print(boundry.get_shape())
-  #Display the training images in the visualizer.
+
   return flow, boundry
 
 def _generate_image_label_batch(image, batch_size):
@@ -253,7 +253,7 @@ def diffusion_inputs(batch_size, seq_length):
 
   return frames
 
-def fluid_inputs(batch_size, seq_length):
+def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
   Args:
     batch_size: Number of images per batch.
@@ -262,29 +262,34 @@ def fluid_inputs(batch_size, seq_length):
     images: Images. 4D tensor. Possible of size [batch_size, 28x28x4].
   """
   # num tf records
-  if FLAGS.train == True:
+  if train == True:
     run_num = 50
   else:
     run_num = 1
 
-  shape=(401,101)
-  num_frames = 2
+  # make dir name based on shape of simulation 
+  dir_name = 'fluid_flow_' + shape[0] + 'x' + shape[1]
+  if len(shape) > 2:
+    dir_name = dir_name + 'x' + shape[2]
 
-  dir_name = 'fluid_flow'
-  if not FLAGS.train:
+  if not train:
     dir_name = dir_name + '_test'
  
   fluid_createTFRecords.generate_tfrecords(seq_length, run_num, shape, num_frames, dir_name)
 
-  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  tfrecord_filename = glb(FLAGS.data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
   flow, boundry = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
-  #
-  tf.image_summary('x', flow[:,:,:,0:1])
-  tf.image_summary('y', flow[:,:,:,1:2])
-  tf.image_summary('boundry', boundry[:,:,:,0:1])
+
+  # dispay images
+  if len(shape) == 2:
+    tf.image_summary('x', flow[:,:,:,0:1])
+    tf.image_summary('y', flow[:,:,:,1:2])
+    tf.image_summary('density', flow[:,:,:,2:3])
+    tf.image_summary('boundry', boundry[:,:,:,0:1])
+  elif len:
 
   #image = tf.div(image, 255.0) 
 

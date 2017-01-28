@@ -21,25 +21,25 @@ FLAGS = tf.app.flags.FLAGS
 # Constants describing the training process.
 
 ################# system params
-tf.app.flags.DEFINE_string('system', 'diffusion',
+tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
-tf.app.flags.DEFINE_string('representation', 'lattice',
-                           """ train on lattice state or possibly velocity or magnetic/electric fields """)
-tf.app.flags.DEFINE_integer('lattice_size', 9,
+tf.app.flags.DEFINE_integer('lattice_size', 3,
                            """ size of lattice """)
+tf.app.flags.DEFINE_integer('x_dim', 256,
+                           """ x dimension of lattice """)
+tf.app.flags.DEFINE_integer('y_dim', 256,
+                           """ y dimension of lattice """)
+tf.app.flags.DEFINE_integer('z_dim', 256,
+                           """ z dimension of lattice """)
 tf.app.flags.DEFINE_string('dimension', '2d',
                            """ dimension of simulation (2d or 3d) """)
 
 ################# model params
 ## resnet params
-tf.app.flags.DEFINE_integer('nr_residual', 1,
+tf.app.flags.DEFINE_integer('nr_residual', 2,
                            """ number of residual blocks before down sizing """)
 tf.app.flags.DEFINE_integer('nr_downsamples', 3,
                            """ numper of downsamples """)
-tf.app.flags.DEFINE_bool('multi_resolution', False,
-                           """ multi resolutions """)
-tf.app.flags.DEFINE_bool('multi_resolution_skip', False,
-                           """ skip connections over resolutions """)
 tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
 tf.app.flags.DEFINE_float('keep_p', 1.0,
@@ -48,14 +48,13 @@ tf.app.flags.DEFINE_bool('gated', False,
                            """ gated res blocks """)
 tf.app.flags.DEFINE_integer('filter_size', 16,
                            """ filter size for first res block. the rest of the filters are 2x every downsample """)
-## compression train
-tf.app.flags.DEFINE_bool('compression', False,
-                           """ train in compression style """)
 ## lstm params
-tf.app.flags.DEFINE_bool('lstm', True,
+tf.app.flags.DEFINE_bool('lstm', False,
                            """ lstm or non recurrent""")
-tf.app.flags.DEFINE_integer('nr_residual_compression', 1,
+tf.app.flags.DEFINE_integer('nr_residual_compression', 2,
                            """ number of residual compression layers """)
+tf.app.flags.DEFINE_integer('filter_size_compression', 64,
+                           """ filter size for compression piece """)
 ## gan params
 tf.app.flags.DEFINE_bool('gan', False,
                            """ use gan training """)

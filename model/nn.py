@@ -2,9 +2,9 @@
 """functions used to construct different architectures  
 """
 
+
 import tensorflow as tf
 import numpy as np
-import BasicConvLSTMCell
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -18,9 +18,11 @@ def concat_elu(x):
 
 def set_nonlinearity(name):
   if name == 'concat_elu':
-    return convat_elu
+    return concat_elu
   elif name == 'elu':
     return tf.nn.elu
+  elif name == 'concat_relu':
+    return tf.nn.crelu
   elif name == 'relu':
     return tf.nn.relu
   else:
@@ -28,10 +30,8 @@ def set_nonlinearity(name):
 
 def _activation_summary(x):
   """Helper to create summaries for activations.
-
   Creates a summary that provides a histogram of activations.
   Creates a summary that measure the sparsity of activations.
-
   Args:
     x: Tensor
   Returns:
@@ -41,26 +41,25 @@ def _activation_summary(x):
   tf.histogram_summary(tensor_name + '/activations', x)
   tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
-def _variable(name, shape, stddev):
+def _variable(name, shape, initializer):
   """Helper to create a Variable.
-
   Args:
     name: name of the variable
     shape: list of ints
     initializer: initializer for Variable
-
   Returns:
     Variable Tensor
   """
-  var = tf.get_variable(name, shape, tf.truncated_normal_initializer(stddev=stddev))
+  # getting rid of stddev for xavier ## testing this for faster convergence
+  var = tf.get_variable(name, shape, initializer=initializer)
   return var
 
 def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_conv'.format(idx)) as scope:
-    input_channels = inputs.get_shape()[3]
+    input_channels = int(inputs.get_shape()[3])
 
-    weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],stddev=0.01)
-    biases = _variable('biases',[num_features],stddev=0.01)
+    weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
     conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
     conv_biased = tf.nn.bias_add(conv, biases)
@@ -70,19 +69,24 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
 
 def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
-    input_channels = inputs.get_shape()[3]
+    input_channels = int(inputs.get_shape()[3])
     
-    weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels], stddev=0.01)
-    biases = _variable('biases',[num_features],stddev=0.01)
+    weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
     batch_size = tf.shape(inputs)[0]
     output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
     conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
     conv_biased = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
       conv_biased = nonlinearity(conv_biased)
+
+    #reshape
+    shape = int_shape(inputs)
+    conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
+
     return conv_biased
 
-def fc_layer(inputs, hiddens, idx, flat = False, linear = False):
+def fc_layer(inputs, hiddens, idx, nonlinearity=None, flat = False):
   with tf.variable_scope('{0}_fc'.format(idx)) as scope:
     input_shape = inputs.get_shape().as_list()
     if flat:
@@ -92,18 +96,18 @@ def fc_layer(inputs, hiddens, idx, flat = False, linear = False):
       dim = input_shape[1]
       inputs_processed = inputs
     
-    weights = _variable('weights', shape=[dim,hiddens],stddev=0.01)
-    biases = _variable_on_cpu('biases', [hiddens], tf.constant_initializer(0.01))
+    weights = _variable('weights', shape=[dim,hiddens],initializer=tf.contrib.layers.xavier_initializer())
+    biases = _variable('biases', [hiddens], initializer=tf.contrib.layers.xavier_initializer())
     output_biased = tf.add(tf.matmul(inputs_processed,weights),biases,name=str(idx)+'_fc')
     if nonlinearity is not None:
-      ouput_biased = nonlinearity(ouput_biased)
-    return ouput_biased
+      output_biased = nonlinearity(ouput_biased)
+    return output_biased
 
-def nin(x, num_units, **kwargs):
+def nin(x, num_units, idx):
     """ a network in network layer (1x1 CONV) """
     s = int_shape(x)
     x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
-    x = dense(x, num_units, **kwargs)
+    x = fc_layer(x, num_units, idx)
     return tf.reshape(x, s[:-1]+[num_units])
 
 def _phase_shift(I, r):
@@ -124,9 +128,15 @@ def PS(X, r, depth):
 
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
   orig_x = x
+  print(orig_x.get_shape())
   x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
-  if a is not None
-    x_1 += nin(nonlinearity(a), filter_size)
+  if a is not None:
+    shape_a = int_shape(a) 
+    shape_x_1 = int_shape(x_1)
+    a = tf.pad(
+      a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]],
+      [0, 0]])
+    x_1 += nin(nonlinearity(a), filter_size, name + '_nin')
   x_1 = nonlinearity(x_1)
   if keep_p < 1.0:
     x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
@@ -139,14 +149,15 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
 
   if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
     assert(int(orig_x.get_shape()[2]) == 2*int(x_2.get_shape()[2]), "res net block only supports stirde 2")
-    orig_x = tf.nn.ave_pooling(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
+    orig_x = tf.nn.avg_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
 
   # pad it
   out_filter = filter_size
   in_filter = int(orig_x.get_shape()[3])
-  orig_x = tf.pad(
-      orig_x, [[0, 0], [0, 0], [0, 0],
-      [(out_filter-in_filter)//2, (out_filter-in_filter)//2]])
+  if out_filter != in_filter:
+    orig_x = tf.pad(
+        orig_x, [[0, 0], [0, 0], [0, 0],
+        [(out_filter-in_filter), 0]])
 
   return orig_x + x_2
 
@@ -175,6 +186,4 @@ def res_block_lstm(x, hidden_state_1=None, hidden_state_2=None, keep_p=1.0, name
   x_2, hidden_state_2 = lstm_cell_2(x_1, hidden_state_2)
 
   return orig_x + x_2, hidden_state_1, hidden_state_2
-
-
 
