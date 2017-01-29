@@ -263,12 +263,12 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train == True:
-    run_num = 50
+    run_num = 20
   else:
     run_num = 1
 
   # make dir name based on shape of simulation 
-  dir_name = 'fluid_flow_' + shape[0] + 'x' + shape[1]
+  dir_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1])
   if len(shape) > 2:
     dir_name = dir_name + 'x' + shape[2]
 
@@ -289,9 +289,12 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
     tf.image_summary('y', flow[:,:,:,1:2])
     tf.image_summary('density', flow[:,:,:,2:3])
     tf.image_summary('boundry', boundry[:,:,:,0:1])
-  elif len:
-
-  #image = tf.div(image, 255.0) 
+  elif len(shape) == 3:
+    tf.image_summary('x', flow[:,:,:,shape[2]/2,0:1])
+    tf.image_summary('y', flow[:,shape[0]/2,:,:,1:2])
+    tf.image_summary('z', flow[:,:,shape[1]/2,:,2:3])
+    tf.image_summary('density', flow[:,:,:,shape[2]/2,3:4])
+    tf.image_summary('boundry', boundry[:,:,:,shape[2]/2,0:1])
 
   flows, boundrys = _generate_image_label_batch_fluid(flow, boundry, batch_size)
 

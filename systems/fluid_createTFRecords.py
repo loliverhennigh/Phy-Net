@@ -34,18 +34,18 @@ def load_flow(filename, shape, frame_num):
 
   # process velocity field
   flow_state_vel = np.array(stream_flow['Velocity_0'][:])
-  flow_state_vel = flow_state_vel.reshape(shape, 3)
-  if frame_num = 3: # if 2D then kill the z velocity
+  flow_state_vel = flow_state_vel.reshape(shape + [3])
+  if frame_num == 3: # if 2D then kill the z velocity
     flow_state = flow_state[:,:,0:2]
 
   # process density field
   flow_state_den = np.array(stream_flow['Density_0'][:])
-  flow_state_den = flow_state_den.reshape(shape, 1)
+  flow_state_den = flow_state_den.reshape(shape + [1])
 
   # concate state
   flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
 
-  return fluid_state
+  return flow_state
 
 def load_boundry(filename, shape, frame_num):
   stream_boundry = h5py.File(filename, 'r')
@@ -58,7 +58,6 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
   if not tf.gfile.Exists(FLAGS.data_dir + '/tfrecords/' + dir_name):
     tf.gfile.MakeDirs(FLAGS.data_dir + '/tfrecords/' + dir_name)
 
-  print('generating records')
   for run in tqdm(xrange(num_runs)):
     filename = FLAGS.data_dir + '/tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
   
@@ -81,7 +80,6 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       # save tf records
       ind_dat = 0
       while ind_dat < (num_samples - seq_length - 1):
-        print("read!")
         seq_frames = np.zeros([seq_length] + shape + [frame_num])
         for i in xrange(seq_length):
           flow_state = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_' + str(ind_dat).zfill(4) + '.h5', shape, frame_num)

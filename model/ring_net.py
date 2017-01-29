@@ -11,9 +11,7 @@ Summary of available functions:
 
 import tensorflow as tf
 import numpy as np
-import architecture
-import unwrap_helper
-import loss_helper
+from nn import *
 import input.ring_net_input as ring_net_input
 
 FLAGS = tf.app.flags.FLAGS
@@ -23,16 +21,10 @@ FLAGS = tf.app.flags.FLAGS
 ################# system params
 tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
-tf.app.flags.DEFINE_integer('lattice_size', 3,
+tf.app.flags.DEFINE_integer('lattice_size', 4,
                            """ size of lattice """)
-tf.app.flags.DEFINE_integer('x_dim', 256,
-                           """ x dimension of lattice """)
-tf.app.flags.DEFINE_integer('y_dim', 256,
-                           """ y dimension of lattice """)
-tf.app.flags.DEFINE_integer('z_dim', 256,
-                           """ z dimension of lattice """)
-tf.app.flags.DEFINE_string('dimension', '2d',
-                           """ dimension of simulation (2d or 3d) """)
+tf.app.flags.DEFINE_string('dimensions', '256x256',
+                           """ dimension of simulation with x between value """)
 
 ################# model params
 ## resnet params
@@ -40,7 +32,7 @@ tf.app.flags.DEFINE_integer('nr_residual', 2,
                            """ number of residual blocks before down sizing """)
 tf.app.flags.DEFINE_integer('nr_downsamples', 3,
                            """ numper of downsamples """)
-tf.app.flags.DEFINE_sting('nonlinearity', "concat_elu",
+tf.app.flags.DEFINE_string('nonlinearity', "concat_elu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
 tf.app.flags.DEFINE_float('keep_p', 1.0,
                            """ keep probability for res blocks """)
@@ -70,13 +62,13 @@ tf.app.flags.DEFINE_float('keep_p_discriminator', 1.0,
                            """ keep probability for res blocks """)
 tf.app.flags.DEFINE_integer('filter_size_discriminator', 32,
                            """ filter size for first res block of discriminator """)
- tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
+tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
                            """ size of lstm cell in discriminator """)
  
 
 
 ################# optimize params
-tf.app.flags.DEFINE_sting('optimizer', "adam",
+tf.app.flags.DEFINE_string('optimizer', "adam",
                            """ what optimizer to use """)
 tf.app.flags.DEFINE_float('reconstruction_rl', 1e-5,
                            """ learning rete for reconstruction """)
@@ -88,7 +80,7 @@ tf.app.flags.DEFINE_float('lambda_divergence', 0.2,
                            """ weight of divergence error """)
 
 ################# train params
-tf.app.flags.DEFINE_integer('init_unroll_length', 5,
+tf.app.flags.DEFINE_integer('init_unroll_length', 0,
                            """ unroll length to initialize network """)
 tf.app.flags.DEFINE_integer('unroll_length', 5,
                            """ unroll length """)
@@ -108,7 +100,11 @@ def inputs():
   Return:
     x: input vector, may be filled 
   """
-  state, boundry = ring_net_input.inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length)
+  shape = FLAGS.dimensions.split('x')
+  shape = map(int, shape)
+  frame_num = FLAGS.lattice_size # 3 for 2D and 4 for 3D (this will change with mag stuff)
+  if FLAGS.system == "fluid_flow":
+    state, boundry = ring_net_input.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
  
   if FLAGS.gan:
     z = tf.placeholder("float", [None, total_unroll_length, FLAGS.z_size])
@@ -116,7 +112,7 @@ def inputs():
   else:
     return state, boundry
 
-def encoding(inputs):
+def encoding(inputs, name='', boundry=False):
   """Builds encoding part of ring net.
   Args:
     inputs: input to encoder
@@ -129,26 +125,23 @@ def encoding(inputs):
 
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
-  if FLAGS.multi_resolution:
-    skip_connections = []
   for i in xrange(FLAGS.nr_downsamples):
 
-    filter_size = FLAGS.filter_size*(2^(i))
+    filter_size = FLAGS.filter_size*(pow(2,i))
     print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
 
-    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_0") 
+    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0") 
 
 
     for j in xrange(FLAGS.nr_residual - 1):
-      x_i = res_block(x_i, filter_size=FLAGS.filter_size*(2^(i)), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1))
+      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1))
 
-    if FLAGS.mulit_resolution:
-      skip_connections.append(x_i)
-
-  if FLAGS.multi_resolution:
-    return skip_connections
+  if boundry:
+    x_i = res_block(x_i, filter_size=FLAGS.filter_size_compression*2, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_last_before_compression")
   else:
-    return x_i
+    x_i = res_block(x_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_last_before_compression")
+
+  return x_i
 
 def compression(y):
   """Builds compressed dynamical system part of the net.
@@ -164,18 +157,8 @@ def compression(y):
 
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
-  if FLAGS.multi_resolution:
-    y_i_store = []
-    for i in xrange(FLAGS.nr_downsamples):
-      y_i_j = y_i[i]
-      for j in xrange(FLAGS.nr_residual_compression):
-        y_i_j = res_block(y_i_j, filter_size=int(y_i_j.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_" + str(j))
-      y_i_store.append(y_i_j)
-    y_i = y_i_store 
-
-  else:
-    for i in xrange(FLAGS.nr_residual_compression):
-      y_i = res_block(y_i, filter_size=int(y_i.get_shape()[3]), nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, name="_resnet_" + str(i))
+  for i in xrange(FLAGS.nr_residual_compression):
+    y_i = res_block(y_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_compression_" + str(i))
 
   return y_i
 
@@ -235,45 +218,28 @@ def decoding(y):
   #--------- Making the net -----------
   # x_1 -> y_1 -> y_2 -> x_2
   # this peice y_2 -> x_2
-  if FLAGS.multi_resolution:
-    y_i = y[-1]
-  else:
-    y_i = y
+  y_i = y
  
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
   for i in xrange(FLAGS.nr_downsamples-1):
-    filter_size = FLAGS.filter_size*(2^(FLAGS.nr_downsamples-i-2))
-    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    filter_size = FLAGS.filter_size*pow(2,FLAGS.nr_downsamples-i-2)
+    print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    y_i = transpose_conv_layer(y_i, 3, 2, filter_size, "up_conv_" + str(i))
 
-    if i != 0 and FLAGS.multi_resolution_skip:
-      y_i = res_block(y_i, a=y[-1-i], filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
-    else:
-      y_i = res_block(y_i, filter_size=4*filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_0")
-    y_i = PS(y_i, 2, filter_size)
+    for j in xrange(FLAGS.nr_residual):
+      y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_" + str(j+1))
 
-
-    for j in xrange(FLAGS.nr_residual - 1):
-      y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, FLAGS.gated, name="resnet_" + str(i) + "_nr_residual_" + str(j+1))
+  y_i = transpose_conv_layer(y_i, 3, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
 
   return y_i
 
 def add_z(y, z):
-
-  if FLAGS.multi_resolution:
-    y_new = []
-    for i in xrange(FLAGS.nr_downsamples):
-      y_shape = int_shape(y[i]) 
-      z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
-      z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
-      z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
-      y_new.append(y[i] + z)
-  else:
-    y_shape = int_shape(y]) 
-    z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
-    z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
-    z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
-    y_new = y + z
+  y_shape = int_shape(y) 
+  z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+  z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+  z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+  y_new = y + z
 
   return y_new
 
@@ -287,11 +253,11 @@ def discriminator(output, hidden_state=None):
 
   for split in xrange(FLAGS.nr_discriminators):
     for i in xrange(FLAGS.nr_downsamples):
-      filter_size = FLAGS.filter_size_discriminator*(2^(i))
+      filter_size = FLAGS.filter_size_discriminator*pow(2,i)
       print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
-      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
+      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
       for j in xrange(FLAGS.nr_residual - 1):
-        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
+        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
   
     with tf.variable_scope("discriminator_LSTM_" + str(split), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
       lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size_discriminator, forget_bias=1.0)
@@ -311,9 +277,9 @@ def discriminator(output, hidden_state=None):
 
 def encode_compress_decode(state, boundry, hidden_state=None, z=None):
  
-  state = add_boundry(state, boundry)
- 
   y_1 = encoding(state)
+  small_boundry = encoding(boundry, name='boundry')
+  y_1 = small_boundry * y_1
   if FLAGS.lstm:
     y_2, hidden_state = lstm_compression(y_1, hidden_state)
   else:
@@ -322,14 +288,47 @@ def encode_compress_decode(state, boundry, hidden_state=None, z=None):
     y_2 = add_z(y_2, z)
   x_2 = decoding(y_2) 
 
-  state = apply_boundry(state, boundry)
-
   return x_2, hidden_state
 
 def unroll(state, boundry, z=None):
 
   total_unroll_length = FLAGS.init_unroll_length + FLAGS.unroll_length 
-  
+ 
+  if FLAGS.lstm:
+    # need to implement
+    exit()
+  else:
+    # store all out
+    x_out = []
+    # encode
+    y_1 = encoding(state[:,0])
+    small_boundry = encoding(boundry[:,0], name='boundry_', boundry=True)
+    # apply boundry
+    [small_boundry_mul, small_boundry_add] = tf.split(len(small_boundry.get_shape())-1, 2, small_boundry)
+    y_1 = (small_boundry_mul * y_1) + small_boundry_add
+    # add z if gan training
+    if FLAGS.gan:
+      y_1 = add_z(y_1, z)
+    # unroll all
+    for i in xrange(FLAGS.unroll_length):
+      # set reuse to true
+      if i > 0:
+        tf.get_variable_scope().reuse_variables()
+      # decode and add to list
+      x_2 = decoding(y_1)
+      x_out.append(x_2)
+      # compression
+      y_1 = compression(y_1)
+      # boundry
+      y_1 = (small_boundry_mul * y_1) + small_boundry_add
+      # add z if gan training
+      if FLAGS.gan:
+        y_1 = add_z(y_1, z)
+
+  x_out = tf.pack(x_out)
+  x_out = tf.transpose(x_out, perm=[1,0,2,3,4])
+  return x_out
+  """
   x_2_o = []
   if FLAGS.gan:
     x_2, hidden_state = encode_compress_decode(state[:,0], z=z[:,0], hidden_state=None)
@@ -337,8 +336,8 @@ def unroll(state, boundry, z=None):
   else: 
     x_2, hidden_state = encode_compress_decode(state[:,0], hidden_state=None)
 
-  tf.get_variable_scope().reuse_variable()
 
+  tf.get_variable_scope().reuse_variable()
   if FLAGS.gan:
     gan_g_label, gan_g_hidden_state = ring_net.discriminator(state[:,0], None)
 
@@ -395,5 +394,5 @@ def unroll(state, boundry, z=None):
     return x_2_o, gan_t_label, gan_g_label
   else:
     return x_2_o
-
+  """
 
