@@ -263,7 +263,7 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train == True:
-    run_num = 20
+    run_num = 15
   else:
     run_num = 1
 
@@ -282,6 +282,8 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
   flow, boundry = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
+
+  print(flow.get_shape())
 
   # dispay images
   if len(shape) == 2:

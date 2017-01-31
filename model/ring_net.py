@@ -21,7 +21,7 @@ FLAGS = tf.app.flags.FLAGS
 ################# system params
 tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
-tf.app.flags.DEFINE_integer('lattice_size', 4,
+tf.app.flags.DEFINE_integer('lattice_size', 3,
                            """ size of lattice """)
 tf.app.flags.DEFINE_string('dimensions', '256x256',
                            """ dimension of simulation with x between value """)
@@ -43,7 +43,7 @@ tf.app.flags.DEFINE_integer('filter_size', 16,
 ## lstm params
 tf.app.flags.DEFINE_bool('lstm', False,
                            """ lstm or non recurrent""")
-tf.app.flags.DEFINE_integer('nr_residual_compression', 2,
+tf.app.flags.DEFINE_integer('nr_residual_compression', 4,
                            """ number of residual compression layers """)
 tf.app.flags.DEFINE_integer('filter_size_compression', 64,
                            """ filter size for compression piece """)
@@ -158,6 +158,7 @@ def compression(y):
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
   for i in xrange(FLAGS.nr_residual_compression):
+    print("resnet compression " + str(i))
     y_i = res_block(y_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_compression_" + str(i))
 
   return y_i
@@ -317,6 +318,10 @@ def unroll(state, boundry, z=None):
       # decode and add to list
       x_2 = decoding(y_1)
       x_out.append(x_2)
+      # display
+      tf.image_summary('generated_x_' + str(i), x_2[:,:,:,0:1])
+      tf.image_summary('generated_y_' + str(i), x_2[:,:,:,1:2])
+      tf.image_summary('generated_density_' + str(i), x_2[:,:,:,2:3])
       # compression
       y_1 = compression(y_1)
       # boundry
@@ -328,6 +333,31 @@ def unroll(state, boundry, z=None):
   x_out = tf.pack(x_out)
   x_out = tf.transpose(x_out, perm=[1,0,2,3,4])
   return x_out
+
+def continual_unroll(state, boundry, z=None):
+
+  if FLAGS.lstm:
+    # need to implement
+    exit()
+  else:
+    # store all out
+    y_1 = encoding(state[:,0])
+    small_boundry = encoding(boundry[:,0], name='boundry_', boundry=True)
+    # apply boundry
+    [small_boundry_mul, small_boundry_add] = tf.split(len(small_boundry.get_shape())-1, 2, small_boundry)
+    y_1_boundry = (small_boundry_mul * y_1) + small_boundry_add
+    # add z if gan training
+    if FLAGS.gan:
+      y_1_boundry = add_z(y_1_boundry, z)
+    # unroll all
+    x_2 = decoding(y_1_boundry)
+    print("shape is ")
+    print(x_2.get_shape())
+    y_2 = compression(y_1_boundry)
+
+  return y_1, small_boundry_mul, small_boundry_add, x_2, y_2
+
+
   """
   x_2_o = []
   if FLAGS.gan:

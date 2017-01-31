@@ -36,7 +36,7 @@ def load_flow(filename, shape, frame_num):
   flow_state_vel = np.array(stream_flow['Velocity_0'][:])
   flow_state_vel = flow_state_vel.reshape(shape + [3])
   if frame_num == 3: # if 2D then kill the z velocity
-    flow_state = flow_state[:,:,0:2]
+    flow_state_vel = flow_state_vel[:,:,0:2]
 
   # process density field
   flow_state_den = np.array(stream_flow['Density_0'][:])
