@@ -233,7 +233,7 @@ def decoding(y):
 
   y_i = transpose_conv_layer(y_i, 3, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
 
-  return y_i
+  return tf.nn.tanh(y_i)
 
 def add_z(y, z):
   y_shape = int_shape(y) 

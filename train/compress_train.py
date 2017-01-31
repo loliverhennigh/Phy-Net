@@ -36,7 +36,7 @@ def train():
 
     # error mse
     error_mse = loss_mse(state, x_2_o)
-    error_divergence = loss_divergence(state)
+    error_divergence = loss_divergence(x_2_o)
     error = error_mse + 0.0*error_divergence
 
     # train (hopefuly)
