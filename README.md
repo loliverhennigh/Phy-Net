@@ -1,6 +1,7 @@
 # Phy-Net
 This repository is a perliminary looks at compressing physics simulations onto neural networks. Similary works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
 
+This Repository is currently being expanded with more complex architectures, better datasets (including electromagnetic) and generative adversarial training in the gans branch.
 
 ## Diffusion
 Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion.
