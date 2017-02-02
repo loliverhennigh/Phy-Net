@@ -82,9 +82,14 @@ def evaluate():
 
     plt.figure(1)
     plt.plot(mse_error, label='error')
+    plt.title('error')
+    plt.legend()
     plt.figure(2)
     plt.plot(divergence_true, label='div true')
     plt.plot(divergence_generated, label='div generated')
+    plt.title('divergence')
+    plt.legend()
+    plt.show()
 
        
 def main(argv=None):  # pylint: disable=unused-argument
