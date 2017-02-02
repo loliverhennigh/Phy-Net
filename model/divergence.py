@@ -32,15 +32,13 @@ def spatial_divergence_2d(field):
   weight_y = tf.constant(np.float32(weight_y_np))
 
   # calc gradientes
-  print(field.get_shape())
-  print(weight_y.get_shape())
   field_dx = _simple_conv_2d(field, weight_x)
   field_dy = _simple_conv_2d(field, weight_y)
 
   # divergence of field
   field_div = field_dx + field_dy
 
-  # kill boundrys (this is not correct! I should use boundrys but for right now I will not)
+  # kill boundarys (this is not correct! I should use boundarys but for right now I will not)
   field_div = tf.abs(field_div[:,1:-2,1:-2,:])
 
   return field_div

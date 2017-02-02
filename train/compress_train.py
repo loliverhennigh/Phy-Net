@@ -9,12 +9,10 @@ import sys
 sys.path.append('../')
 from model.ring_net import *
 from model.loss import *
+from model.optimizer import *
 from utils.experiment_manager import make_checkpoint_path
 
 FLAGS = tf.app.flags.FLAGS
-
-tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
-                            """dir to store trained net """)
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 
@@ -22,37 +20,41 @@ def train():
   """Train ring_net for a number of steps."""
 
   with tf.Graph().as_default():
+    # print important params
+    print(FLAGS.system + " system!")
+    print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
+
     # make inputs
-    state, boundry = inputs() 
+    print("Constructing inputs...")
+    state, boundary = inputs() 
 
     # unwrap
-    x_2_o = unroll(state, boundry)
+    print("Unwrapping network...")
+    x_2_o = unroll(state, boundary)
 
-    # apply boundry
-    x_2_o = x_2_o * (1.0-boundry)
-    print(x_2_o.get_shape())
-    print(boundry.get_shape())
-    print(state.get_shape())
+    # apply boundary
+    #x_2_o = x_2_o * (1.0-boundary)
 
-    # error mse
+    # error
     error_mse = loss_mse(state, x_2_o)
     error_divergence = loss_divergence(x_2_o)
-    error = error_mse + 0.0*error_divergence
+    error = error_mse
 
     # train (hopefuly)
-    train_op = tf.train.AdamOptimizer(FLAGS.reconstruction_rl).minimize(error)
+    optimizer = set_optimizer(FLAGS.optimizer, FLAGS.reconstruction_lr)
+    train_op = optimizer_general(error, optimizer)
     
     # List of all Variables
-    variables = tf.all_variables()
+    variables = tf.global_variables()
 
     # Build a saver
-    saver = tf.train.Saver(tf.all_variables())   
+    saver = tf.train.Saver(variables)   
 
     # Summary op
-    summary_op = tf.merge_all_summaries()
+    summary_op = tf.summary.merge_all()
  
     # build initialization
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
 
     # Start running operations on the Graph.
     sess = tf.Session()
@@ -61,40 +63,42 @@ def train():
     sess.run(init)
 
     # init from seq 1 model
-    #print("init from " + RESTORE_DIR)
-    #saver_restore = tf.train.Saver(variables)
-    #ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
-    #saver_restore.restore(sess, ckpt.model_checkpoint_path)
+    saver_restore = tf.train.Saver(variables)
+    ckpt = tf.train.get_checkpoint_state(TRAIN_DIR)
+    if ckpt is not None:
+      print("init from " + TRAIN_DIR)
+      saver_restore.restore(sess, ckpt.model_checkpoint_path)
 
     # Start que runner
     tf.train.start_queue_runners(sess=sess)
 
     # Summary op
     graph_def = sess.graph.as_graph_def(add_shapes=True)
-    summary_writer = tf.train.SummaryWriter(TRAIN_DIR, graph_def=graph_def)
+    summary_writer = tf.summary.FileWriter(TRAIN_DIR, graph_def=graph_def)
 
-    for step in xrange(20000000):
+    for step in xrange(FLAGS.max_steps):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={})
       elapsed = time.time() - t
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-      if step%100 == 0:
+      if step%200 == 0:
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step) 
 
-      if step%1000 == 0:
+      if step%2000 == 0:
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)  
         print("saved to " + TRAIN_DIR)
 
 def main(argv=None):  # pylint: disable=unused-argument
-  if tf.gfile.Exists(TRAIN_DIR):
+  if not tf.gfile.Exists(TRAIN_DIR):
+    tf.gfile.MakeDirs(TRAIN_DIR)
+  if tf.gfile.Exists(TRAIN_DIR) and not FLAGS.restore:
     tf.gfile.DeleteRecursively(TRAIN_DIR)
-  tf.gfile.MakeDirs(TRAIN_DIR)
   train()
 
 if __name__ == '__main__':

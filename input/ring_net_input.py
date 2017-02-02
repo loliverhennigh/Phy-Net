@@ -2,10 +2,10 @@
 import os
 import numpy as np
 import tensorflow as tf
-import utils.createTFRecords as createTFRecords
-import systems.balls_createTFRecords as balls_createTFRecords
+#import utils.createTFRecords as createTFRecords
+#import systems.balls_createTFRecords as balls_createTFRecords
 import systems.fluid_createTFRecords as fluid_createTFRecords
-import systems.diffusion_createTFRecords as diffusion_createTFRecords
+#import systems.diffusion_createTFRecords as diffusion_createTFRecords
 from glob import glob as glb
 from tqdm import *
 
@@ -61,18 +61,18 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
     serialized_example,
     features={
       'flow':tf.FixedLenFeature([],tf.string),
-      'boundry':tf.FixedLenFeature([],tf.string)
+      'boundary':tf.FixedLenFeature([],tf.string)
     }) 
   flow = tf.decode_raw(features['flow'], tf.float32)
-  boundry = tf.decode_raw(features['boundry'], tf.float32)
+  boundary = tf.decode_raw(features['boundary'], tf.float32)
 
   # reshape
   flow = tf.reshape(flow, [seq_length] + shape + [num_frames])
   flow = tf.to_float(flow)
-  boundry = tf.reshape(boundry, [1] + shape + [1]) 
-  boundry = tf.to_float(boundry)
+  boundary = tf.reshape(boundary, [1] + shape + [1]) 
+  boundary = tf.to_float(boundary)
 
-  return flow, boundry
+  return flow, boundary
 
 def _generate_image_label_batch(image, batch_size):
   """Construct a queued batch of images.
@@ -103,7 +103,7 @@ def _generate_image_label_batch(image, batch_size):
       capacity=3 * batch_size)
   return frames
 
-def _generate_image_label_batch_fluid(flow, boundry, batch_size):
+def _generate_image_label_batch_fluid(flow, boundary, batch_size):
   """Construct a queued batch of images.
   Args:
     image: 4-D Tensor of [seq, height, width, frame_num] 
@@ -118,19 +118,19 @@ def _generate_image_label_batch_fluid(flow, boundry, batch_size):
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
-    flows, boundrys = tf.train.shuffle_batch(
-      [flow, boundry],
+    flows, boundarys = tf.train.shuffle_batch(
+      [flow, boundary],
       batch_size=batch_size,
       num_threads=num_preprocess_threads,
       capacity=FLAGS.min_queue_examples + 3 * batch_size,
       min_after_dequeue=FLAGS.min_queue_examples)
   else:
-     flows, boundrys = tf.train.batch(
-      [flow, boundry],
+     flows, boundarys = tf.train.batch(
+      [flow, boundary],
       batch_size=batch_size,
       num_threads=num_preprocess_threads,
       capacity=3 * batch_size)
-  return flows, boundrys
+  return flows, boundarys
 
 
 def video_inputs(batch_size, seq_length):
@@ -161,7 +161,7 @@ def video_inputs(batch_size, seq_length):
     createTFRecords.generate_tfrecords(f, seq_length, shape, num_frames, color)
  
   # get list of tfrecords 
-  tfrecord_filename = glb('../data/tfrecords/'+FLAGS.video_dir+'/*seq_' + str(seq_length) + '_size_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(num_frames) + '_color_' + str(color) + '.tfrecords') 
+  tfrecord_filename = glb('../data/tfrecords/'+FLAGS.video_dir+'/*seq_' + str(seq_length) + '_size_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(num_frames) + '_color_' + str(color) + '.tfrecords')
   
   
   filename_queue = tf.train.string_input_producer(tfrecord_filename) 
@@ -263,7 +263,8 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train == True:
-    run_num = 15
+    run_num = 150
+    #run_num = 1
   else:
     run_num = 1
 
@@ -275,30 +276,30 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   if not train:
     dir_name = dir_name + '_test'
  
+  print("begining to generate tf records")
   fluid_createTFRecords.generate_tfrecords(seq_length, run_num, shape, num_frames, dir_name)
 
   tfrecord_filename = glb(FLAGS.data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
-  flow, boundry = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
-
-  print(flow.get_shape())
+  flow, boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
 
   # dispay images
   if len(shape) == 2:
-    tf.image_summary('x', flow[:,:,:,0:1])
-    tf.image_summary('y', flow[:,:,:,1:2])
-    tf.image_summary('density', flow[:,:,:,2:3])
-    tf.image_summary('boundry', boundry[:,:,:,0:1])
+    tf.summary.image('x', flow[:,:,:,0:1])
+    tf.summary.image('y', flow[:,:,:,1:2])
+    tf.summary.image('density', flow[:,:,:,2:3])
+    tf.summary.image('boundary', boundary[:,:,:,0:1])
   elif len(shape) == 3:
-    tf.image_summary('x', flow[:,:,:,shape[2]/2,0:1])
-    tf.image_summary('y', flow[:,shape[0]/2,:,:,1:2])
-    tf.image_summary('z', flow[:,:,shape[1]/2,:,2:3])
-    tf.image_summary('density', flow[:,:,:,shape[2]/2,3:4])
-    tf.image_summary('boundry', boundry[:,:,:,shape[2]/2,0:1])
+    tf.summary.image('x', flow[:,:,:,shape[2]/2,0:1])
+    tf.summary.image('y', flow[:,shape[0]/2,:,:,1:2])
+    tf.summary.image('z', flow[:,:,shape[1]/2,:,2:3])
+    tf.summary.image('density', flow[:,:,:,shape[2]/2,3:4])
+    tf.summary.image('boundary', boundary[:,:,:,shape[2]/2,0:1])
 
-  flows, boundrys = _generate_image_label_batch_fluid(flow, boundry, batch_size)
+  flows, boundarys = _generate_image_label_batch_fluid(flow, boundary, batch_size)
 
-  return flows, boundrys
+  return flows, boundarys
+
 

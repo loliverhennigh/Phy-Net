@@ -71,8 +71,6 @@ def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start
 
   return flow_state, boundary_cond
 
-
-
 def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
 
   if not tf.gfile.Exists(FLAGS.data_dir + '/tfrecords/' + dir_name):

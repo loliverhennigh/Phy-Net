@@ -2,12 +2,15 @@ import tensorflow as tf
 import fnmatch
 import os
 
+# flags to not include in checkpoint path
+non_checkpoint_flags = ['min_queue_examples', 'data_dir', 'train', 'base_dir', 'restore', 'max_steps', 'restore_unroll_length', 'batch_size', 'unroll_from_true', 'unroll_length', 'video_shape', 'video_length', 'test_length', 'test_nr_runs', 'test_nr_per_simulation', 'test_dimensions']
+
 def make_checkpoint_path(base_path, FLAGS):
   # make checkpoint path with all the flags specifing different directories
 
   # run through all params and add them to the base path
   for k, v in FLAGS.__dict__['__flags'].items():
-    if k != 'base_dir':
+    if k not in non_checkpoint_flags:
       base_path = base_path + '/' + k + '_' + str(v)
 
   return base_path

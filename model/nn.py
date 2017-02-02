@@ -128,7 +128,6 @@ def PS(X, r, depth):
 
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
   orig_x = x
-  print(orig_x.get_shape())
   x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
   if a is not None:
     shape_a = int_shape(a) 

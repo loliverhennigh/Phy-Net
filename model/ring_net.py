@@ -26,6 +26,12 @@ tf.app.flags.DEFINE_integer('lattice_size', 3,
 tf.app.flags.DEFINE_string('dimensions', '256x256',
                            """ dimension of simulation with x between value """)
 
+################# running params
+tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
+                            """dir to store trained net """)
+tf.app.flags.DEFINE_bool('restore', True,
+                            """ restore model if there is one """)
+
 ################# model params
 ## resnet params
 tf.app.flags.DEFINE_integer('nr_residual', 2,
@@ -70,9 +76,9 @@ tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
 ################# optimize params
 tf.app.flags.DEFINE_string('optimizer', "adam",
                            """ what optimizer to use """)
-tf.app.flags.DEFINE_float('reconstruction_rl', 1e-5,
+tf.app.flags.DEFINE_float('reconstruction_lr', 1e-5,
                            """ learning rete for reconstruction """)
-tf.app.flags.DEFINE_float('gan_rl', 2e-5,
+tf.app.flags.DEFINE_float('gan_lr', 2e-5,
                            """ learning rate for training gan """)
 tf.app.flags.DEFINE_float('lambda_reconstruction', 1.0,
                            """ weight of reconstruction error """) 
@@ -80,39 +86,57 @@ tf.app.flags.DEFINE_float('lambda_divergence', 0.2,
                            """ weight of divergence error """)
 
 ################# train params
-tf.app.flags.DEFINE_integer('init_unroll_length', 0,
-                           """ unroll length to initialize network """)
+tf.app.flags.DEFINE_integer('max_steps', 1000000,
+                            """ max steps to train """)
 tf.app.flags.DEFINE_integer('unroll_length', 5,
                            """ unroll length """)
-tf.app.flags.DEFINE_bool('unroll_from_true', True,
+tf.app.flags.DEFINE_integer('init_unroll_length', 0,
+                           """ inital unroll length before training """)
+tf.app.flags.DEFINE_bool('unroll_from_true', False,
                            """ use the true data when unrolling the network (probably just used for unroll_length 1 when doing curriculum learning""")
-tf.app.flags.DEFINE_integer('restore_unroll_length', 0,
-                           """ what to unroll length to restore from. (if 0 then initialize from scratch) """)
 tf.app.flags.DEFINE_integer('batch_size', 4,
                            """ batch size """)
+
+################# test params
+tf.app.flags.DEFINE_string('test_dimensions', '1024x1024',
+                           """ test video dimentions """)
+tf.app.flags.DEFINE_integer('video_length', 50,
+                           """ video dimentions """)
+tf.app.flags.DEFINE_integer('test_length', 50,
+                           """ sequence length for testing (making error plots) """)
+tf.app.flags.DEFINE_integer('test_nr_runs', 50,
+                           """ number of simulations to test on (making error plots) """)
+tf.app.flags.DEFINE_integer('test_nr_per_simulation', 300,
+                           """ number of test runs per simulations (making error plots) """)
 
 ################# input params
 tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
 
-def inputs():
+def inputs(empty=False, shape=None):
   """makes input vector
+  Args:
+    empty will just return an empty state to fill with a feed dict
   Return:
     x: input vector, may be filled 
   """
-  shape = FLAGS.dimensions.split('x')
-  shape = map(int, shape)
+  if shape is None:
+    shape = FLAGS.dimensions.split('x')
+    shape = map(int, shape)
   frame_num = FLAGS.lattice_size # 3 for 2D and 4 for 3D (this will change with mag stuff)
-  if FLAGS.system == "fluid_flow":
-    state, boundry = ring_net_input.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
+  if empty:
+    state = tf.placeholder(tf.float32, [1] + shape + [frame_num])
+    boundary = tf.placeholder(tf.float32, [1] + shape + [1])
+  elif FLAGS.system == "fluid_flow":
+    state, boundary = ring_net_input.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
  
   if FLAGS.gan:
     z = tf.placeholder("float", [None, total_unroll_length, FLAGS.z_size])
-    return state, boundry, z
+    return state, boundary, z
   else:
-    return state, boundry
+    return state, boundary
 
-def encoding(inputs, name='', boundry=False):
+def encoding(inputs, name='', boundary=False):
   """Builds encoding part of ring net.
   Args:
     inputs: input to encoder
@@ -128,7 +152,7 @@ def encoding(inputs, name='', boundry=False):
   for i in xrange(FLAGS.nr_downsamples):
 
     filter_size = FLAGS.filter_size*(pow(2,i))
-    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    #print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
 
     x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0") 
 
@@ -136,7 +160,7 @@ def encoding(inputs, name='', boundry=False):
     for j in xrange(FLAGS.nr_residual - 1):
       x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_" + str(j+1))
 
-  if boundry:
+  if boundary:
     x_i = res_block(x_i, filter_size=FLAGS.filter_size_compression*2, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_last_before_compression")
   else:
     x_i = res_block(x_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_last_before_compression")
@@ -158,7 +182,7 @@ def compression(y):
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
   for i in xrange(FLAGS.nr_residual_compression):
-    print("resnet compression " + str(i))
+    #print("resnet compression " + str(i))
     y_i = res_block(y_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_compression_" + str(i))
 
   return y_i
@@ -225,7 +249,7 @@ def decoding(y):
 
   for i in xrange(FLAGS.nr_downsamples-1):
     filter_size = FLAGS.filter_size*pow(2,FLAGS.nr_downsamples-i-2)
-    print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    #print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
     y_i = transpose_conv_layer(y_i, 3, 2, filter_size, "up_conv_" + str(i))
 
     for j in xrange(FLAGS.nr_residual):
@@ -255,7 +279,7 @@ def discriminator(output, hidden_state=None):
   for split in xrange(FLAGS.nr_discriminators):
     for i in xrange(FLAGS.nr_downsamples):
       filter_size = FLAGS.filter_size_discriminator*pow(2,i)
-      print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
+      #print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
       x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
       for j in xrange(FLAGS.nr_residual - 1):
         x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
@@ -276,11 +300,11 @@ def discriminator(output, hidden_state=None):
 
   return label
 
-def encode_compress_decode(state, boundry, hidden_state=None, z=None):
+def encode_compress_decode(state, boundary, hidden_state=None, z=None):
  
   y_1 = encoding(state)
-  small_boundry = encoding(boundry, name='boundry')
-  y_1 = small_boundry * y_1
+  small_boundary = encoding(boundary, name='boundary')
+  y_1 = small_boundary * y_1
   if FLAGS.lstm:
     y_2, hidden_state = lstm_compression(y_1, hidden_state)
   else:
@@ -291,7 +315,7 @@ def encode_compress_decode(state, boundry, hidden_state=None, z=None):
 
   return x_2, hidden_state
 
-def unroll(state, boundry, z=None):
+def unroll(state, boundary, z=None):
 
   total_unroll_length = FLAGS.init_unroll_length + FLAGS.unroll_length 
  
@@ -303,10 +327,10 @@ def unroll(state, boundry, z=None):
     x_out = []
     # encode
     y_1 = encoding(state[:,0])
-    small_boundry = encoding(boundry[:,0], name='boundry_', boundry=True)
-    # apply boundry
-    [small_boundry_mul, small_boundry_add] = tf.split(len(small_boundry.get_shape())-1, 2, small_boundry)
-    y_1 = (small_boundry_mul * y_1) + small_boundry_add
+    small_boundary = encoding(boundary[:,0], name='boundry_', boundary=True)
+    # apply boundary
+    [small_boundary_mul, small_boundary_add] = tf.split(len(small_boundary.get_shape())-1, 2, small_boundary)
+    y_1 = (small_boundary_mul * y_1) + small_boundary_add
     # add z if gan training
     if FLAGS.gan:
       y_1 = add_z(y_1, z)
@@ -315,17 +339,21 @@ def unroll(state, boundry, z=None):
       # set reuse to true
       if i > 0:
         tf.get_variable_scope().reuse_variables()
+        if FLAGS.unroll_from_true: # for testing (no compression at all)
+          y_1 = encoding(state[:,i]) 
+          y_1 = (small_boundary_mul * y_1) + small_boundary_add
+        
       # decode and add to list
       x_2 = decoding(y_1)
       x_out.append(x_2)
       # display
-      tf.image_summary('generated_x_' + str(i), x_2[:,:,:,0:1])
-      tf.image_summary('generated_y_' + str(i), x_2[:,:,:,1:2])
-      tf.image_summary('generated_density_' + str(i), x_2[:,:,:,2:3])
+      tf.summary.image('generated_x_' + str(i), x_2[:,:,:,0:1])
+      tf.summary.image('generated_y_' + str(i), x_2[:,:,:,1:2])
+      tf.summary.image('generated_density_' + str(i), x_2[:,:,:,2:3])
       # compression
       y_1 = compression(y_1)
-      # boundry
-      y_1 = (small_boundry_mul * y_1) + small_boundry_add
+      # boundary
+      y_1 = (small_boundary_mul * y_1) + small_boundary_add
       # add z if gan training
       if FLAGS.gan:
         y_1 = add_z(y_1, z)
@@ -334,28 +362,26 @@ def unroll(state, boundry, z=None):
   x_out = tf.transpose(x_out, perm=[1,0,2,3,4])
   return x_out
 
-def continual_unroll(state, boundry, z=None):
+def continual_unroll(state, boundary, z=None):
 
   if FLAGS.lstm:
     # need to implement
     exit()
   else:
     # store all out
-    y_1 = encoding(state[:,0])
-    small_boundry = encoding(boundry[:,0], name='boundry_', boundry=True)
-    # apply boundry
-    [small_boundry_mul, small_boundry_add] = tf.split(len(small_boundry.get_shape())-1, 2, small_boundry)
-    y_1_boundry = (small_boundry_mul * y_1) + small_boundry_add
+    y_1 = encoding(state)
+    small_boundary = encoding(boundary, name='boundry_', boundary=True)
+    # apply boundary
+    [small_boundary_mul, small_boundary_add] = tf.split(len(small_boundary.get_shape())-1, 2, small_boundary)
+    y_1_boundary = (small_boundary_mul * y_1) + small_boundary_add
     # add z if gan training
     if FLAGS.gan:
-      y_1_boundry = add_z(y_1_boundry, z)
+      y_1_boundary = add_z(y_1_boundary, z)
     # unroll all
-    x_2 = decoding(y_1_boundry)
-    print("shape is ")
-    print(x_2.get_shape())
-    y_2 = compression(y_1_boundry)
+    x_2 = decoding(y_1_boundary)
+    y_2 = compression(y_1_boundary)
 
-  return y_1, small_boundry_mul, small_boundry_add, x_2, y_2
+  return y_1, small_boundary_mul, small_boundary_add, x_2, y_2
 
 
   """
@@ -384,7 +410,7 @@ def continual_unroll(state, boundry, z=None):
 
     else:
       # unroll generator network 
-      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundry[:,i+1], hidden_state)
+      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundary[:,i+1], hidden_state)
 
   x_2_o.append(x_2)
 

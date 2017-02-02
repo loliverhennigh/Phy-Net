@@ -10,6 +10,10 @@ FLAGS = tf.app.flags.FLAGS
 def set_optimizer(name, lr):
   if name == "adam":
     return tf.train.AdamOptimizer(lr)
+  elif name == "adagrad":
+    return tf.train.AdagradOptimizer(lr)
+  elif name == "adadelta":
+    return tf.train.AdadeltaOptimizer(lr)
 
 def optimizer_discriminator(loss_d, optimizer):
   t_vars = tf.trainable_variables()
