@@ -4,7 +4,7 @@ This repository is a perliminary looks at compressing physics simulations onto n
 This Repository is currently being expanded with more complex architectures, better datasets (including electromagnetic) and generative adversarial training in the gans branch.
 
 ## Diffusion
-Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion.
+Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion. No speed ups are seen because diffusion extremely simple. This is just to test architectures.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/N57BvSspLtU/0.jpg)](https://www.youtube.com/watch?v=N57BvSspLtU)
 
@@ -12,6 +12,11 @@ Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki
 Compressing non-laminar fluid flow around objects. The fluid flow was generated with the open source [palabos library](http://www.palabos.org/). The cpu time for each simulation is approximatly 155 seconds. The approximate time for the neural network is .78 seconds. Total speed up so far is roughly 198 x. The video bellow was not in the training set. The left is true, middle generated, right difference.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/AAQCuJM67RE/0.jpg)](https://www.youtube.com/watch?v=AAQCuJM67RE=54s)
+
+Better simulations are under development in the GAN branch. Here is a sneak peak!
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/SsAWHkcENEI/0.jpg)](https://www.youtube.com/watch?v=SsAWHkcENEI)
+
 
 ## Network Details
 The network is kept all convolutional and uses an [convolutional lstm](https://github.com/loliverhennigh/Convolutional-LSTM-in-Tensorflow). Up sampling using Deconvolution is replased with computationaly effeicent [subpixel convolutions](https://github.com/Tetrachrome/subpixel). Keeping the network convolutional allows the trained model to be used on simulations of different sizes allowing the network to focus on just learning compressed representations of the dynamics.
