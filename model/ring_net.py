@@ -152,7 +152,7 @@ def encoding(inputs, name='', boundary=False):
   for i in xrange(FLAGS.nr_downsamples):
 
     filter_size = FLAGS.filter_size*(pow(2,i))
-    #print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
 
     x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0") 
 
@@ -249,7 +249,7 @@ def decoding(y):
 
   for i in xrange(FLAGS.nr_downsamples-1):
     filter_size = FLAGS.filter_size*pow(2,FLAGS.nr_downsamples-i-2)
-    #print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
     y_i = transpose_conv_layer(y_i, 3, 2, filter_size, "up_conv_" + str(i))
 
     for j in xrange(FLAGS.nr_residual):
@@ -347,9 +347,17 @@ def unroll(state, boundary, z=None):
       x_2 = decoding(y_1)
       x_out.append(x_2)
       # display
-      tf.summary.image('generated_x_' + str(i), x_2[:,:,:,0:1])
-      tf.summary.image('generated_y_' + str(i), x_2[:,:,:,1:2])
-      tf.summary.image('generated_density_' + str(i), x_2[:,:,:,2:3])
+      # dispay images
+      if len(x_2.get_shape()) == 4:
+        tf.summary.image('generated_x_' + str(i), x_2[:,:,:,0:1])
+        tf.summary.image('generated_y_' + str(i), x_2[:,:,:,1:2])
+        tf.summary.image('generated_density_' + str(i), x_2[:,:,:,2:3])
+      elif len(x_2.get_shape()) == 5:
+        tf.summary.image('generated_x_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,0:1])
+        tf.summary.image('generated_y_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,1:2])
+        tf.summary.image('generated_z_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,2:3])
+        tf.summary.image('generated_density_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,3:4])
+
       # compression
       y_1 = compression(y_1)
       # boundary
@@ -359,7 +367,9 @@ def unroll(state, boundary, z=None):
         y_1 = add_z(y_1, z)
 
   x_out = tf.pack(x_out)
-  x_out = tf.transpose(x_out, perm=[1,0,2,3,4])
+  perm = np.concatenate([np.array([1,0]), np.arange(2,len(x_2.get_shape())+1,1)], 0)
+  print(perm)
+  x_out = tf.transpose(x_out, perm=perm)
   return x_out
 
 def continual_unroll(state, boundary, z=None):

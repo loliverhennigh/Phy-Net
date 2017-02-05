@@ -56,12 +56,32 @@ def _variable(name, shape, initializer):
 
 def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_conv'.format(idx)) as scope:
-    input_channels = int(inputs.get_shape()[3])
+    input_channels = int(inputs.get_shape()[-1])
+    
+    # determine if 2d or 3d conv is needed
+    length_input = len(inputs.get_shape())
+    d2d = False
+    d3d = False
+    if length_input == 4:
+      d2d = True
+    elif length_input == 5:
+      d3d = True
+    else:
+      print("conv layer does not support non 2d or 3d inputs")
+      exit()
 
-    weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    if d2d: 
+      weights = _variable('weights', shape=[kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    elif d3d:
+      weights = _variable('weights', shape=[kernel_size,kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-    conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
+    if d2d:
+      conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
+    elif d3d:
+      conv = tf.nn.conv3d(inputs, weights, strides=[1, stride, stride, stride, 1], padding='SAME')
+
     conv_biased = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
       conv_biased = nonlinearity(conv_biased)
@@ -69,20 +89,45 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
 
 def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
-    input_channels = int(inputs.get_shape()[3])
-    
-    weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    input_channels = int(inputs.get_shape()[-1])
+     
+    # determine if 2d or 3d trans conv is needed
+    length_input = len(inputs.get_shape())
+    d2d = False
+    d3d = False
+    if length_input == 4:
+      d2d = True
+    elif length_input == 5:
+      d3d = True
+    else:
+      print("transpose conv layer does not support non 2d or 3d inputs")
+      exit()
+
+    if d2d: 
+      weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+    elif d3d:
+      weights = _variable('weights', shape=[kernel_size,kernel_size,kernel_size,num_features,input_channels],initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
     batch_size = tf.shape(inputs)[0]
-    output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
-    conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
+
+    if d2d:
+      output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
+      conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
+    elif d3d:
+      output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, tf.shape(inputs)[3]*stride, num_features]) 
+      conv = tf.nn.conv3d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,stride,1], padding='SAME')
+
     conv_biased = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
       conv_biased = nonlinearity(conv_biased)
 
     #reshape
     shape = int_shape(inputs)
-    conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
+    if d2d:
+      conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
+    if d3d:
+      conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, shape[3]*stride, num_features])
 
     return conv_biased
 
@@ -127,14 +172,32 @@ def PS(X, r, depth):
   return X
 
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
+      
+  # determine if 2d or 3d trans conv is needed
+  length_input = len(x.get_shape())
+  d2d = False
+  d3d = False
+  if length_input == 4:
+   d2d = True
+  elif length_input == 5:
+    d3d = True
+  else:
+    print("resnet does not support non 2d or 3d inputs")
+    exit()
+
   orig_x = x
   x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
   if a is not None:
     shape_a = int_shape(a) 
     shape_x_1 = int_shape(x_1)
-    a = tf.pad(
-      a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]],
-      [0, 0]])
+    if d2d:
+      a = tf.pad(
+        a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]],
+        [0, 0]])
+    elif d3d:
+      a = tf.pad(
+        a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]], [0, shape_x_1[3]-shape_a[3]],
+        [0, 0]])
     x_1 += nin(nonlinearity(a), filter_size, name + '_nin')
   x_1 = nonlinearity(x_1)
   if keep_p < 1.0:
@@ -143,20 +206,31 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
     x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
   else:
     x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
-    x_2_1, x_2_2 = tf.split(3,2,x_2)
+    if d2d:
+      x_2_1, x_2_2 = tf.split(3,2,x_2)
+    elif d3d:
+      x_2_1, x_2_2 = tf.split(4,2,x_2)
     x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
 
   if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
     assert(int(orig_x.get_shape()[2]) == 2*int(x_2.get_shape()[2]), "res net block only supports stirde 2")
-    orig_x = tf.nn.avg_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
+    if d2d:
+      orig_x = tf.nn.avg_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
+    elif d3d:
+      orig_x = tf.nn.avg_pool3d(orig_x, [1,2,2,2,1], [1,2,2,2,1], padding='SAME')
 
   # pad it
   out_filter = filter_size
-  in_filter = int(orig_x.get_shape()[3])
+  in_filter = int(orig_x.get_shape()[-1])
   if out_filter != in_filter:
-    orig_x = tf.pad(
-        orig_x, [[0, 0], [0, 0], [0, 0],
-        [(out_filter-in_filter), 0]])
+    if d2d:
+      orig_x = tf.pad(
+          orig_x, [[0, 0], [0, 0], [0, 0],
+          [(out_filter-in_filter), 0]])
+    elif d3d:
+      orig_x = tf.pad(
+          orig_x, [[0, 0], [0, 0], [0, 0], [0, 0],
+          [(out_filter-in_filter), 0]])
 
   return orig_x + x_2
 

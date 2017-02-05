@@ -37,7 +37,7 @@ def load_flow(filename, shape, frame_num):
   # process velocity field
   flow_state_vel = np.array(stream_flow['Velocity_0'][:])
   flow_state_vel = flow_state_vel.reshape(shape + [3])
-  if frame_num == 3: # if 2D then kill the z velocity
+  if len(shape) == 2: # if 2D then kill the z velocity
     flow_state_vel = flow_state_vel[:,:,0:2]
 
   # process density field
@@ -45,6 +45,8 @@ def load_flow(filename, shape, frame_num):
   flow_state_den = flow_state_den.reshape(shape + [1])
 
   # concate state
+  print(shape)
+  print(flow_state_vel.shape)
   flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
 
   # print for testing
@@ -70,8 +72,6 @@ def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start
     flow_state[i] = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/fluid_flow_' + str(start_index + i).zfill(4) + '.h5', shape, frame_num)
 
   return flow_state, boundary_cond
-
-
 
 def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
 

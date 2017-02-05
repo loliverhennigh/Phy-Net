@@ -37,7 +37,8 @@ def train():
 
     # error
     error_mse = loss_mse(state, x_2_o)
-    error_divergence = loss_divergence(x_2_o)
+    #error_divergence = loss_divergence(x_2_o)
+    #error = error_mse + FLAGS.lambda_divergence * error_divergence
     error = error_mse
 
     # train (hopefuly)
