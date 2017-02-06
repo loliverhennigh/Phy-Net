@@ -171,7 +171,7 @@ def PS(X, r, depth):
   X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
   return X
 
-def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
+def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet", begin_nonlinearity=True):
       
   # determine if 2d or 3d trans conv is needed
   length_input = len(x.get_shape())
@@ -186,7 +186,9 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
     exit()
 
   orig_x = x
-  x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
+  if begin_nonlinearity: 
+    x = nonlinearity(x) 
+  x_1 = conv_layer(x, 3, stride, filter_size, name + '_conv_1')
   if a is not None:
     shape_a = int_shape(a) 
     shape_x_1 = int_shape(x_1)

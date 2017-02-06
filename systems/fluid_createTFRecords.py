@@ -1,5 +1,6 @@
 
 import math
+import time
 
 import numpy as np
 import scipy.io
@@ -45,8 +46,6 @@ def load_flow(filename, shape, frame_num):
   flow_state_den = flow_state_den.reshape(shape + [1])
 
   # concate state
-  print(shape)
-  print(flow_state_vel.shape)
   flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
 
   # print for testing
@@ -94,7 +93,8 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       # first calc boundary (from first sample)
       boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_0000.h5', shape, frame_num)
       boundary_cond = np.float32(boundary_cond)
-      boundary_flat = boundary_cond.reshape([1,np.prod(np.array(shape))])
+      #boundary_flat = boundary_cond.reshape([1,np.prod(np.array(shape))])
+      boundary_flat = boundary_cond.reshape([np.prod(np.array(shape))])
       boundary_raw = boundary_flat.tostring()
 
       # save tf records
@@ -102,12 +102,17 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       while ind_dat < (num_samples - seq_length - 1):
         seq_frames = np.zeros([seq_length] + shape + [frame_num])
         for i in xrange(seq_length):
+          t = time.time()
           flow_state = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_' + str(i+ind_dat).zfill(4) + '.h5', shape, frame_num)
+          elapsed = time.time() - t
+          #print("time per read is " + str(elapsed))
+          
           flow_state = np.float32(flow_state)
           seq_frames[i] = flow_state 
         ind_dat = ind_dat + 1
         seq_frames = np.float32(seq_frames)
-        seq_frames_flat = seq_frames.reshape([1,seq_length*np.prod(np.array(shape))*frame_num])
+        #seq_frames_flat = seq_frames.reshape([1,seq_length*np.prod(np.array(shape))*frame_num])
+        seq_frames_flat = seq_frames.reshape([seq_length*np.prod(np.array(shape))*frame_num])
         seq_frame_raw = seq_frames_flat.tostring()
         # create example and write it
         example = tf.train.Example(features=tf.train.Features(feature={

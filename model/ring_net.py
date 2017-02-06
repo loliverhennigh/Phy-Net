@@ -152,9 +152,9 @@ def encoding(inputs, name='', boundary=False):
   for i in xrange(FLAGS.nr_downsamples):
 
     filter_size = FLAGS.filter_size*(pow(2,i))
-    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size))
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size) + " with shape " + str(x_i.get_shape()))
 
-    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0") 
+    x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0", begin_nonlinearity=False) 
 
 
     for j in xrange(FLAGS.nr_residual - 1):

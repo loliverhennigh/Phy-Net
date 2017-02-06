@@ -68,7 +68,10 @@ def train():
     ckpt = tf.train.get_checkpoint_state(TRAIN_DIR)
     if ckpt is not None:
       print("init from " + TRAIN_DIR)
-      saver_restore.restore(sess, ckpt.model_checkpoint_path)
+      try:
+         saver_restore.restore(sess, ckpt.model_checkpoint_path)
+      except:
+         print("there was a problem using that checkpoint! We will just use random init")
 
     # Start que runner
     tf.train.start_queue_runners(sess=sess)
