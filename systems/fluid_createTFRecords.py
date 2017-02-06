@@ -60,6 +60,17 @@ def load_boundary(filename, shape, frame_num):
   boundary_cond = boundary_cond.reshape([1]+shape+[1])
   return boundary_cond
 
+def make_feature_from_seq(seq_frames, seq_length, shape, frame_num):
+  feature = {}
+  for i in xrange(seq_length):
+    frame = seq_frames[i]
+    frame = np.float32(frame)
+    frame = frame.reshape([1,np.prod(np.array(shape))*frame_num])
+    frame = frame.tostring()
+    feature['flow/frame_' + str(i)] = _bytes_feature(frame)
+  return feature
+    
+
 def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
 
   # generate boundry
@@ -109,15 +120,14 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
           
           flow_state = np.float32(flow_state)
           seq_frames[i] = flow_state 
-        ind_dat = ind_dat + 1
-        seq_frames = np.float32(seq_frames)
-        #seq_frames_flat = seq_frames.reshape([1,seq_length*np.prod(np.array(shape))*frame_num])
-        seq_frames_flat = seq_frames.reshape([seq_length*np.prod(np.array(shape))*frame_num])
-        seq_frame_raw = seq_frames_flat.tostring()
+        ind_dat = ind_dat + seq_length/2 # this can be made much more efficent but for now this is how it do
+
+        # make feature map
+        feature = make_feature_from_seq(seq_frames, seq_length, shape, frame_num)
+        feature['boundary'] = _bytes_feature(boundary_raw)
+
         # create example and write it
-        example = tf.train.Example(features=tf.train.Features(feature={
-          'flow': _bytes_feature(seq_frame_raw),
-          'boundary': _bytes_feature(boundary_raw)}))
+        example = tf.train.Example(features=tf.train.Features(feature=feature))
         writer.write(example.SerializeToString())
     
     
