@@ -22,6 +22,10 @@ FLAGS = tf.app.flags.FLAGS
 def _bytes_feature(value):
   return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
+
+def _float_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
 def tryint(s):
   try:
     return int(s)
@@ -65,11 +69,12 @@ def make_feature_from_seq(seq_frames, seq_length, shape, frame_num):
   for i in xrange(seq_length):
     frame = seq_frames[i]
     frame = np.float32(frame)
-    frame = frame.reshape([1,np.prod(np.array(shape))*frame_num])
-    frame = frame.tostring()
-    feature['flow/frame_' + str(i)] = _bytes_feature(frame)
+    frame = frame.reshape([np.prod(np.array(shape))*frame_num])
+    frame = frame.astype(np.float)
+    #frame = frame.tostring()
+    #frame = frame.tolist()
+    feature['flow/frame_' + str(i)] = _float_feature(frame)
   return feature
-    
 
 def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
 
@@ -106,7 +111,8 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       boundary_cond = np.float32(boundary_cond)
       #boundary_flat = boundary_cond.reshape([1,np.prod(np.array(shape))])
       boundary_flat = boundary_cond.reshape([np.prod(np.array(shape))])
-      boundary_raw = boundary_flat.tostring()
+      #boundary_raw = boundary_flat.tostring()
+      boundary_raw = boundary_flat.astype(np.float)
 
       # save tf records
       ind_dat = 0
@@ -124,10 +130,12 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
 
         # make feature map
         feature = make_feature_from_seq(seq_frames, seq_length, shape, frame_num)
-        feature['boundary'] = _bytes_feature(boundary_raw)
+        feature['boundary'] = _float_feature(boundary_raw)
 
         # create example and write it
         example = tf.train.Example(features=tf.train.Features(feature=feature))
         writer.write(example.SerializeToString())
+
+      writer.close()
     
     

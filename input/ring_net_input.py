@@ -61,8 +61,8 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
   # make feature dict
   feature_dict = {}
   for i in xrange(seq_length):
-    feature_dict['flow/frame_' + str(i)] = tf.FixedLenFeature([],tf.string)
-  feature_dict['boundary'] = tf.FixedLenFeature([],tf.string)
+    feature_dict['flow/frame_' + str(i)] = tf.FixedLenFeature([np.prod(np.array(shape))*num_frames],tf.float32)
+  feature_dict['boundary'] = tf.FixedLenFeature([np.prod(np.array(shape))],tf.float32)
   
   features = tf.parse_single_example(
     serialized_example,
@@ -70,8 +70,10 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
 
   flow = []
   for i in xrange(seq_length):
-    flow.append(tf.decode_raw(features['flow/frame_' + str(i)], tf.float32))
-  boundary = tf.decode_raw(features['boundary'], tf.float32)
+    #flow.append(tf.decode_raw(features['flow/frame_' + str(i)], tf.float32))
+    flow.append(features['flow/frame_' + str(i)])
+  #boundary = tf.decode_raw(features['boundary'], tf.float32)
+  boundary = features['boundary']
 
   # reshape
   flow = tf.pack(flow)
