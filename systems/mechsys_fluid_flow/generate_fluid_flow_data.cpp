@@ -147,42 +147,44 @@ void Setup (FLBM::Domain & dom, void * UD)
     #ifdef USE_OMP
     #pragma omp parallel for schedule(static) num_threads(dom.Nproc)
     #endif
-	for (size_t i=0; i<dom.Ndim(1)-500; ++i)
+	for (size_t i=0; i<dom.Ndim(1); ++i)
+	for (size_t j=0; j<dom.Ndim(2); ++j)
 	{
-        double * f = dom.F[0][0][i][0];
+        double * f = dom.F[0][0][i][j];
 		double rho = (f[0]+f[2]+f[4] + 2.0*(f[3]+f[6]+f[7]))/(1.0-dat.Vel[i]);
 		f[1] = f[3] + (2.0/3.0)*rho*dat.Vel[i];
 		f[5] = f[7] + (1.0/6.0)*rho*dat.Vel[i] - 0.5*(f[2]-f[4]);
 		f[8] = f[6] + (1.0/6.0)*rho*dat.Vel[i] + 0.5*(f[2]-f[4]);
-        dom.Vel[0][0][i][0] = OrthoSys::O;
-        dom.Rho[0][0][i][0] = 0.0;
+        dom.Vel[0][0][i][j] = OrthoSys::O;
+        dom.Rho[0][0][i][j] = 0.0;
         for (size_t k=0;k<dom.Nneigh;k++)
         {
-            dom.Rho[0][0][i][0] +=  dom.F[0][0][i][0][k];
-            dom.Vel[0][0][i][0] +=  dom.F[0][0][i][0][k]*dom.C[k];
+            dom.Rho[0][0][i][j] +=  dom.F[0][0][i][j][k];
+            dom.Vel[0][0][i][j] +=  dom.F[0][0][i][j][k]*dom.C[k];
         }
-        dom.Vel[0][0][i][0] /= dom.Rho[0][0][i][0];
+        dom.Vel[0][0][i][j] /= dom.Rho[0][0][i][j];
 	}
 
 	// Cells with prescribed density
     #ifdef USE_OMP
     #pragma omp parallel for schedule(static) num_threads(dom.Nproc)
     #endif
-	for (size_t i=0; i<dom.Ndim(1)-500; ++i)
+	for (size_t i=0; i<dom.Ndim(1); ++i)
+	for (size_t j=0; j<dom.Ndim(2); ++j)
 	{
-        double * f = dom.F[0][dom.Ndim(0)-1][i][0];
+        double * f = dom.F[0][dom.Ndim(0)-1][i][j];
 		double vx = -1.0 + (f[0]+f[2]+f[4] + 2.0*(f[1]+f[5]+f[8]))/dat.rho;
 		f[3] = f[1] - (2.0/3.0)*dat.rho*vx; 
 		f[7] = f[5] - (1.0/6.0)*dat.rho*vx + 0.5*(f[2]-f[4]);
 		f[6] = f[8] - (1.0/6.0)*dat.rho*vx - 0.5*(f[2]-f[4]);
-        dom.Vel[0][dom.Ndim(0)-1][i][0] = OrthoSys::O;
-        dom.Rho[0][dom.Ndim(0)-1][i][0] = 0.0;
+        dom.Vel[0][dom.Ndim(0)-1][i][j] = OrthoSys::O;
+        dom.Rho[0][dom.Ndim(0)-1][i][j] = 0.0;
         for (size_t k=0;k<dom.Nneigh;k++)
         {
-            dom.Rho[0][dom.Ndim(0)-1][i][0] +=  dom.F[0][dom.Ndim(0)-1][i][0][k];
-            dom.Vel[0][dom.Ndim(0)-1][i][0] +=  dom.F[0][dom.Ndim(0)-1][i][0][k]*dom.C[k];
+            dom.Rho[0][dom.Ndim(0)-1][i][j] +=  dom.F[0][dom.Ndim(0)-1][i][j][k];
+            dom.Vel[0][dom.Ndim(0)-1][i][j] +=  dom.F[0][dom.Ndim(0)-1][i][j][k]*dom.C[k];
         }
-        dom.Vel[0][dom.Ndim(0)-1][i][0] /= dom.Rho[0][dom.Ndim(0)-1][i][0];
+        dom.Vel[0][dom.Ndim(0)-1][i][j] /= dom.Rho[0][dom.Ndim(0)-1][i][j];
 	}
     #endif // USE_OCL
 }

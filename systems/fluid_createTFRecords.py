@@ -73,6 +73,7 @@ def make_feature_from_seq(seq_frames, seq_length, shape, frame_num):
     frame = frame.astype(np.float)
     #frame = frame.tostring()
     #frame = frame.tolist()
+    frame = np.zeros(frame.shape)
     feature['flow/frame_' + str(i)] = _float_feature(frame)
   return feature
 

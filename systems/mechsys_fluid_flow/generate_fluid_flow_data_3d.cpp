@@ -151,10 +151,10 @@ void Setup (FLBM::Domain & dom, void * UD)
 	for (size_t j=0; j<dom.Ndim(2); ++j)
 	{
         double * f = dom.F[0][0][i][j];
-		double rho = (f[0]+f[2]+f[4] + 2.0*(f[3]+f[6]+f[7]))/(1.0-dat.Vel[i]);
-		f[1] = f[3] + (2.0/3.0)*rho*dat.Vel[i];
-		f[5] = f[7] + (1.0/6.0)*rho*dat.Vel[i] - 0.5*(f[2]-f[4]);
-		f[8] = f[6] + (1.0/6.0)*rho*dat.Vel[i] + 0.5*(f[2]-f[4]);
+		double rho = (f[0]+f[2]+f[4] + 2.0*(f[3]+f[6]+f[7]))/(1.0-dat.Vel[i + j*dom.Ndim(1)]);
+		f[1] = f[3] + (2.0/3.0)*rho*dat.Vel[i + j*dom.Ndim(1)];
+		f[5] = f[7] + (1.0/6.0)*rho*dat.Vel[i + j*dom.Ndim(1)] - 0.5*(f[2]-f[4]);
+		f[8] = f[6] + (1.0/6.0)*rho*dat.Vel[i + j*dom.Ndim(1)] + 0.5*(f[2]-f[4]);
         dom.Vel[0][0][i][j] = OrthoSys::O;
         dom.Rho[0][0][i][j] = 0.0;
         for (size_t k=0;k<dom.Nneigh;k++)
@@ -219,7 +219,7 @@ int main(int argc, char **argv) try
     size_t ny = nx;
     size_t nz = nx;
     double nu     = u_max*(2*200)/Re; // viscocity (hard set now)
-    FLBM::Domain Dom(D3Q19, nu, iVec3_t(nx,ny,nz), 1.0, 1.0);
+    FLBM::Domain Dom(D3Q15, nu, iVec3_t(nx,ny,nz), 1.0, 1.0);
     
     UserData dat;
     Dom.UserData = &dat;

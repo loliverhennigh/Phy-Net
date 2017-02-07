@@ -1,0 +1,19 @@
+
+#!/bin/bash 
+SIZE=$1
+COUNTER=0
+until [  $COUNTER -gt 200 ]; do
+  echo $COUNTER
+  FLUIDDIR="/data/fluid_flow_$SIZE"
+  FLUIDDIR+="x"
+  FLUIDDIR+="$SIZE"
+  FLUIDDIR+="x"
+  FLUIDDIR+="$SIZE"
+  mkdir $FLUIDDIR
+  FLUIDDIR+="/sample_$COUNTER"
+  mkdir $FLUIDDIR
+  FLUIDDIR+="/fluid_flow"
+  ./generate_fluid_flow_data_3d $SIZE $FLUIDDIR
+  let COUNTER+=1
+done
+
