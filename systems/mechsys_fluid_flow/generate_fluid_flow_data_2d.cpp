@@ -227,20 +227,20 @@ int main(int argc, char **argv) try
 
     // number of objects between 10 and 25
     //size_t num_objects = (rand() % 10) + 10;
-    size_t num_objects = 5*(nx/128);
+    size_t num_objects = 5*(nx/128)*(nx/128);
 
     // set objects
     size_t h = 0;
     size_t trys = 0;
-    while (h<num_objects && trys<1000)
+    while (h<num_objects && trys<10000)
     {
         trys++;
         int object_type = (rand() % 2);
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 40) + 10;
-            int radius_y = (rand() % 40) + 10;
+            int radius_x = (rand() % 100) + 10;
+            int radius_y = (rand() % 100) + 10;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
 	    double obsX   = (rand() % (nx-(3*max_radius))) + (1.5*max_radius) ;   // x position
@@ -251,7 +251,7 @@ int main(int argc, char **argv) try
             {
                 for (size_t j=0;j<ny;j++)
                 {
-                    if ((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(4*radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(4*radius_y*radius_y)<1.0)
+                    if ((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(3*radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(3*radius_y*radius_y)<1.0)
                     {
                         if (Dom.IsSolid[0][i][j][0])
                         {
@@ -280,8 +280,8 @@ int main(int argc, char **argv) try
         if (object_type == 1) // square
         {
 	    // set inner obstacle
-            int length_x = (rand() % 40) + 10;
-            int length_y = (rand() % 40) + 10;
+            int length_x = (rand() % 100) + 10;
+            int length_y = (rand() % 100) + 10;
             int max_length = length_x; 
             if (length_y > length_x) { max_length = length_y; }
 	    double obsX   = (rand() % (nx-(2*max_length))) + (1.0*double(max_length)) ;   // x position
@@ -291,7 +291,7 @@ int main(int argc, char **argv) try
             {
                 for (size_t j=0;j<ny;j++)
                 {
-                    if (obsX-length_x < i && obsX + 2*length_x > i && obsY-length_y < j && obsY + 2*length_y > j)
+                    if (obsX-1.8*length_x < i && obsX + 1.8*length_x > i && obsY-1.8*length_y < j && obsY + 1.8*length_y > j)
                     {
                         if (Dom.IsSolid[0][i][j][0])
                         {

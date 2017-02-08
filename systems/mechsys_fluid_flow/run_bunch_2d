@@ -14,7 +14,7 @@ until [  $COUNTER -gt $NUM_RUNS ]; do
   FLUIDDIR+="/sample_$COUNTER"
   mkdir $FLUIDDIR
   FLUIDDIR+="/fluid_flow"
-  ./generate_fluid_flow_data $SIZE $FLUIDDIR
+  ./generate_fluid_flow_data_2d $SIZE $FLUIDDIR
   let COUNTER+=1
 done
 

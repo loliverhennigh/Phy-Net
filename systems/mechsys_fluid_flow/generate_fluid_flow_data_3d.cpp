@@ -238,7 +238,7 @@ int main(int argc, char **argv) try
 
     // number of objects between 10 and 25
     //size_t num_objects = (rand() % 10) + 10;
-    size_t num_objects = 2*(nx/32);
+    size_t num_objects = (nx/32)*(nx/32)*(nx/32);
 
     // set objects
     size_t h = 0;
@@ -250,9 +250,9 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 10) + 10;
-            int radius_y = (rand() % 10) + 10;
-            int radius_z = (rand() % 10) + 10;
+            int radius_x = (rand() % 15) + 10;
+            int radius_y = (rand() % 15) + 10;
+            int radius_z = (rand() % 15) + 10;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
             if (radius_z > max_radius) { max_radius = radius_z; }
@@ -266,7 +266,7 @@ int main(int argc, char **argv) try
             for (size_t j=0;j<ny;j++)
             for (size_t k=0;k<nz;k++)
             {
-                if (in_sphere(double(i),double(j),double(k),obsX,obsY,obsZ,2*radius_x,2*radius_y,2*radius_z,alpha,beta) == 1)
+                if (in_sphere(double(i),double(j),double(k),obsX,obsY,obsZ,1.3*radius_x,1.3*radius_y,1.3*radius_z,alpha,beta) == 1)
                 {
                     if (Dom.IsSolid[0][i][j][k])
                     {
@@ -292,9 +292,9 @@ int main(int argc, char **argv) try
         if (object_type == 1) // square
         {
 	    // set inner obstacle
-            int length_x = (rand() % 10) + 10;
-            int length_y = (rand() % 10) + 10;
-            int length_z = (rand() % 10) + 10;
+            int length_x = (rand() % 15) + 10;
+            int length_y = (rand() % 15) + 10;
+            int length_z = (rand() % 15) + 10;
             int max_length = length_x; 
             if (length_y > length_x) { max_length = length_y; }
             if (length_z > max_length) { max_length = length_z; }
@@ -306,7 +306,7 @@ int main(int argc, char **argv) try
             for (size_t j=0;j<ny;j++)
             for (size_t k=0;k<nz;k++)
             {
-                if (obsX-2*length_x < i && obsX + 2*length_x > i && obsY-2*length_y < j && obsY + 2*length_y > j &&  obsZ-2*length_z < k && obsZ + 2*length_z > k)
+                if (obsX-1.3*length_x < i && obsX + 1.3*length_x > i && obsY-1.3*length_y < j && obsY + 1.3*length_y > j &&  obsZ-1.3*length_z < k && obsZ + 1.3*length_z > k)
                 {
                     if (Dom.IsSolid[0][i][j][k])
                     {
