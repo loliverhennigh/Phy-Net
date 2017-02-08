@@ -3,7 +3,7 @@ import fnmatch
 import os
 
 # flags to not include in checkpoint path
-non_checkpoint_flags = ['min_queue_examples', 'data_dir', 'train', 'base_dir', 'restore', 'max_steps', 'restore_unroll_length', 'batch_size', 'unroll_from_true', 'unroll_length', 'video_shape', 'video_length', 'test_length', 'test_nr_runs', 'test_nr_per_simulation', 'test_dimensions']
+non_checkpoint_flags = ['min_queue_examples', 'data_dir', 'train', 'base_dir', 'restore', 'max_steps', 'restore_unroll_length', 'batch_size', 'unroll_from_true', 'unroll_length', 'video_shape', 'video_length', 'test_length', 'test_nr_runs', 'test_nr_per_simulation', 'test_dimensions', 'lstm', 'gan', 'nr_discriminators', 'z_size', 'nr_residual_discriminators', 'keep_p_discriminator', 'filter_size_discriminator', 'lstm_size_discriminator', 'lambda_reconstruction']
 
 def make_checkpoint_path(base_path, FLAGS):
   # make checkpoint path with all the flags specifing different directories

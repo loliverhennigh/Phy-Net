@@ -124,7 +124,7 @@ def _generate_image_label_batch_fluid(flow, boundary, batch_size):
     images: Images. 5D tensor of [batch_size, seq_lenght, height, width, frame_num] size.
   """
 
-  num_preprocess_threads = 2
+  num_preprocess_threads = 1
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
@@ -273,8 +273,8 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train == True:
-    #run_num = 150
-    run_num = 1
+    run_num = 100
+    #run_num = 1
   else:
     run_num = 1
 
