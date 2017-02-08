@@ -273,8 +273,8 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train == True:
-    run_num = 100
-    #run_num = 1
+    #run_num = 100
+    run_num = 1
   else:
     run_num = 1
 

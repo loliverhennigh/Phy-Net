@@ -24,7 +24,7 @@ def loss_divergence(field):
 
 def loss_gradient_difference(true, generated):
   # seen in Beyond Mean Square Error
-  if len(field.get_shape()) == 5:
+  if len(true.get_shape()) == 5:
     true_x_shifted_right = true[:,:,1:,:,:]
     true_x_shifted_left = true[:,:,:-1,:,:]
     true_x_gradient = tf.abs(true_x_shifted_right - true_x_shifted_left)
