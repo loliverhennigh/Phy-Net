@@ -250,9 +250,9 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % nx/10) + 10;
-            int radius_y = (rand() % nx/10) + 10;
-            int radius_z = (rand() % nx/10) + 10;
+            int radius_x = (rand() % 10) + 10;
+            int radius_y = (rand() % 10) + 10;
+            int radius_z = (rand() % 10) + 10;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
             if (radius_z > max_radius) { max_radius = radius_z; }
@@ -292,9 +292,9 @@ int main(int argc, char **argv) try
         if (object_type == 1) // square
         {
 	    // set inner obstacle
-            int length_x = (rand() % nx/10) + 10;
-            int length_y = (rand() % nx/10) + 10;
-            int length_z = (rand() % nx/10) + 10;
+            int length_x = (rand() % 10) + 10;
+            int length_y = (rand() % 10) + 10;
+            int length_z = (rand() % 10) + 10;
             int max_length = length_x; 
             if (length_y > length_x) { max_length = length_y; }
             if (length_z > max_length) { max_length = length_z; }
@@ -352,7 +352,7 @@ int main(int argc, char **argv) try
         Dom.Initialize(0,idx,rho0,v0);
     }  
      
-    Dom.Solve(40000.0,100.0,Setup,NULL,argv[2],true,Nproc);
+    Dom.Solve(40000.0,120.0,Setup,NULL,argv[2],true,Nproc);
 
 
 }
