@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
 tf.app.flags.DEFINE_integer('lattice_size', 3,
                            """ size of lattice """)
-tf.app.flags.DEFINE_string('dimensions', '256x256',
+tf.app.flags.DEFINE_string('dimensions', '384x384',
                            """ dimension of simulation with x between value """)
 
 ################# running params
@@ -38,7 +38,7 @@ tf.app.flags.DEFINE_integer('nr_residual', 2,
                            """ number of residual blocks before down sizing """)
 tf.app.flags.DEFINE_integer('nr_downsamples', 3,
                            """ numper of downsamples """)
-tf.app.flags.DEFINE_string('nonlinearity', "concat_elu",
+tf.app.flags.DEFINE_string('nonlinearity', "relu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
 tf.app.flags.DEFINE_float('keep_p', 1.0,
                            """ keep probability for res blocks """)

@@ -274,7 +274,7 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   # num tf records
   if train == True:
     #run_num = 100
-    run_num = 1
+    run_num = 70
   else:
     run_num = 1
 
@@ -282,6 +282,8 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   dir_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1])
   if len(shape) > 2:
     dir_name = dir_name + 'x' + str(shape[2])
+
+  dir_name = dir_name + '_'
 
   if not train:
     dir_name = dir_name + '_test'

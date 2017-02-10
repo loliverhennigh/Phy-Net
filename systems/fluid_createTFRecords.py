@@ -88,6 +88,18 @@ def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start
 
   return flow_state, boundary_cond
 
+def generate_start_state(seq_length, shape, frame_num, dir_name, run_number, start_index):
+
+  # generate boundry
+  boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/fluid_flow_0000.h5', shape, frame_num) # doesnt mater what boundary is loaded
+
+  # generate flow state
+  flow_state = np.zeros([seq_length] + shape + [frame_num])
+  for i in xrange(seq_length):
+    flow_state[i] = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/fluid_flow_' + str(start_index + i).zfill(4) + '.h5', shape, frame_num)
+
+  return flow_state, boundary_cond
+
 def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
 
   if not tf.gfile.Exists(FLAGS.data_dir + '/tfrecords/' + dir_name):
