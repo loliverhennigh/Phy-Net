@@ -1,0 +1,43 @@
+
+
+## Related Papers
+
+Here is a list of related papers. This will become the bibliography after a full liturature review.
+
+### Speeding up Fluid Flow with Neural Networks
+
+There are two recent papers using neural networks to speed up the computation time of fluid simulations
+
+#### [Convolutional Neural Networks for Steady Flow Approximation](https://autodeskresearch.com/sites/default/files/ADSK-KDD2016.pdf) (Aug 13, 2016)
+
+This paper uses convolutional networks to predict the laminar flow on different objects with 100x speed increases. They use an interesting Signed Distance Function for the boundary conditions. They use OpenBL for simulations. Great citations throughout paper.
+
+#### [Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://github.com/google/FluidNet) (2017 (on going))
+This paper looks at using neural networks to accelerate eulerian fluid simulations. The main objective of this method is for animations. This paper is still under fairly active development however contains great citations.
+
+### Reduced-Order Modeling
+
+This is the technique of reducing the computational complexity of mathematical models in numerical simulations. [Here](https://www.reddit.com/r/CFD/comments/5q2t3s/could_someone_explain_reduced_order_modelling_and/?st=iyz2tlfy&sh=151e76dc) is a very breif look at them for CFD. [The wikipedia](https://en.wikipedia.org/wiki/Model_order_reduction) page on them gives a nice over view of different methods used. There is a ton of work in this area but the main idea is to reduce the dimensionality of the model using some kind of projection.
+
+#### [Reduced-order modeling: new approaches for computational physics](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20010018414.pdf) (Dec, 2003)
+
+This paper offers a good over view of what Reduced order modeling is. They look at a time domain version of the Volterra Theory. Volterra Series is a model for non-linear behavior. They use this to model the fluid flow.
+
+##### Good Quotes
+The intent in coistructig such reduced order models (ROMs) is twofold: to provide quantitatively accurate descriptions of the dynamics of systems at a computational cost much lower than the original numerical model, and to provide a means by which system dynamcis can be readily interpreted
+
+The reduction in computational cost needed to solve the ROM is offset by a potential loss of accuracy and model robustness
+
+The general purpose of reduced-order modeling is to lower the computational DOFs present in numerical model while retaining the model's fidelity.
+
+Neural networks have also been used to develop nonlinear models of unsteady aerodynamics and nonlinear models of maneuvers (Modelling and Identification of Non-Linear Unsteady Aerodynamics Loads by Neural Networks and Genetic Algorithms)
+
+#### [Reduced-order modeling Applications: Introduction and preliminaries](http://scala.uc3m.es/essim2013/pdf/1_preliminaries.pdf) (2013)
+
+Presentation on Reduced Order Model applications. These slides gives the impression that the projection techneques are usually PCA although they call them proper orthogonal decomposition (POD). They cite the Reduced-order modeling: new approaches for computational physics paper.
+
+##### Good Quotes
+
+There is a large variety of ROMs in the market. They are also known as surrogate models
+
+
