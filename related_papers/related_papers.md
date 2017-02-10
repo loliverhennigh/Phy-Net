@@ -2,7 +2,7 @@
 
 ## Related Papers
 
-Here is a list of related papers. This will become the bibliography after a full liturature review.
+Here is a list of related papers. This will become the bibliography after a full liturature review. Right now this will just contain the most relevent papers.
 
 ### Speeding up Fluid Flow with Neural Networks
 
@@ -14,6 +14,12 @@ This paper uses convolutional networks to predict the laminar flow on different 
 
 #### [Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://github.com/google/FluidNet) (2017 (on going))
 This paper looks at using neural networks to accelerate eulerian fluid simulations. The main objective of this method is for animations. This paper is still under fairly active development however contains great citations.
+
+### Data Driven Surrogate Models
+
+#### [Surrogate-Based Aerodynamic Design Optimization: Use of Surrogates in Aerodynamic Design Optimization](http://www.mtc.edu.eg/asat13/pdf/AE14.pdf)
+This paper gives a nice overview of surrogate models and their use in aerodynamics. They only look at small number of design paramaters and mention the curse of dimensionality. Accelerating Eulerian Fluid Simulations Cites this work. They list the main types of Surrogate models to be Polynomial Regression, Kriging (gaussian stochastic process models), Radial Basis Functions, Multiple Adaptive Regression Splines, and Neural Networks. Very good overview of surrogate models.
+
 
 ### Reduced-Order Modeling
 

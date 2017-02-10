@@ -98,6 +98,8 @@ tf.app.flags.DEFINE_integer('batch_size', 4,
                            """ batch size """)
 
 ################# test params
+tf.app.flags.DEFINE_bool('train', True,
+                           """ train or test """)
 tf.app.flags.DEFINE_string('test_dimensions', '1024x1024',
                            """ test video dimentions """)
 tf.app.flags.DEFINE_integer('video_length', 50,
@@ -108,10 +110,6 @@ tf.app.flags.DEFINE_integer('test_nr_runs', 50,
                            """ number of simulations to test on (making error plots) """)
 tf.app.flags.DEFINE_integer('test_nr_per_simulation', 300,
                            """ number of test runs per simulations (making error plots) """)
-
-################# input params
-tf.app.flags.DEFINE_bool('train', True,
-                           """ train or test """)
 
 def inputs(empty=False, shape=None):
   """makes input vector
