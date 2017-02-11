@@ -324,25 +324,27 @@ def unroll(state, boundary, z=None):
     # store all out
     x_out = []
     # encode
-    y_1 = encoding(state[:,0])
-    small_boundary = encoding(boundary[:,0], name='boundry_', boundary=True)
+    encode_state_template = tf.make_template('encode_state_template', encoding)
+    y_1 = encode_state_template(state[:,0])
+    encode_boundary_template = tf.make_template('encode_boundary_template', encoding)
+    small_boundary = encode_boundary_template(boundary[:,0], name='boundry_', boundary=True)
     # apply boundary
-    [small_boundary_mul, small_boundary_add] = tf.split(len(small_boundary.get_shape())-1, 2, small_boundary)
+    [small_boundary_mul, small_boundary_add] = tf.split(small_boundary, 2, len(small_boundary.get_shape())-1)
     y_1 = (small_boundary_mul * y_1) + small_boundary_add
     # add z if gan training
     if FLAGS.gan:
       y_1 = add_z(y_1, z)
     # unroll all
+    compress_template = tf.make_template('compress_template', compression)
+    decoding_template = tf.make_template('decoding_template', decoding)
     for i in xrange(FLAGS.unroll_length):
-      # set reuse to true
-      if i > 0:
-        tf.get_variable_scope().reuse_variables()
-        if FLAGS.unroll_from_true: # for testing (no compression at all)
-          y_1 = encoding(state[:,i]) 
-          y_1 = (small_boundary_mul * y_1) + small_boundary_add
+      # set reuse to true (not for new tensorflow)
+      #if i > 0:
+      #  tf.get_variable_scope().reuse_variables()
         
       # decode and add to list
-      x_2 = decoding(y_1)
+      x_2 = decoding_template(y_1)
+      #x_2 = decoding(y_1)
       x_out.append(x_2)
       # display
       # dispay images
@@ -357,14 +359,15 @@ def unroll(state, boundary, z=None):
         tf.summary.image('generated_density_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,3:4])
 
       # compression
-      y_1 = compression(y_1)
+      #y_1 = compression(y_1)
+      y_1 = compress_template(y_1)
       # boundary
       y_1 = (small_boundary_mul * y_1) + small_boundary_add
       # add z if gan training
       if FLAGS.gan:
         y_1 = add_z(y_1, z)
 
-  x_out = tf.pack(x_out)
+  x_out = tf.stack(x_out)
   perm = np.concatenate([np.array([1,0]), np.arange(2,len(x_2.get_shape())+1,1)], 0)
   print(perm)
   x_out = tf.transpose(x_out, perm=perm)
@@ -380,7 +383,7 @@ def continual_unroll(state, boundary, z=None):
     y_1 = encoding(state)
     small_boundary = encoding(boundary, name='boundry_', boundary=True)
     # apply boundary
-    [small_boundary_mul, small_boundary_add] = tf.split(len(small_boundary.get_shape())-1, 2, small_boundary)
+    [small_boundary_mul, small_boundary_add] = tf.split(small_boundary, 2, len(small_boundary.get_shape())-1)
     y_1_boundary = (small_boundary_mul * y_1) + small_boundary_add
     # add z if gan training
     if FLAGS.gan:

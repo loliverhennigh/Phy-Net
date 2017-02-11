@@ -112,10 +112,10 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
     batch_size = tf.shape(inputs)[0]
 
     if d2d:
-      output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
+      output_shape = tf.stack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
       conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
     elif d3d:
-      output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, tf.shape(inputs)[3]*stride, num_features]) 
+      output_shape = tf.stack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, tf.shape(inputs)[3]*stride, num_features]) 
       conv = tf.nn.conv3d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,stride,1], padding='SAME')
 
     conv_biased = tf.nn.bias_add(conv, biases)
@@ -160,9 +160,9 @@ def _phase_shift(I, r):
   bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
   X = tf.reshape(I, (bsize, a, b, r, r))
   X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
-  X = tf.split(1, a, X)  # a, [bsize, b, r, r]
+  X = tf.split(X, a, 1)  # a, [bsize, b, r, r]
   X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
-  X = tf.split(1, b, X)  # b, [bsize, a*r, r]
+  X = tf.split(X, b, 1)  # b, [bsize, a*r, r]
   X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
   return tf.reshape(X, (bsize, a*r, b*r, 1))
 

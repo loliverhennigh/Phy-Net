@@ -76,7 +76,7 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
   boundary = features['boundary']
 
   # reshape
-  flow = tf.pack(flow)
+  flow = tf.stack(flow)
   flow = tf.reshape(flow, [seq_length] + shape + [num_frames])
   flow = tf.to_float(flow)
   boundary = tf.reshape(boundary, [1] + shape + [1]) 
