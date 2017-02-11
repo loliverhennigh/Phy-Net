@@ -13,7 +13,7 @@ from tqdm import *
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_integer('min_queue_examples', 10,
+tf.app.flags.DEFINE_integer('min_queue_examples', 400,
                            """ min examples to queue up""")
 tf.app.flags.DEFINE_string('data_dir', '/data',
                            """ base dir for all data""")
