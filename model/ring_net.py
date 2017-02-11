@@ -380,8 +380,10 @@ def continual_unroll(state, boundary, z=None):
     exit()
   else:
     # store all out
-    y_1 = encoding(state)
-    small_boundary = encoding(boundary, name='boundry_', boundary=True)
+    encode_state_template = tf.make_template('encode_state_template', encoding)
+    y_1 = encode_state_template(state)
+    encode_boundary_template = tf.make_template('encode_boundary_template', encoding)
+    small_boundary = encode_boundary_template(boundary, name='boundry_', boundary=True)
     # apply boundary
     [small_boundary_mul, small_boundary_add] = tf.split(small_boundary, 2, len(small_boundary.get_shape())-1)
     y_1_boundary = (small_boundary_mul * y_1) + small_boundary_add
@@ -389,8 +391,10 @@ def continual_unroll(state, boundary, z=None):
     if FLAGS.gan:
       y_1_boundary = add_z(y_1_boundary, z)
     # unroll all
-    x_2 = decoding(y_1_boundary)
-    y_2 = compression(y_1_boundary)
+    compress_template = tf.make_template('compress_template', compression)
+    decoding_template = tf.make_template('decoding_template', decoding)
+    x_2 = decoding_template(y_1_boundary)
+    y_2 = compress_template(y_1_boundary)
 
   return y_1, small_boundary_mul, small_boundary_add, x_2, y_2
 

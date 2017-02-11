@@ -214,7 +214,7 @@ int main(int argc, char **argv) try
     }
     size_t Nproc = 1; 
     double u_max  = 0.1;                // Poiseuille's maximum velocity
-    double Re     = 40000.0;                  // Reynold's number
+    double Re     = 80000.0;                  // Reynold's number
     size_t nx = atoi(argv[1]);
     size_t ny = nx;
     size_t nz = nx;
@@ -250,9 +250,9 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 15) + 10;
-            int radius_y = (rand() % 15) + 10;
-            int radius_z = (rand() % 15) + 10;
+            int radius_x = (rand() % 10) + 10;
+            int radius_y = (rand() % 10) + 10;
+            int radius_z = (rand() % 10) + 10;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
             if (radius_z > max_radius) { max_radius = radius_z; }
@@ -292,9 +292,9 @@ int main(int argc, char **argv) try
         if (object_type == 1) // square
         {
 	    // set inner obstacle
-            int length_x = (rand() % 15) + 10;
-            int length_y = (rand() % 15) + 10;
-            int length_z = (rand() % 15) + 10;
+            int length_x = (rand() % 10) + 10;
+            int length_y = (rand() % 10) + 10;
+            int length_z = (rand() % 10) + 10;
             int max_length = length_x; 
             if (length_y > length_x) { max_length = length_y; }
             if (length_z > max_length) { max_length = length_z; }
