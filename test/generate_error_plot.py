@@ -19,8 +19,10 @@ import matplotlib.pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
 
+# get restore dir
 RESTORE_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 
+# shape of test simulation
 shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
@@ -31,7 +33,7 @@ def evaluate():
     state, boundary = inputs(empty=True, shape=shape)
 
     # unwrap
-    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll(state, boundary)
+    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
     # restore network
     variables_to_restore = tf.all_variables()
