@@ -15,11 +15,24 @@ This paper uses convolutional networks to predict the laminar flow on different 
 #### [Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://github.com/google/FluidNet) (2017 (on going))
 This paper looks at using neural networks to accelerate eulerian fluid simulations. The main objective of this method is for animations. This paper is still under fairly active development however contains great citations.
 
+### Lattice Boltzmann Method
+
+#### [Multi-GPU performance of incompressible flow computation by lattice Boltzmann method on GPU cluster](http://www.sciencedirect.com/science/article/pii/S0167819111000214)
+
+STILL TRYING TO GET FULL PAPER. This looks like a nice comparison paper from Tokyo. The key result is a D3R15 simulation of grid size 2000x1000x1000 with 100 gpus in 6 hours. The current neural network model should be able to handle this size.
+
+#### [Large-scale LES Wind Simulation using Lattice Boltzmann Method](http://www.sim.gsic.titech.ac.jp/TSUBAME_ESJ/ESJ_09E.pdf)
+
+Classic paper on a huge 10,000x10,000x512 grid simulation of Tokyo with 4,096 gpus. Not pure Lattice Boltzmann. Uses corrections with Smagorinsky model. Nice to get a sense of the scale
+
+#### [Performance Evaluation of Parallel Large-Scale Lattice Boltzmann Applications on Three Supercomputing Architectures](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.320.5541&rep=rep1&type=pdf)
+
+On reading list.
+
 ### Data Driven Surrogate Models
 
 #### [Surrogate-Based Aerodynamic Design Optimization: Use of Surrogates in Aerodynamic Design Optimization](http://www.mtc.edu.eg/asat13/pdf/AE14.pdf)
 This paper gives a nice overview of surrogate models and their use in aerodynamics. They only look at small number of design paramaters and mention the curse of dimensionality. Accelerating Eulerian Fluid Simulations Cites this work. They list the main types of Surrogate models to be Polynomial Regression, Kriging (gaussian stochastic process models), Radial Basis Functions, Multiple Adaptive Regression Splines, and Neural Networks. Very good overview of surrogate models.
-
 
 ### Reduced-Order Modeling
 
@@ -37,6 +50,14 @@ The reduction in computational cost needed to solve the ROM is offset by a poten
 The general purpose of reduced-order modeling is to lower the computational DOFs present in numerical model while retaining the model's fidelity.
 
 Neural networks have also been used to develop nonlinear models of unsteady aerodynamics and nonlinear models of maneuvers (Modelling and Identification of Non-Linear Unsteady Aerodynamics Loads by Neural Networks and Genetic Algorithms)
+
+#### [Reduced Order Modeling of Fluid/Structure Interaction](http://www.sandia.gov/~ikalash/rom_ldrd_sand.pdf) (2009)
+
+Very rich source of information on reduced order modeling. The explination of Proper Orthogonal Decomposition (POD) (or PCA for machine learning people) for ROM is comprehensable.
+
+#### [Introduction to Model Order Reduction](http://www.springer.com/cda/content/document/cda_downloaddocument/9783540788409-c1.pdf?SGWID=0-0-45-773840-p173830213) (2008)
+
+On reading list
 
 #### [Reduced-order modeling Applications: Introduction and preliminaries](http://scala.uc3m.es/essim2013/pdf/1_preliminaries.pdf) (2013)
 
