@@ -100,7 +100,7 @@ tf.app.flags.DEFINE_bool('tf_store_images', False,
 ################# test params
 tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
-tf.app.flags.DEFINE_string('test_dimensions', '1024x1024',
+tf.app.flags.DEFINE_string('test_dimensions', '384x384',
                            """ test video dimentions """)
 tf.app.flags.DEFINE_integer('video_length', 50,
                            """ video dimentions """)
