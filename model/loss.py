@@ -12,7 +12,7 @@ FLAGS = tf.app.flags.FLAGS
 
 def loss_mse(true, generated):
   loss = tf.nn.l2_loss(true - generated)
-  tf.summary.scalar('reconstruction_loss', loss)
+  #tf.summary.scalar('reconstruction_loss', loss)
   return loss
  
 def loss_divergence(field):
@@ -34,7 +34,7 @@ def loss_gradient_difference(true, generated):
     generated_x_gradient = tf.abs(generated_x_shifted_right - generated_x_shifted_left)
 
     loss_x_gradient = tf.nn.l2_loss(true_x_gradient - generated_x_gradient)
-    tf.summary.scalar('loss_x_gradient', loss_x_gradient)
+    #tf.summary.scalar('loss_x_gradient', loss_x_gradient)
 
     true_y_shifted_right = true[:,:,:,1:,:]
     true_y_shifted_left = true[:,:,:,:-1,:]
@@ -45,10 +45,10 @@ def loss_gradient_difference(true, generated):
     generated_y_gradient = tf.abs(generated_y_shifted_right - generated_y_shifted_left)
     
     loss_y_gradient = tf.nn.l2_loss(true_y_gradient - generated_y_gradient)
-    tf.summary.scalar('loss_y_gradient', loss_y_gradient)
+    #tf.summary.scalar('loss_y_gradient', loss_y_gradient)
 
     loss = loss_x_gradient + loss_y_gradient
-    tf.summary.scalar('gradient_loss', loss)
+    #tf.summary.scalar('gradient_loss', loss)
 
   return loss
 

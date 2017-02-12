@@ -42,9 +42,6 @@ def adam_updates(params, cost_or_grads, lr=0.001, mom1=0.9, mom2=0.999):
     updates.append(t.assign_add(1))
     return tf.group(*updates)
 
-
-nr_gpus = 1
-
 def train():
   """Train ring_net for a number of steps."""
 
@@ -53,37 +50,50 @@ def train():
     print(FLAGS.system + " system!")
     print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
 
-    # make inputs
-    state, boundary = inputs() 
-    unroll_template = tf.make_template('unroll_template', unroll)
-    x_2_o = unroll_template(state, boundary)
+    # store grad and loss values
+    grads = []
+    loss_gen = []
 
-    all_params = tf.trainable_variables()
+    # do for all gpus
+    print("unrolling network on all gpus...")
+    for i in range(FLAGS.nr_gpus):
+      # make input que runner for gpu
+      state, boundary = inputs() 
+
+      # hard set gpu
+      with tf.device('/gpu:%d' % i):
+        # unroll on gpu
+        x_2_o = unroll_template(state, boundary)
+
+        # if i is one then get variables to store all trainable params and 
+        if i == 0:
+          all_params = tf.trainable_variables()
+
+        # loss mse
+        error_mse = loss_mse(state, x_2_o)
+        # loss gradient (see "beyond mean squared error")
+        error_gradient = loss_gradient_difference(state, x_2_o)
+        error = error_mse + FLAGS.lambda_divergence * error_gradient
+        loss_gen.append(error)
+
+        # store gradients
+        grads.append(tf.gradients(loss_gen[i], all_params))
+
+    # exponential moving average for training
     ema = tf.train.ExponentialMovingAverage(decay=.9995)
     maintain_averages_op = tf.group(ema.apply(all_params))
 
-    grads = []
-    loss_gen = []
-    # do for all gpus
-    for i in range(nr_gpus):
-      # unwrap
-      x_2_o = unroll_template(state, boundary)
-      error_mse = loss_mse(state, x_2_o)
-      error_gradient = loss_gradient_difference(state, x_2_o)
-      error = error_mse + FLAGS.lambda_divergence * error_gradient
-      loss_gen.append(error)
-      # gradients
-      grads.append(tf.gradients(loss_gen[i], all_params))
-
+    # store up the loss and gradients on gpu:0
     with tf.device('/gpu:0'):
-      for i in range(1, nr_gpus):
+      for i in range(1, FLAGS.nr_gpus):
         loss_gen[0] += loss_gen[i]
         for j in range(len(grads[0])):
           grads[0][j] += grads[i][j]
 
       # train (hopefuly)
-      optimizer = tf.group(adam_updates(all_params, grads[0], mom1=0.95, mom2=0.9995), maintain_averages_op)
+      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op)
 
+    # set total loss for printing
     total_loss = loss_gen[0]
     
     # List of all Variables
@@ -121,18 +131,19 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.summary.FileWriter(TRAIN_DIR, graph_def=graph_def)
 
+    t = time.time()
     for step in xrange(FLAGS.max_steps):
-      t = time.time()
       _ , loss_value = sess.run([optimizer, total_loss],feed_dict={})
-      elapsed = time.time() - t
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
       if step%200 == 0:
+        elapsed = time.time() - t
         print("loss value at " + str(loss_value))
-        print("time per batch is " + str(elapsed))
+        print("time per batch is " + str(elapsed/200.))
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step) 
+        t = time.time()
 
       if step%2000 == 0:
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')

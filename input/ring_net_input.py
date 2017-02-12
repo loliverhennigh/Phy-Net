@@ -15,8 +15,12 @@ FLAGS = tf.app.flags.FLAGS
 # Constants describing the training process.
 tf.app.flags.DEFINE_integer('min_queue_examples', 400,
                            """ min examples to queue up""")
+tf.app.flags.DEFINE_integer('num_preprocess_threads', 3,
+                           """ number of process threads for que runner """)
 tf.app.flags.DEFINE_string('data_dir', '/data',
                            """ base dir for all data""")
+tf.app.flags.DEFINE_string('tf_data_dir', '../data',
+                           """ base dir for saving tf records data""")
 
 def read_data(filename_queue, seq_length, shape, num_frames, color, raw_type='uint8'):
   """ reads data from tfrecord files.
@@ -124,7 +128,7 @@ def _generate_image_label_batch_fluid(flow, boundary, batch_size):
     images: Images. 5D tensor of [batch_size, seq_lenght, height, width, frame_num] size.
   """
 
-  num_preprocess_threads = 2
+  num_preprocess_threads = FLAGS.num_preprocess_threads
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
@@ -291,14 +295,15 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   print("begining to generate tf records")
   fluid_createTFRecords.generate_tfrecords(seq_length, run_num, shape, num_frames, dir_name)
 
-  tfrecord_filename = glb(FLAGS.data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  tfrecord_filename = glb(FLAGS.tf_data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
   flow, boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
 
   # dispay images
-  if len(shape) == 2:
+  #if len(shape) == 2:
+  if False: # for testing
     tf.summary.image('x', flow[:,:,:,0:1])
     tf.summary.image('y', flow[:,:,:,1:2])
     tf.summary.image('density', flow[:,:,:,2:3])

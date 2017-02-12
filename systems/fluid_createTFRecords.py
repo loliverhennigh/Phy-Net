@@ -102,13 +102,13 @@ def generate_start_state(seq_length, shape, frame_num, dir_name, run_number, sta
 
 def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
 
-  if not tf.gfile.Exists(FLAGS.data_dir + '/tfrecords/' + dir_name):
-    tf.gfile.MakeDirs(FLAGS.data_dir + '/tfrecords/' + dir_name)
+  if not tf.gfile.Exists(FLAGS.tf_data_dir + '/tfrecords/' + dir_name):
+    tf.gfile.MakeDirs(FLAGS.tf_data_dir + '/tfrecords/' + dir_name)
 
   for run in tqdm(xrange(num_runs)):
-    filename = FLAGS.data_dir + '/tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
+    filename = FLAGS.tf_data_dir + '/tfrecords/' + dir_name + '/run_' + str(run) + '_seq_length_' + str(seq_length) + '.tfrecords'
   
-    tfrecord_filename = glb(FLAGS.data_dir + '/tfrecords/' + dir_name + '/*')  
+    tfrecord_filename = glb(FLAGS.tf_data_dir + '/tfrecords/' + dir_name + '/*')  
 
     if filename not in tfrecord_filename:
    

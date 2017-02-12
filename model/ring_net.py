@@ -70,20 +70,16 @@ tf.app.flags.DEFINE_integer('filter_size_discriminator', 32,
                            """ filter size for first res block of discriminator """)
 tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
                            """ size of lstm cell in discriminator """)
- 
-
 
 ################# optimize params
 tf.app.flags.DEFINE_string('optimizer', "adam",
-                           """ what optimizer to use """)
-tf.app.flags.DEFINE_float('reconstruction_lr', 1e-5,
+                           """ what optimizer to use (currently adam is the only option)""")
+tf.app.flags.DEFINE_float('reconstruction_lr', 0.001,
                            """ learning rete for reconstruction """)
 tf.app.flags.DEFINE_float('gan_lr', 2e-5,
                            """ learning rate for training gan """)
-tf.app.flags.DEFINE_float('lambda_reconstruction', 1.0,
-                           """ weight of reconstruction error """) 
 tf.app.flags.DEFINE_float('lambda_divergence', 0.2,
-                           """ weight of divergence error """)
+                           """ weight of divergence or gradient differnce error """)
 
 ################# train params
 tf.app.flags.DEFINE_integer('max_steps', 1000000,
@@ -96,6 +92,10 @@ tf.app.flags.DEFINE_bool('unroll_from_true', False,
                            """ use the true data when unrolling the network (probably just used for unroll_length 1 when doing curriculum learning""")
 tf.app.flags.DEFINE_integer('batch_size', 4,
                            """ batch size """)
+tf.app.flags.DEFINE_integer('nr_gpus', 1,
+                           """ number of gpus for training (each gpu with have batch size FLAGS.batch_size""")
+tf.app.flags.DEFINE_bool('tf_store_images', False,
+                           """ store the velocity images in tensorboard (makes checkpoints waaaaay to big) """)
 
 ################# test params
 tf.app.flags.DEFINE_bool('train', True,
@@ -111,6 +111,7 @@ tf.app.flags.DEFINE_integer('test_nr_runs', 50,
 tf.app.flags.DEFINE_integer('test_nr_per_simulation', 300,
                            """ number of test runs per simulations (making error plots) """)
 
+####### inputs #######
 def inputs(empty=False, shape=None):
   """makes input vector
   Args:
@@ -134,6 +135,7 @@ def inputs(empty=False, shape=None):
   else:
     return state, boundary
 
+####### encoding #######
 def encoding(inputs, name='', boundary=False):
   """Builds encoding part of ring net.
   Args:
@@ -164,7 +166,12 @@ def encoding(inputs, name='', boundary=False):
     x_i = res_block(x_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name=name + "resnet_last_before_compression")
 
   return x_i
+####### encoding template #######
+encode_state_template = tf.make_template('encode_state_template', encoding)
+encode_boundary_template = tf.make_template('encode_boundary_template', encoding)
+#################################
 
+####### compression #############
 def compression(y):
   """Builds compressed dynamical system part of the net.
   Args:
@@ -184,8 +191,11 @@ def compression(y):
     y_i = res_block(y_i, filter_size=FLAGS.filter_size_compression, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_compression_" + str(i))
 
   return y_i
+####### compression template ######
+compress_template = tf.make_template('compress_template', compression)
+#################################
 
-# not functional yet!!!
+''' # not functional yet!!!
 def compression_lstm(y, hidden_state=None):
   """Builds compressed dynamical system part of the net.
   Args:
@@ -232,7 +242,9 @@ def compression_lstm(y, hidden_state=None):
   hidden = [hidden_state_1_i_new, hidden_state_2_i_new]
 
   return y_i, hidden 
+'''
 
+####### decoding #######
 def decoding(y):
   """Builds decoding part of ring net.
   Args:
@@ -256,7 +268,11 @@ def decoding(y):
   y_i = transpose_conv_layer(y_i, 3, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
 
   return tf.nn.tanh(y_i)
+####### decoding template #######
+decoding_template = tf.make_template('decoding_template', decoding)
+#################################
 
+''' CURRENTLY NOT IN USE
 def add_z(y, z):
   y_shape = int_shape(y) 
   z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
@@ -297,22 +313,9 @@ def discriminator(output, hidden_state=None):
   label = tf.pack(label)
 
   return label
+'''
 
-def encode_compress_decode(state, boundary, hidden_state=None, z=None):
- 
-  y_1 = encoding(state)
-  small_boundary = encoding(boundary, name='boundary')
-  y_1 = small_boundary * y_1
-  if FLAGS.lstm:
-    y_2, hidden_state = lstm_compression(y_1, hidden_state)
-  else:
-    y_2 = compression(y_1)
-  if FLAGS.gan:
-    y_2 = add_z(y_2, z)
-  x_2 = decoding(y_2) 
-
-  return x_2, hidden_state
-
+####### unroll #######
 def unroll(state, boundary, z=None):
 
   total_unroll_length = FLAGS.init_unroll_length + FLAGS.unroll_length 
@@ -324,9 +327,7 @@ def unroll(state, boundary, z=None):
     # store all out
     x_out = []
     # encode
-    encode_state_template = tf.make_template('encode_state_template', encoding)
     y_1 = encode_state_template(state[:,0])
-    encode_boundary_template = tf.make_template('encode_boundary_template', encoding)
     small_boundary = encode_boundary_template(boundary[:,0], name='boundry_', boundary=True)
     # apply boundary
     [small_boundary_mul, small_boundary_add] = tf.split(small_boundary, 2, len(small_boundary.get_shape())-1)
@@ -335,8 +336,6 @@ def unroll(state, boundary, z=None):
     if FLAGS.gan:
       y_1 = add_z(y_1, z)
     # unroll all
-    compress_template = tf.make_template('compress_template', compression)
-    decoding_template = tf.make_template('decoding_template', decoding)
     for i in xrange(FLAGS.unroll_length):
       # set reuse to true (not for new tensorflow)
       #if i > 0:
@@ -348,15 +347,16 @@ def unroll(state, boundary, z=None):
       x_out.append(x_2)
       # display
       # dispay images
-      if len(x_2.get_shape()) == 4:
-        tf.summary.image('generated_x_' + str(i), x_2[:,:,:,0:1])
-        tf.summary.image('generated_y_' + str(i), x_2[:,:,:,1:2])
-        tf.summary.image('generated_density_' + str(i), x_2[:,:,:,2:3])
-      elif len(x_2.get_shape()) == 5:
-        tf.summary.image('generated_x_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,0:1])
-        tf.summary.image('generated_y_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,1:2])
-        tf.summary.image('generated_z_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,2:3])
-        tf.summary.image('generated_density_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,3:4])
+      if FLAGS.tf_store_images: # currently not functional
+        if len(x_2.get_shape()) == 4:
+          tf.summary.image('generated_x_' + str(i), x_2[:,:,:,0:1])
+          tf.summary.image('generated_y_' + str(i), x_2[:,:,:,1:2])
+          tf.summary.image('generated_density_' + str(i), x_2[:,:,:,2:3])
+        elif len(x_2.get_shape()) == 5:
+          tf.summary.image('generated_x_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,0:1])
+          tf.summary.image('generated_y_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,1:2])
+          tf.summary.image('generated_z_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,2:3])
+          tf.summary.image('generated_density_' + str(i), x_2[:,int(x_2.get_shape()[1])/2,:,:,3:4])
 
       # compression
       #y_1 = compression(y_1)
@@ -372,7 +372,11 @@ def unroll(state, boundary, z=None):
   print(perm)
   x_out = tf.transpose(x_out, perm=perm)
   return x_out
+####### unroll template #######
+unroll_template = tf.make_template('unroll_template', unroll)
+###############################
 
+####### continual unroll #######
 def continual_unroll(state, boundary, z=None):
 
   if FLAGS.lstm:
@@ -380,9 +384,7 @@ def continual_unroll(state, boundary, z=None):
     exit()
   else:
     # store all out
-    encode_state_template = tf.make_template('encode_state_template', encoding)
     y_1 = encode_state_template(state)
-    encode_boundary_template = tf.make_template('encode_boundary_template', encoding)
     small_boundary = encode_boundary_template(boundary, name='boundry_', boundary=True)
     # apply boundary
     [small_boundary_mul, small_boundary_add] = tf.split(small_boundary, 2, len(small_boundary.get_shape())-1)
@@ -391,79 +393,11 @@ def continual_unroll(state, boundary, z=None):
     if FLAGS.gan:
       y_1_boundary = add_z(y_1_boundary, z)
     # unroll all
-    compress_template = tf.make_template('compress_template', compression)
-    decoding_template = tf.make_template('decoding_template', decoding)
     x_2 = decoding_template(y_1_boundary)
     y_2 = compress_template(y_1_boundary)
 
   return y_1, small_boundary_mul, small_boundary_add, x_2, y_2
-
-
-  """
-  x_2_o = []
-  if FLAGS.gan:
-    x_2, hidden_state = encode_compress_decode(state[:,0], z=z[:,0], hidden_state=None)
-    gan_t_label, gan_t_hidden_state = discriminator(state[:,0], None)
-  else: 
-    x_2, hidden_state = encode_compress_decode(state[:,0], hidden_state=None)
-
-
-  tf.get_variable_scope().reuse_variable()
-  if FLAGS.gan:
-    gan_g_label, gan_g_hidden_state = ring_net.discriminator(state[:,0], None)
-
-  for i in xrange(FLAGS.init_unroll_length-1):
-    if FLAGS.gan: 
-      # unroll generator network 
-      x_2, hidden_state = ring_net.encode_compress_decode(state[:,i+1], hidden_state, z[:,i+1,:])
-  
-      # unroll discriminator network on true
-      gan_t_label, gan_t_hidden_state = ring_net.discriminator(state[:,i+1], gan_t_hidden_state)
-
-      # unroll discriminator network on generated
-      gan_g_label, gan_g_hidden_state = ring_net.discriminator(state[:,i+1], gan_g_hidden_state)
-
-    else:
-      # unroll generator network 
-      x_2, hidden_state = ring_net.encode_compress_decode(flow_boundary[:,i+1], hidden_state)
-
-  x_2_o.append(x_2)
-
-  if FLAGS.gan:
-    # unroll discriminator network on true
-    gan_t_label, gan_t_hidden_state = ring_net.discriminator(state[:,FLAGS.init_unroll_length], gan_t_hidden_state)
-
-    # unroll discriminator network on generated
-    gan_g_label, gan_g_hidden_state = ring_net.discriminator(x_2, gan_g_hidden_state)
-
-  for i in xrange(FLAGS.unroll_length):
-    if FLAGS.unroll_from_true:
-      next_state = state[:,i+FLAGS.init_unroll_length]
-    else:
-      next_state = x2
-
-    if FLAGS.gan: 
-      # unroll generator network 
-      x_2, hidden_state = ring_net.encode_compress_decode(next_state, hidden_state, z[:,i+FLAGS.init_unroll_length,:])
-  
-      # unroll discriminator network on true
-      gan_t_label, gan_t_hidden_state = ring_net.discriminator(state[:,i+FLAGS.init_unroll_length+1], gan_t_hidden_state)
-
-      # unroll discriminator network on generated
-      gan_g_label, gan_g_hidden_state = ring_net.discriminator(x_2, gan_g_hidden_state)
-
-    else:
-      # unroll generator network 
-      x_2, hidden_state = ring_net.encode_compress_decode(next_state, hidden_state)
-
-    x_2_o.append(x_2)
-
-  x_2_o = tf.pack(x_2_o)
-  x_2_o = tf.transpose(x_2_o, perm[1,0])
-
-  if FLAGS.gan
-    return x_2_o, gan_t_label, gan_g_label
-  else:
-    return x_2_o
-  """
+####### continual unroll template #######
+continual_unroll_template = tf.make_template('unroll_template', continual_unroll) # same variable scope as unroll_template
+#########################################
 
