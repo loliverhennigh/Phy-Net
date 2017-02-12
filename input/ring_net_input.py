@@ -302,18 +302,18 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   flow, boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
 
   # dispay images
-  #if len(shape) == 2:
-  if False: # for testing
-    tf.summary.image('x', flow[:,:,:,0:1])
-    tf.summary.image('y', flow[:,:,:,1:2])
-    tf.summary.image('density', flow[:,:,:,2:3])
-    tf.summary.image('boundary', boundary[:,:,:,0:1])
-  elif len(shape) == 3:
-    tf.summary.image('x', flow[:,shape[0]/2,:,:,0:1])
-    tf.summary.image('y', flow[:,shape[0]/2,:,:,1:2])
-    tf.summary.image('z', flow[:,shape[0]/2,:,:,2:3])
-    tf.summary.image('density', flow[:,shape[0]/2,:,:,3:4])
-    tf.summary.image('boundary', boundary[:,shape[0]/2,:,:,0:1])
+  if FLAGS.tf_store_images: # not working with multi gpu traing
+    if len(shape) == 2:
+      tf.summary.image('x', flow[:,:,:,0:1])
+      tf.summary.image('y', flow[:,:,:,1:2])
+      tf.summary.image('density', flow[:,:,:,2:3])
+      tf.summary.image('boundary', boundary[:,:,:,0:1])
+    elif len(shape) == 3:
+      tf.summary.image('x', flow[:,shape[0]/2,:,:,0:1])
+      tf.summary.image('y', flow[:,shape[0]/2,:,:,1:2])
+      tf.summary.image('z', flow[:,shape[0]/2,:,:,2:3])
+      tf.summary.image('density', flow[:,shape[0]/2,:,:,3:4])
+      tf.summary.image('boundary', boundary[:,shape[0]/2,:,:,0:1])
 
   flows, boundarys = _generate_image_label_batch_fluid(flow, boundary, batch_size)
 
