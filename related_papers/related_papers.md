@@ -17,6 +17,8 @@ This paper looks at using neural networks to accelerate eulerian fluid simulatio
 
 ## Lattice Boltzmann Method
 
+### [](http://www.sciencedirect.com/science/article/pii/S0167819111000214)
+
 ### [Multi-GPU performance of incompressible flow computation by lattice Boltzmann method on GPU cluster](http://www.sciencedirect.com/science/article/pii/S0167819111000214)
 
 STILL TRYING TO GET FULL PAPER. This looks like a nice comparison paper from Tokyo. The key result is a D3R15 simulation of grid size 2000x1000x1000 with 100 gpus in 6 hours. The current neural network model should be able to handle this size.
