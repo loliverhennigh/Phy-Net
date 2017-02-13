@@ -75,12 +75,21 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
     elif d3d:
       weights = _variable('weights', shape=[kernel_size,kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
+    # pad it mobius
+    if d2d: 
+      top = inputs[:,-1:,:,:]
+      bottom = inputs[:,:1,:,:]
+      inputs = tf.concat([top, inputs, bottom], axis=1)
+      left = inputs[:,:,-1:,:]
+      right = inputs[:,:,:1,:]
+      inputs = tf.concat([left, inputs, right], axis=2)
+
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
     if d2d:
-      conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='SAME')
+      conv = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1], padding='VALID')
     elif d3d:
-      conv = tf.nn.conv3d(inputs, weights, strides=[1, stride, stride, stride, 1], padding='SAME')
+      conv = tf.nn.conv3d(inputs, weights, strides=[1, stride, stride, stride, 1], padding='VALID')
 
     conv_biased = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
