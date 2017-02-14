@@ -14,7 +14,7 @@ def int_shape(x):
 def concat_elu(x):
     """ like concatenated ReLU (http://arxiv.org/abs/1603.05201), but then with ELU """
     axis = len(x.get_shape())-1
-    return tf.nn.elu(tf.concat(axis, [x, -x]))
+    return tf.nn.elu(tf.concat([x, -x], axis))
 
 def set_nonlinearity(name):
   if name == 'concat_elu':
