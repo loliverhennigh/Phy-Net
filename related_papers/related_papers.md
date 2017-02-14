@@ -19,13 +19,17 @@ This paper looks at using neural networks to accelerate eulerian fluid simulatio
 
 ### [](http://www.sciencedirect.com/science/article/pii/S0167819111000214)
 
-### [Multi-GPU performance of incompressible flow computation by lattice Boltzmann method on GPU cluster](http://www.sciencedirect.com/science/article/pii/S0167819111000214)
+### [Multi-GPU performance of incompressible flow computation by lattice Boltzmann method on GPU cluster](http://www.sciencedirect.com/science/article/pii/S0167819111000214) (Feb 27, 2011)
 
-STILL TRYING TO GET FULL PAPER. This looks like a nice comparison paper from Tokyo. The key result is a D3R15 simulation of grid size 2000x1000x1000 with 100 gpus in 6 hours. The current neural network model should be able to handle this size.
+This looks like a nice comparison paper from Tokyo. The key result is a D3R15 simulation of grid size 2000x1000x1000 with 100 gpus in 6 hours. The current neural network model should be able to handle this size.
+
+#### Good Quotes
+
+Large-scale computational fluid dynamics (CFD) becomes more and more indispensible for science and engineering. For example, more than 10 million meshes are needed for simulating a flow around a car, a whole human body, weather prediction, Tsunami and so on.
 
 ### [Large-scale LES Wind Simulation using Lattice Boltzmann Method](http://www.sim.gsic.titech.ac.jp/TSUBAME_ESJ/ESJ_09E.pdf)
 
-Classic paper on a huge 10,000x10,000x512 grid simulation of Tokyo with 4,096 gpus. Not pure Lattice Boltzmann. Uses corrections with Smagorinsky model. Nice to get a sense of the scale
+Classic paper on a huge 10,000x10,000x512 grid simulation of Tokyo with 4,096 gpus. Not pure Lattice Boltzmann. Uses corrections with Smagorinsky model. Nice to get a sense of the scale.
 
 ### [Performance Evaluation of Parallel Large-Scale Lattice Boltzmann Applications on Three Supercomputing Architectures](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.320.5541&rep=rep1&type=pdf)
 

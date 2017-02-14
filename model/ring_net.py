@@ -13,6 +13,7 @@ import tensorflow as tf
 import numpy as np
 from nn import *
 import input.ring_net_input as ring_net_input
+import systems.fluid_createTFRecords as fluid
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -108,7 +109,7 @@ tf.app.flags.DEFINE_integer('test_length', 50,
                            """ sequence length for testing (making error plots) """)
 tf.app.flags.DEFINE_integer('test_nr_runs', 50,
                            """ number of simulations to test on (making error plots) """)
-tf.app.flags.DEFINE_integer('test_nr_per_simulation', 300,
+tf.app.flags.DEFINE_integer('test_nr_per_simulation', 1,
                            """ number of test runs per simulations (making error plots) """)
 
 ####### inputs #######
@@ -134,6 +135,15 @@ def inputs(empty=False, shape=None):
     return state, boundary, z
   else:
     return state, boundary
+
+####### feed_dict #######
+def feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
+  """makes feed dict for testing
+  """
+  if FLAGS.system == "fluid_flow":
+    state, boundary = fluid.generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index)
+ 
+  return state, boundary
 
 ####### encoding #######
 def encoding(inputs, name='', boundary=False):
