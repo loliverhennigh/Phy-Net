@@ -76,13 +76,17 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
       weights = _variable('weights', shape=[kernel_size,kernel_size,kernel_size,input_channels,num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
     # pad it mobius
-    if d2d: 
-      top = inputs[:,-1:,:,:]
-      bottom = inputs[:,:1,:,:]
-      inputs = tf.concat([top, inputs, bottom], axis=1)
-      left = inputs[:,:,-1:,:]
-      right = inputs[:,:,:1,:]
-      inputs = tf.concat([left, inputs, right], axis=2)
+    top = inputs[:,-1:]
+    bottom = inputs[:,:1]
+    inputs = tf.concat([top, inputs, bottom], axis=1)
+    left = inputs[:,:,-1:]
+    right = inputs[:,:,:1]
+    inputs = tf.concat([left, inputs, right], axis=2)
+
+    if d3d:
+      z_in = inputs[:,:,:,-1:]
+      z_out = inputs[:,:,:,:1]
+      inputs = tf.concat([z_in, inputs, z_out], axis=3)
 
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
