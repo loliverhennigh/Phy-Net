@@ -79,8 +79,8 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
     top = inputs[:,-1:]
     bottom = inputs[:,:1]
     inputs = tf.concat([top, inputs, bottom], axis=1)
-    left = inputs[:,:,-1:]
-    right = inputs[:,:,:1]
+    left = tf.zeros_like(inputs[:,:,-1:]) # make zero
+    right = tf.zeros_like(inputs[:,:,:1]) # make zero
     inputs = tf.concat([left, inputs, right], axis=2)
 
     if d3d:
