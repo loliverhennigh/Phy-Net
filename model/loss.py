@@ -19,7 +19,7 @@ def loss_divergence(field):
   if len(field.get_shape()) == 5:
     field_div = spatial_divergence_2d(field)
   loss = tf.nn.l2_loss(field_div)
-  tf.summary.scalar('divergence_loss', loss)
+  #tf.summary.scalar('divergence_loss', loss)
   return loss
 
 def loss_gradient_difference(true, generated):

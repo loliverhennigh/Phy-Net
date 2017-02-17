@@ -68,12 +68,16 @@ def evaluate():
       y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
 
       # normalize velocity
+      #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,2:3])) #*boundary_max[0,:,:,0:1]
+      #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1])) #*boundary_max[0,:,:,0:1]
       frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1]) + np.square(x_2_g[0,:,:,1:2])) #*boundary_max[0,:,:,0:1]
      
       # get true normalized velocity 
       state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 10+step)
       flow_true = state_feed_dict[0]
       frame_true = np.sqrt(np.square(flow_true[:,:,0:1]) + np.square(flow_true[:,:,1:2])) #*boundary_max[0,:,:,0:1]
+      #frame_true = np.sqrt(np.square(flow_true[:,:,2:3])) #*boundary_max[0,:,:,0:1]
+      #frame_true = np.sqrt(np.square(flow_true[:,:,0:1])) #*boundary_max[0,:,:,0:1]
 
       # make frame for video
       frame = np.concatenate([frame_generated, frame_true, np.abs(frame_generated - frame_true)], 1)

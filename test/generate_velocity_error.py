@@ -68,7 +68,11 @@ def evaluate():
         true_state = state_feed_dict[0]
 
         # run throught a line halfway through the simulation and add up the velocitys
-        halfway_index = 3*shape[0]/4
+        halfway_index = 4*shape[0]/5
+
+        #true_flow_rate += np.sum(true_state[:,:,1]) # y velocity
+        #generated_flow_rate += np.sum(generated_state[:,:,1]) # y velocity
+
         for i in xrange(shape[1]):
           counter = 0
           # add velocity if not boundary
@@ -78,21 +82,27 @@ def evaluate():
             # calc generated flow rate
             generated_flow_rate += generated_state[i,halfway_index,0] # y velocity
             counter += 1
+      
+        # print things
+        #print("generated_flow_rate " + str(generated_flow_rate))
+        #print("true_flow_rate " + str(true_flow_rate))
 
       # print things
       #print("counter " + str(counter))
       #print("true_flow_rate " + str(true_flow_rate))
 
       # normalize for size of gap and number of steps
-      true_flow_rate = true_flow_rate/(counter*FLAGS.test_length)
-      generated_flow_rate = generated_flow_rate/(counter*FLAGS.test_length)
+      #true_flow_rate = true_flow_rate/(counter*FLAGS.test_length)
+      #generated_flow_rate = generated_flow_rate/(counter*FLAGS.test_length)
+      true_flow_rate = true_flow_rate/(FLAGS.test_length)
+      generated_flow_rate = generated_flow_rate/(FLAGS.test_length)
 
       # calc percentage error
       percentage_error[sim] = (true_flow_rate - generated_flow_rate)/true_flow_rate
       print("percentage off is " + str(percentage_error[sim]))
 
     plt.figure(1)
-    n, bins, patches = plt.hist(percentage_error, 10, normed=1)
+    n, bins, patches = plt.hist(percentage_error, 50, normed=1)
     #l = plt.plot(bins)
     plt.title('error')
     plt.legend()
