@@ -282,7 +282,8 @@ def decoding(y):
 decoding_template = tf.make_template('decoding_template', decoding)
 #################################
 
-''' CURRENTLY NOT IN USE
+'''
+CURRENTLY NOT IN USE
 def add_z(y, z):
   y_shape = int_shape(y) 
   z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
@@ -353,6 +354,7 @@ def unroll(state, boundary, z=None):
         
       # decode and add to list
       x_2 = decoding_template(y_1)
+      #x_2 = x_2 * (1.0-boundary[:,0]) # kill grads on boundary
       #x_2 = decoding(y_1)
       x_out.append(x_2)
       # display

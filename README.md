@@ -19,6 +19,8 @@ Better simulations are under development using Mechsys library. Here is a sneak 
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/cm-cc7_Djfg/0.jpg)](https://www.youtube.com/watch?v=cm-cc7_Djfg)
 
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/2G8-OHjZQto/0.jpg)](https://www.youtube.com/watch?v=2G8-OHjZQto)
+
 
 ## Network Details
 The network is kept all convolutional and uses an [convolutional lstm](https://github.com/loliverhennigh/Convolutional-LSTM-in-Tensorflow). Up sampling using Deconvolution is replased with computationaly effeicent [subpixel convolutions](https://github.com/Tetrachrome/subpixel). Keeping the network convolutional allows the trained model to be used on simulations of different sizes allowing the network to focus on just learning compressed representations of the dynamics.
