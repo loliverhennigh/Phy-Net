@@ -70,6 +70,7 @@ def train():
 
     # set total loss for printing
     total_loss = loss_gen[0]
+    tf.summary.scalar('total_loss', total_loss)
     
     # List of all Variables
     variables = tf.global_variables()
