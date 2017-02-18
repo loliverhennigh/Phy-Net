@@ -214,11 +214,11 @@ int main(int argc, char **argv) try
     }
     size_t Nproc = 1; 
     double u_max  = 0.1;                // Poiseuille's maximum velocity
-    double Re     = 80000.0;                  // Reynold's number
+    double Re     = 40000.0;                  // Reynold's number
     size_t nx = atoi(argv[1]);
     size_t ny = nx;
     size_t nz = nx;
-    double nu     = u_max*(2*200)/Re; // viscocity (hard set now)
+    double nu     = u_max*(2*12)/Re; // viscocity (hard set now)
     FLBM::Domain Dom(D3Q15, nu, iVec3_t(nx,ny,nz), 1.0, 1.0);
     
     UserData dat;
@@ -238,7 +238,7 @@ int main(int argc, char **argv) try
 
     // number of objects between 10 and 25
     //size_t num_objects = (rand() % 10) + 10;
-    size_t num_objects = (nx/32)*(nx/32)*(nx/32);
+    size_t num_objects = 5*(nx/96)*(nx/96)*(nx/96);
 
     // set objects
     size_t h = 0;
@@ -250,9 +250,9 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 10) + 10;
-            int radius_y = (rand() % 10) + 10;
-            int radius_z = (rand() % 10) + 10;
+            int radius_x = (rand() % 10) + 5;
+            int radius_y = (rand() % 10) + 5;
+            int radius_z = (rand() % 10) + 5;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
             if (radius_z > max_radius) { max_radius = radius_z; }
@@ -292,9 +292,9 @@ int main(int argc, char **argv) try
         if (object_type == 1) // square
         {
 	    // set inner obstacle
-            int length_x = (rand() % 10) + 10;
-            int length_y = (rand() % 10) + 10;
-            int length_z = (rand() % 10) + 10;
+            int length_x = (rand() % 10) + 5;
+            int length_y = (rand() % 10) + 5;
+            int length_z = (rand() % 10) + 5;
             int max_length = length_x; 
             if (length_y > length_x) { max_length = length_y; }
             if (length_z > max_length) { max_length = length_z; }

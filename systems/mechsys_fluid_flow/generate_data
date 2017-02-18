@@ -1,14 +1,11 @@
 
 #!/bin/bash
-#./run_bunch_2d 384 70
-#./run_bunch_2d 384 70 test
 ./run_bunch_2d 256 70
 ./run_bunch_2d 256 70 test
-#./run_bunch_2d 768 30 test
-#./run_bunch_2d 1536 10 test
-#./run_bunch_2d 3072 1 test
-#./run_bunch_3d 96 70
-#./run_bunch_3d 96 70 test
-#./run_bunch_3d 192 10 test
-#./run_bunch_3d 192 1 test
+./run_bunch_2d 512 10 test
+./run_bunch_2d 1024 3 test
+./run_bunch_2d 2048 1 test
+./run_bunch_3d 96 70
+./run_bunch_3d 96 70 test
+./run_bunch_3d 192 10 test
 
