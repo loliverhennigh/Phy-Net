@@ -17,6 +17,7 @@ from systems.fluid_createTFRecords import generate_feed_dict
 import random
 import time
 from tqdm import *
+import matplotlib
 import matplotlib.pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
@@ -147,53 +148,52 @@ def evaluate():
 
     flux_generated_z_std = np.sqrt(np.sum(np.square(flux_generated_z - np.expand_dims(flux_generated_z_mean, axis=0)), axis=0)/FLAGS.test_nr_runs)
 
+    plt.style.use('seaborn-darkgrid')
 
-    plt.figure(1)
-    plt.errorbar(x, mse_error_mean, yerr=mse_error_std)
-    #for i in xrange(FLAGS.test_nr_runs):
-    #  plt.plot(mse_error[i])
-    plt.title('error')
-    plt.legend()
-    plt.figure(2)
-    plt.errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true')
-    plt.errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated')
-    plt.title('divergence')
-    plt.legend()
-    plt.figure(3)
-    plt.errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true')
-    plt.errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated')
-    plt.title('drag x')
-    plt.legend()
-    plt.figure(4)
-    plt.errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true')
-    plt.errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated')
-    plt.title('drag y')
-    plt.legend()
-    plt.figure(5)
-    plt.errorbar(x, drag_true_z_mean, yerr=drag_true_z_std, label='z drag true')
-    plt.errorbar(x, drag_generated_z_mean, yerr=drag_generated_z_std, label='z drag generated')
-    plt.title('drag z')
-    plt.legend()
+    font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 6}
 
-    plt.figure(6)
-    plt.errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true')
-    plt.errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated')
-    #for i in xrange(FLAGS.test_nr_runs):
-    #  plt.plot(flux_generated_x[i])
-    plt.title('flux x')
-    plt.legend()
-    plt.figure(7)
-    plt.errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='y flux true')
-    plt.errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='y flux generated')
-    plt.title('flux y')
-    plt.legend()
-    plt.figure(8)
-    plt.errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='z flux true')
-    plt.errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='z flux generated')
-    plt.title('flux z')
-    plt.legend()
+    matplotlib.rc('font', **font)
 
+    f, axarr = plt.subplots(8, sharex=True, figsize=(5,8.5))
+    plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", fontsize="x-large", y=0.94)
 
+    axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
+    axarr[0].set_title('error', y=0.96)
+
+    axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
+    axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
+    axarr[1].set_title('divergence', y=0.96)
+
+    axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
+    axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
+    axarr[2].set_title('drag x', y=0.96)
+
+    axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
+    axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
+    axarr[3].set_title('drag y', y=0.96)
+
+    axarr[4].errorbar(x, drag_true_z_mean, yerr=drag_true_z_std, label='z drag true', c='g', capsize=0, lw=0.3)
+    axarr[4].errorbar(x, drag_generated_z_mean, yerr=drag_generated_z_std, label='z drag generated', c='y', capsize=0, lw=0.3)
+    axarr[4].set_title('drag z', y=0.96)
+
+    axarr[5].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
+    axarr[5].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
+    axarr[5].set_title('flux x', y=0.96)
+
+    axarr[6].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
+    axarr[6].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
+    axarr[6].set_title('flux y', y=0.96)
+
+    axarr[7].errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='True', c='g', capsize=0, lw=0.3)
+    axarr[7].errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='Generated', c='y', capsize=0, lw=0.3)
+    axarr[7].set_title('flux y', y=0.96)
+    axarr[7].set_xlabel('step')
+
+    plt.legend(loc="upper_left")
+    plt.savefig(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + "_3d_error_plot.png")
+ 
     plt.show()
 
        

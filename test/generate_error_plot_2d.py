@@ -73,7 +73,7 @@ def evaluate():
         y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
 
         # run network 
-        for step in xrange(FLAGS.test_length):
+        for step in tqdm(xrange(FLAGS.test_length)):
           # network step
           y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
           generated_state = x_2_g[0]
@@ -151,10 +151,10 @@ def evaluate():
     axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
     axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
     axarr[1].set_title('divergence', y=0.96)
-    axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.2)
+    axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
     axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
     axarr[2].set_title('drag x', y=0.96)
-    axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.2)
+    axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
     axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
     axarr[3].set_title('drag y', y=0.96)
     axarr[4].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
@@ -162,8 +162,8 @@ def evaluate():
     #for i in xrange(FLAGS.test_nr_runs):
     #  plt.plot(flux_generated_x[i])
     axarr[4].set_title('flux x', y=0.96)
-    axarr[5].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='y flux true', c='g', capsize=0, lw=0.3)
-    axarr[5].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='y flux generated', c='y', capsize=0, lw=0.3)
+    axarr[5].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
+    axarr[5].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
     axarr[5].set_title('flux y', y=0.96)
     axarr[5].set_xlabel('step')
     #axarr[5].legend(loc="upper_left")

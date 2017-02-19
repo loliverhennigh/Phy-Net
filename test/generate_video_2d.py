@@ -61,6 +61,7 @@ def evaluate():
     state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0)
     feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
+    last_step_frame_true = 0.0
 
     # generate video
     for step in tqdm(xrange(FLAGS.video_length)):
@@ -76,6 +77,8 @@ def evaluate():
       state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0+step)
       flow_true = state_feed_dict[0]
       frame_true = np.sqrt(np.square(flow_true[:,:,0:1]) + np.square(flow_true[:,:,1:2])) #*boundary_max[0,:,:,0:1]
+      print(np.sum(np.abs(frame_true - last_step_frame_true)))
+      last_step_frame_true = frame_true
       #frame_true = np.sqrt(np.square(flow_true[:,:,2:3])) #*boundary_max[0,:,:,0:1]
       #frame_true = np.sqrt(np.square(flow_true[:,:,0:1])) #*boundary_max[0,:,:,0:1]
 

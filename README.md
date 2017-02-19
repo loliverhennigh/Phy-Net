@@ -1,19 +1,19 @@
 # Phy-Net
-This repository is a perliminary looks at compressing physics simulations onto neural networks. Similary works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
 
-This Repository is currently being expanded with more complex architectures, better datasets (including electromagnetic) and generative adversarial training.
+## Introduction
 
-## Diffusion
-Compressing an [Implicit Finite Difference Method](https://en.wikipedia.org/wiki/Finite_difference_method) approximation of diffusion. No speed ups are seen because diffusion extremely simple. This is just to test architectures.
+This repository is a looks at compressing lattice boltzmann physics simulations onto neural networks. This approach relies on learning a compressed representation of simulation while learning the dynamics on this compressed form. This allows us to simulate large systems with low memory and computation. We apply this method to Lattice Boltzmann fluid flow simulations. This work is currently being written up.
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/N57BvSspLtU/0.jpg)](https://www.youtube.com/watch?v=N57BvSspLtU)
+## Related Work
+Similary works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
 
-## Lattice Boltzmann Fluid flow
-Compressing non-laminar fluid flow around objects. The fluid flow was generated with the open source [palabos library](http://www.palabos.org/). The cpu time for each simulation is approximatly 155 seconds. The approximate time for the neural network is .78 seconds. Total speed up so far is roughly 198 x. The video bellow was not in the training set. The left is true, middle generated, right difference.
+## Network Details
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/AAQCuJM67RE/0.jpg)](https://www.youtube.com/watch?v=AAQCuJM67RE=54s)
+The network learns a encoding, compression, and decoding peice. The encoding piece learns to compress the state of the physics simulation. The compression piece learns the dynamics of the simulation on this compressed piece. The decoding piece learns to decode the compressed representation. The network is kept all convolutional allowing it to be used and trained and evaluated on any size simulation. This means that once the model is trained on a small simulation (say 256 by 256 grid) it can then attempt to simulate the dynamics of a larger simulation (say 1024 by 1024 grid). We show that the model can still produced accurate results even with evaluating larger simulations then seen during training.
 
-Better simulations are under development using Mechsys library. Here is a sneak peak!
+## Lattice Boltzmann Fluid Flow
+
+Using the Mechsys library we generated 2D and 3D fluid simulations to train our model. For the 2D case we simulate a variety of random objects interacting with a steady flow and periodic boundary conditions. The simulation is a 256 by 256 grid. Using the trained model we evaluate on grid size 256 by 256, 512 by 512, and 1024 by 1024. Here are examples of generated simulations (better videos being produced now).
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/SsAWHkcENEI/0.jpg)](https://www.youtube.com/watch?v=SsAWHkcENEI)
 
@@ -21,9 +21,15 @@ Better simulations are under development using Mechsys library. Here is a sneak 
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/2G8-OHjZQto/0.jpg)](https://www.youtube.com/watch?v=2G8-OHjZQto)
 
+We can 
 
-## Network Details
-The network is kept all convolutional and uses an [convolutional lstm](https://github.com/loliverhennigh/Convolutional-LSTM-in-Tensorflow). Up sampling using Deconvolution is replased with computationaly effeicent [subpixel convolutions](https://github.com/Tetrachrome/subpixel). Keeping the network convolutional allows the trained model to be used on simulations of different sizes allowing the network to focus on just learning compressed representations of the dynamics.
+
+3D simulations are currently being generated and trained on. 
+
+## Conclusion
+
+This project is under active development.
+
 
 
 
