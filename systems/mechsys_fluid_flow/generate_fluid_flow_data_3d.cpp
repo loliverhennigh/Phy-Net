@@ -23,6 +23,7 @@
 #include <mechsys/flbm/Domain.h>
 #include <time.h>
 #include <math.h>
+#include <stdio.h>
 
 #include <iostream>
 #include <string>
@@ -216,8 +217,8 @@ int main(int argc, char **argv) try
     double u_max  = 0.1;                // Poiseuille's maximum velocity
     double Re     = 40000.0;                  // Reynold's number
     size_t nx = atoi(argv[1]);
-    size_t ny = nx;
-    size_t nz = nx;
+    size_t ny = nx/4;
+    size_t nz = nx/4;
     double nu     = u_max*(2*12)/Re; // viscocity (hard set now)
     FLBM::Domain Dom(D3Q15, nu, iVec3_t(nx,ny,nz), 1.0, 1.0);
     
@@ -238,7 +239,7 @@ int main(int argc, char **argv) try
 
     // number of objects between 10 and 25
     //size_t num_objects = (rand() % 10) + 10;
-    size_t num_objects = 5*(nx/96)*(nx/96)*(nx/96);
+    size_t num_objects = 3*(nx/160)*(nx/160)*(nx/160);
 
     // set objects
     size_t h = 0;
@@ -250,25 +251,31 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 10) + 5;
-            int radius_y = (rand() % 10) + 5;
-            int radius_z = (rand() % 10) + 5;
+            int radius_x = 12;
+            int radius_y = 12;
+            int radius_z = 12;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
             if (radius_z > max_radius) { max_radius = radius_z; }
 	    double obsX   = (rand() % (nx-(3*max_radius))) + (1.5*max_radius) ;   // x position
-	    double obsY   = (rand() % (ny-(3*max_radius))) + (1.5*max_radius) ;   // y position
-	    double obsZ   = (rand() % (nz-(3*max_radius))) + (1.5*max_radius) ;   // z position
+	    double obsY   = (rand() % (ny-(2*max_radius))) + (max_radius) ;   // y position
+	    double obsZ   = (rand() % (nz-(2*max_radius))) + (max_radius) ;   // z position
             int alpha = (rand() % 90);
             int beta = (rand() % 90);
             int place_object = 1; 
             for (size_t i=0;i<nx;i++)
-            for (size_t j=0;j<ny;j++)
-            for (size_t k=0;k<nz;k++)
+            for (size_t j=0;j<ny+2*max_radius;j++)
+            for (size_t k=0;k<nz+2*max_radius;k++)
             {
-                if (in_sphere(double(i),double(j),double(k),obsX,obsY,obsZ,1.3*radius_x,1.3*radius_y,1.3*radius_z,alpha,beta) == 1)
+                if (in_sphere(double(i),double(j),double(k),obsX,obsY,obsZ,1.0*radius_x,1.0*radius_y,1.0*radius_z,alpha,beta) == 1)
                 {
-                    if (Dom.IsSolid[0][i][j][k])
+                    int j_ind = j-max_radius;
+                    int k_ind = k-max_radius;
+                    if (j_ind < 0)    { j_ind = ny + j_ind; }
+                    if (j_ind > ny-1) { j_ind = j_ind - ny; }
+                    if (k_ind < 0)    { k_ind = nz + k_ind; }
+                    if (k_ind > nz-1) { k_ind = k_ind - nz; }
+                    if (Dom.IsSolid[0][i][j_ind][k_ind])
                     {
                         place_object = 0;
                     }
@@ -278,56 +285,23 @@ int main(int argc, char **argv) try
             {
                 h++;
                 for (size_t i=0;i<nx;i++)
-                for (size_t j=0;j<ny;j++)
-                for (size_t k=0;k<nz;k++)
+                for (size_t j=0;j<ny+2*max_radius;j++)
+                for (size_t k=0;k<nz+2*max_radius;k++)
                 {
+
                     if (in_sphere(double(i),double(j),double(k),obsX,obsY,obsZ,radius_x,radius_y,radius_z,alpha,beta) == 1)
                     {
-                        Dom.IsSolid[0][i][j][k] = true;
+                        int j_ind = j-max_radius;
+                        int k_ind = k-max_radius;
+                        if (j_ind < 0)    { j_ind = ny + j_ind; }
+                        if (j_ind > ny-1) { j_ind = j_ind - ny; }
+                        if (k_ind < 0)    { k_ind = nz + k_ind; }
+                        if (k_ind > nz-1) { k_ind = k_ind - nz; }
+                        Dom.IsSolid[0][i][j_ind][k_ind] = true;
                     }
                 }
             }
 
-        }
-        if (object_type == 1) // square
-        {
-	    // set inner obstacle
-            int length_x = (rand() % 10) + 5;
-            int length_y = (rand() % 10) + 5;
-            int length_z = (rand() % 10) + 5;
-            int max_length = length_x; 
-            if (length_y > length_x) { max_length = length_y; }
-            if (length_z > max_length) { max_length = length_z; }
-	    double obsX   = (rand() % (nx-(2*max_length))) + (1.0*double(max_length)) ;   // x position
-	    double obsY   = (rand() % (ny-(2*max_length))) + (1.0*double(max_length)) ;   // y position
-	    double obsZ   = (rand() % (nz-(2*max_length))) + (1.0*double(max_length)) ;   // z position
-            int place_object = 1; 
-            for (size_t i=0;i<nx;i++)
-            for (size_t j=0;j<ny;j++)
-            for (size_t k=0;k<nz;k++)
-            {
-                if (obsX-1.3*length_x < i && obsX + 1.3*length_x > i && obsY-1.3*length_y < j && obsY + 1.3*length_y > j &&  obsZ-1.3*length_z < k && obsZ + 1.3*length_z > k)
-                {
-                    if (Dom.IsSolid[0][i][j][k])
-                    {
-                        place_object = 0;
-                    }
-                }
-
-            }
-            if (place_object == 1)
-            {
-                h++;
-                for (size_t i=0;i<nx;i++)
-                for (size_t j=0;j<ny;j++)
-                for (size_t k=0;k<nz;k++)
-                {
-                    if (obsX-length_x < i && obsX + length_x > i && obsY-length_y < j && obsY + length_y > j &&  obsZ-length_z < k && obsZ + length_z > k)
-                    {
-                        Dom.IsSolid[0][i][j][k] = true;
-                    }
-                }
-            }
         }
 
 
