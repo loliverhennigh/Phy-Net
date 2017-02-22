@@ -98,6 +98,10 @@ def train():
       try:
          saver_restore.restore(sess, ckpt.model_checkpoint_path)
       except:
+         print("there was a problem using all variables in checkpoint, We will try just restoring encoder and decoder")
+      try:
+         autoencoder_variables = [variable for i, variable in enumerate(variables_to_restore) if (("decoding_template" in variable.name[:variable.name.index(':')]) or ("encode_state_template" in variable.name[:variable.name.index(':')]) or ("encode_boundary_template" in variable.name[:variable.name.index(':')]))]
+      except:
          print("there was a problem using that checkpoint! We will just use random init")
 
     # Start que runner

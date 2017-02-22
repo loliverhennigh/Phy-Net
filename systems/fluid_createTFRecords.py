@@ -130,7 +130,12 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
           
           flow_state = np.float32(flow_state)
           seq_frames[i] = flow_state 
-        ind_dat = ind_dat + seq_length/2 # this can be made much more efficent but for now this is how it do
+        if seq_length > 2:
+          ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it do
+        elif seq_length == 2:
+          ind_dat += 2
+        elif seq_length == 1:
+          ind_dat += 1
 
         # make feature map
         feature = make_feature_from_seq(seq_frames, seq_length, shape, frame_num)

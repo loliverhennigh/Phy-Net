@@ -372,12 +372,13 @@ def unroll(state, boundary, z=None):
 
       # compression
       #y_1 = compression(y_1)
-      y_1 = compress_template(y_1)
-      # boundary
-      y_1 = (small_boundary_mul * y_1) + small_boundary_add
-      # add z if gan training
-      if FLAGS.gan:
-        y_1 = add_z(y_1, z)
+      if FLAGS.unroll_length > 1:
+        y_1 = compress_template(y_1)
+        # boundary
+        y_1 = (small_boundary_mul * y_1) + small_boundary_add
+        # add z if gan training
+        if FLAGS.gan:
+          y_1 = add_z(y_1, z)
 
   x_out = tf.stack(x_out)
   perm = np.concatenate([np.array([1,0]), np.arange(2,len(x_2.get_shape())+1,1)], 0)
