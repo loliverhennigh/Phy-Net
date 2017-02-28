@@ -215,7 +215,7 @@ int main(int argc, char **argv) try
     }
     size_t Nproc = 1; 
     double u_max  = 0.1;                // Poiseuille's maximum velocity
-    double Re     = 40000.0;                  // Reynold's number
+    double Re     = 5000.0;                  // Reynold's number
     size_t nx = atoi(argv[1]);
     size_t ny = nx/4;
     size_t nz = nx/4;
@@ -326,7 +326,7 @@ int main(int argc, char **argv) try
         Dom.Initialize(0,idx,rho0,v0);
     }  
      
-    Dom.Solve(40000.0,120.0,Setup,NULL,argv[2],true,Nproc);
+    Dom.Solve(15000.0,60.0,Setup,NULL,argv[2],true,Nproc);
 
 
 }
