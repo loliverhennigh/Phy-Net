@@ -21,13 +21,13 @@ Using the Mechsys library we generated 2D and 3D fluid simulations to train our 
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/1TnNSnyRVmI/0.jpg)](https://www.youtube.com/watch?v=1TnNSnyRVmI)
 
-We can look at various properies of the true versus generated simulations such as mean squared error, divergence of the velocity vector field, drag, and flux. Averaging over several test simulations we see the that the generated simulation produces realistic values. The following graphs show this for 256, 512, and 1024 sized simulations.
+We can look at various properties of the true versus generated simulations such as mean squared error, divergence of the velocity vector field, drag, and flux. Averaging over several test simulations we see the that the generated simulation produces realistic values. The following graphs show this for 256, 512, and 1024 sized simulations.
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x256_2d_error_plot.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_error_plot.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_error_plot.png)
 
-We notice that the model produces lower then expected y flux for both the 512 and 1024 simulations. This is understandable because the larger simulations tend to have higher y flows then smaller simulations due to the distrobution of objects being more clumped. It appears that this effect can be mitigated by changing the object density and distorbution (under investigation).
+We notice that the model produces lower then expected y flux for both the 512 and 1024 simulations. This is understandable because the larger simulations tend to have higher y flows then smaller simulations due to the distribution of objects being more clumped. It appears that this effect can be mitigated by changing the object density and distribution (under investigation).
 
 A few more snap shots of simulations
 
