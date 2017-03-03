@@ -1,0 +1,7 @@
+
+# generate values for current best 2d simulation
+python generate_video_2d.py --dimensions=256x256 --test_nr_runs=4 --test_dimensions=256x256 --nr_downsamples=4 --filter_size_compression=64  --base_dir=../checkpoints_compression --lattice_size=3 --filter_size=8 --reconstruction_lr=0.0004 --nr_residual_compression=3
+python generate_video_2d.py --dimensions=256x256 --test_nr_runs=4 --test_dimensions=512x512 --nr_downsamples=4 --filter_size_compression=64  --base_dir=../checkpoints_compression --lattice_size=3 --filter_size=8 --reconstruction_lr=0.0004 --nr_residual_compression=3
+python generate_video_2d.py --dimensions=256x256 --test_nr_runs=4 --test_dimensions=1024x1024 --nr_downsamples=4 --filter_size_compression=64  --base_dir=../checkpoints_compression --lattice_size=3 --filter_size=8 --reconstruction_lr=0.0004 --nr_residual_compression=3
+
+
