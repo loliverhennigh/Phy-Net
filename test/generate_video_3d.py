@@ -29,7 +29,7 @@ shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
 # open video
-success = video.open('fluid_flow.mov', fourcc, 4, (3*shape[1], shape[2]), True)
+success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + '_3d_video.mov', fourcc, 4, (3*shape[2], shape[1]), True)
 if success:
   print("opened video stream to fluid_flow.mov")
 else:
@@ -58,7 +58,7 @@ def evaluate():
       exit()
 
     # get frame
-    state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test', 0, 0)
+    state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test', 0, 100)
     feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
     last_step_frame_true = 0.0
@@ -71,11 +71,11 @@ def evaluate():
       # normalize velocity
       #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,2:3])) #*boundary_max[0,:,:,0:1]
       #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1])) #*boundary_max[0,:,:,0:1]
-      index = shape[0]/2+20
+      index = shape[0]/2 + 10
       frame_generated = np.sqrt(np.square(x_2_g[0,index,:,:,0:1]) + np.square(x_2_g[0,index,:,:,1:2]) + np.square(x_2_g[0,index,:,:,2:3])) #*boundary_max[0,:,:,0:1]
      
       # get true normalized velocity 
-      state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test', 0, 0+step)
+      state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test', 0, 100+step)
       flow_true = state_feed_dict[0]
       frame_true = np.sqrt(np.square(flow_true[index,:,:,0:1]) + np.square(flow_true[index,:,:,1:2]) + np.square(flow_true[index,:,:,2:3])) #*boundary_max[0,:,:,0:1]
       print(np.sum(np.abs(frame_true - last_step_frame_true)))

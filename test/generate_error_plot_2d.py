@@ -168,7 +168,7 @@ def evaluate():
     axarr[5].set_xlabel('step')
     #axarr[5].legend(loc="upper_left")
     plt.legend(loc="upper_left")
-    plt.savefig(str(shape[0]) + "x" + str(shape[1]) + "_2d_error_plot.png")
+    plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_error_plot.png")
  
     plt.show()
 

@@ -215,7 +215,7 @@ int main(int argc, char **argv) try
     }
     size_t Nproc = 1; 
     double u_max  = 0.1;                // Poiseuille's maximum velocity
-    double Re     = 5000.0;                  // Reynold's number
+    double Re     = 3000.0;                  // Reynold's number
     size_t nx = atoi(argv[1]);
     size_t ny = nx/4;
     size_t nz = nx/4;

@@ -103,7 +103,7 @@ tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
 tf.app.flags.DEFINE_string('test_dimensions', '384x384',
                            """ test video dimentions """)
-tf.app.flags.DEFINE_integer('video_length', 50,
+tf.app.flags.DEFINE_integer('video_length', 200,
                            """ video dimentions """)
 tf.app.flags.DEFINE_integer('test_length', 50,
                            """ sequence length for testing (making error plots) """)
@@ -407,7 +407,10 @@ def continual_unroll(state, boundary, z=None):
       y_1_boundary = add_z(y_1_boundary, z)
     # unroll all
     x_2 = decoding_template(y_1_boundary)
-    y_2 = compress_template(y_1_boundary)
+    if FLAGS.unroll_length > 1:
+      y_2 = compress_template(y_1_boundary)
+    else:
+      y_2 = None
 
   return y_1, small_boundary_mul, small_boundary_add, x_2, y_2
 ####### continual unroll template #######
