@@ -47,9 +47,9 @@ Running the 2d simulations requires around 100 Gb of hard drive memory, a good g
 
 The test and train sets are generated using the [Mechsys library](http://mechsys.nongnu.org/index.html). Follow the installation guild found [here](http://mechsys.nongnu.org/installation.html). Once the directory is unpacked run `ccmake .` followed by `c`. Then scroll to the flag that says `A_USE_OCL` and hit enter to raise the flag. Press `c` again to configure followed by `g` to generate (I found ccmake to be confusing at first). Quit the prompt and run `make`. Now copy the contents of `Phy-Net/systems/mechsys_fluid_flow` to the directory `mechsys/tflbm`. Now enter `mechsys/tflbm` and run `make` followed by 
 
-```
+`
 ./generate_data
-```. 
+`. 
 
 This will generate the required train and test set for the 2D simulations and save them to `/data/` (this can be changed in the `run_bunch_2d` script. 3D simulation is commented out for now. Generating the 2D simulation data will require about 12 hours.
 
@@ -57,9 +57,9 @@ This will generate the required train and test set for the 2D simulations and sa
 
 To train the model enter the `Phy-Net/train` directory and run
 
-```
+`
 python compress_train.py
-```
+`
 
 This will first generate tfrecords for the generated training data and then begin training. Multi GPU training is supported with the flag `--nr_gpu=n` for `n` gpus. The important flags for training and model configurations are
 
