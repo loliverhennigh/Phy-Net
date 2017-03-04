@@ -91,9 +91,9 @@ Simplifing the data generation process with a script would be nice. It seems rea
 
 The 3D simulations are not training effectively yet. The attempts made so far are, 
 
-    - Reducing Reynolds number. The Reynolds number appeared to be to high making the simulations extremely chaotic and thus hard to learn. Lowering it seems to have helped convergence and accuracy.
-    - Made all objects spheres of the same size. Not sure how much of an effect this has had. Once the network trains on these simulations effectively we will try more diverse datasets.
-    - larger network with filter size 64 and compression filter size 256. Seems to slow down training and cause over fitting.
+* Reducing Reynolds number. The Reynolds number appeared to be to high making the simulations extremely chaotic and thus hard to learn. Lowering it seems to have helped convergence and accuracy.
+* Made all objects spheres of the same size. Not sure how much of an effect this has had. Once the network trains on these simulations effectively we will try more diverse datasets.
+* larger network with filter size 64 and compression filter size 256. Seems to slow down training and cause over fitting.
 
 - Test extracting state
 
