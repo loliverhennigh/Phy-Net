@@ -5,7 +5,7 @@
 ./run_bunch_2d 512 10 test
 ./run_bunch_2d 1024 3 test
 ./run_bunch_2d 2048 1 test
-./run_bunch_3d 96 70
-./run_bunch_3d 96 70 test
-./run_bunch_3d 192 10 test
+./run_bunch_3d 160 40
+./run_bunch_3d 160 40 test
+./run_bunch_3d 320 1 test
 

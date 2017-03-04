@@ -24,7 +24,7 @@ tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
 tf.app.flags.DEFINE_integer('lattice_size', 3,
                            """ size of lattice """)
-tf.app.flags.DEFINE_string('dimensions', '384x384',
+tf.app.flags.DEFINE_string('dimensions', '256x256',
                            """ dimension of simulation with x between value """)
 
 ################# running params
@@ -37,7 +37,7 @@ tf.app.flags.DEFINE_bool('restore', True,
 ## resnet params
 tf.app.flags.DEFINE_integer('nr_residual', 2,
                            """ number of residual blocks before down sizing """)
-tf.app.flags.DEFINE_integer('nr_downsamples', 3,
+tf.app.flags.DEFINE_integer('nr_downsamples', 4,
                            """ numper of downsamples """)
 tf.app.flags.DEFINE_string('nonlinearity', "relu",
                            """ what nonlinearity to use, leakey_relu, relu, elu, concat_elu """)
@@ -45,16 +45,16 @@ tf.app.flags.DEFINE_float('keep_p', 1.0,
                            """ keep probability for res blocks """)
 tf.app.flags.DEFINE_bool('gated', False,
                            """ gated res blocks """)
-tf.app.flags.DEFINE_integer('filter_size', 16,
+tf.app.flags.DEFINE_integer('filter_size', 8,
                            """ filter size for first res block. the rest of the filters are 2x every downsample """)
-## lstm params
+## compression params
 tf.app.flags.DEFINE_bool('lstm', False,
                            """ lstm or non recurrent""")
-tf.app.flags.DEFINE_integer('nr_residual_compression', 4,
+tf.app.flags.DEFINE_integer('nr_residual_compression', 3,
                            """ number of residual compression layers """)
 tf.app.flags.DEFINE_integer('filter_size_compression', 64,
                            """ filter size for compression piece """)
-## gan params
+## gan params (currently not in use)
 tf.app.flags.DEFINE_bool('gan', False,
                            """ use gan training """)
 tf.app.flags.DEFINE_integer('nr_discriminators', 1,
@@ -75,7 +75,7 @@ tf.app.flags.DEFINE_integer('lstm_size_discriminator', 512,
 ################# optimize params
 tf.app.flags.DEFINE_string('optimizer', "adam",
                            """ what optimizer to use (currently adam is the only option)""")
-tf.app.flags.DEFINE_float('reconstruction_lr', 0.001,
+tf.app.flags.DEFINE_float('reconstruction_lr', 0.0004,
                            """ learning rete for reconstruction """)
 tf.app.flags.DEFINE_float('gan_lr', 2e-5,
                            """ learning rate for training gan """)
@@ -101,7 +101,7 @@ tf.app.flags.DEFINE_bool('tf_store_images', False,
 ################# test params
 tf.app.flags.DEFINE_bool('train', True,
                            """ train or test """)
-tf.app.flags.DEFINE_string('test_dimensions', '384x384',
+tf.app.flags.DEFINE_string('test_dimensions', '256x256',
                            """ test video dimentions """)
 tf.app.flags.DEFINE_integer('video_length', 200,
                            """ video dimentions """)
