@@ -45,54 +45,55 @@ Running the 2d simulations requires around 100 Gb of hard drive memory, a good g
 
 ### Generating Data
 
-The test and train sets are generated using the [Mechsys library](http://mechsys.nongnu.org/index.html). Follow the installation guild found [here](http://mechsys.nongnu.org/installation.html). Once the directory is unpacked run 'ccmake .' followed by 'c'. Then scroll to the flag that says 'A_USE_OCL' and hit enter to raise the flag. Press 'c' again to configure followed by 'g' to generate (I found ccmake to be confusing at first). Quit the prompt and run 'make'. Now copy the contents of 'Phy-Net/systems/mechsys_fluid_flow' to the directory 'mechsys/tflbm'. Now enter 'mechsys/tflbm' and run 'make' followed by 
+The test and train sets are generated using the [Mechsys library](http://mechsys.nongnu.org/index.html). Follow the installation guild found [here](http://mechsys.nongnu.org/installation.html). Once the directory is unpacked run `ccmake .` followed by `c`. Then scroll to the flag that says `A_USE_OCL` and hit enter to raise the flag. Press `c` again to configure followed by `g` to generate (I found ccmake to be confusing at first). Quit the prompt and run `make`. Now copy the contents of `Phy-Net/systems/mechsys_fluid_flow` to the directory `mechsys/tflbm`. Now enter `mechsys/tflbm` and run `make` followed by 
 
-'''
+```
 ./generate_data
-'''. 
+```. 
 
-This will generate the required train and test set for the 2D simulations and save them to '/data/' (this can be changed in the 'run_bunch_2d' script. 3D simulation is commented out for now. Generating the 2D simulation data will require about 12 hours.
+This will generate the required train and test set for the 2D simulations and save them to `/data/` (this can be changed in the `run_bunch_2d` script. 3D simulation is commented out for now. Generating the 2D simulation data will require about 12 hours.
 
 ### Train Model
 
-To train the model enter the `Phy-Net/train' directory and run
+To train the model enter the `Phy-Net/train` directory and run
 
-'''
+```
 python compress_train.py
-'''
+```
 
-This will first generate tfrecords for the generated training data and then begin training. Multi GPU training is supported with the flag '--nr_gpu=n' for 'n' gpus. The important flags for training and model configurations are
+This will first generate tfrecords for the generated training data and then begin training. Multi GPU training is supported with the flag `--nr_gpu=n` for `n` gpus. The important flags for training and model configurations are
 
-- '--nr_residual=2' Number of residual blocks in each downsample chunk of the encoder and decoder
-- '--nr_downsamples=4' Number of downsamples in the encoder and decoder
-- '--filter_size=8' Number of filters for the first encoder layer. The filters double after each downsample.
-- '--nr_residual_compression=3' Number of residual blocks in compression peice.
-- '--filter_size_compression=64' filter size of residual blocks in compression peice.
-- '--unroll_length=5' Number of steps in the future the network is unrolled.
+- `--nr_residual=2` Number of residual blocks in each downsample chunk of the encoder and decoder
+- `--nr_downsamples=4` Number of downsamples in the encoder and decoder
+- `--filter_size=8` Number of filters for the first encoder layer. The filters double after each downsample.
+- `--nr_residual_compression=3` Number of residual blocks in compression peice.
+- `--filter_size_compression=64` filter size of residual blocks in compression peice.
+- `--unroll_length=5` Number of steps in the future the network is unrolled.
 
-All flags and their uses can be found in 'Phy-Net/model/ring_net.py'.
+All flags and their uses can be found in `Phy-Net/model/ring_net.py`.
 
 ### Test Model
 
 There are 4 different tests that can be run.
 
-- 'run_2d_error_script' Generates the error plots seen above
-- 'run_2d_image_script' Generates the images seen above
-- 'run_2d_video_script' Generates the videos seen above
-- 'runtime_script' Generates benchmarks for run times
+- `run_2d_error_script` Generates the error plots seen above
+- `run_2d_image_script` Generates the images seen above
+- `run_2d_video_script` Generates the videos seen above
+- `runtime_script` Generates benchmarks for run times
 
 ## TODO
 
 - Stream line data generation process
 
-Simplifing the data generation process with a script would be nice. It seems reasonable that there could be a script that downloads and compiles 'mechsys' as well as moves the necessary files around.
+Simplifing the data generation process with a script would be nice. It seems reasonable that there could be a script that downloads and compiles `mechsys` as well as moves the necessary files around.
 
 - Train model effectively on 3D simulations
 
 The 3D simulations are not training effectively yet. The attempts made so far are, 
-  - Reducing Reynolds number. The Reynolds number appeared to be to high making the simulations extremely chaotic and thus hard to learn. Lowering it seems to have helped convergence and accuracy.
-  - Made all objects spheres of the same size. Not sure how much of an effect this has had. Once the network trains on these simulations effectively we will try more diverse datasets.
-  - larger network with filter size 64 and compression filter size 256. Seems to slow down training and cause over fitting.
+
+    - Reducing Reynolds number. The Reynolds number appeared to be to high making the simulations extremely chaotic and thus hard to learn. Lowering it seems to have helped convergence and accuracy.
+    - Made all objects spheres of the same size. Not sure how much of an effect this has had. Once the network trains on these simulations effectively we will try more diverse datasets.
+    - larger network with filter size 64 and compression filter size 256. Seems to slow down training and cause over fitting.
 
 - Test extracting state
 
