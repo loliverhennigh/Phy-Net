@@ -24,33 +24,59 @@ def train():
     print(FLAGS.system + " system!")
     print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
 
-    # make inputs
-    print("Constructing inputs...")
-    state, boundary = inputs() 
+    # store grad and loss values
+    grads = []
+    loss_gen = []
 
-    # unwrap
-    print("Unwrapping network...")
-    x_2_o = unroll(state, boundary)
+    # do for all gpus
+    print("unrolling network on all gpus...")
+    for i in range(FLAGS.nr_gpus):
+      # make input que runner for gpu
+      state, boundary = inputs() 
 
-    # apply boundary
-    #x_2_o = x_2_o * (1.0-boundary)
+      # hard set gpu
+      with tf.device('/gpu:%d' % i):
+        # unroll on gpu
+        x_2_o = unroll_template(state, boundary)
 
-    # error
-    error_mse = loss_mse(state, x_2_o)
-    error_gradient = loss_gradient_difference(state, x_2_o)
-    #error_divergence = loss_divergence(x_2_o)
-    #error = error_mse + FLAGS.lambda_divergence * error_divergence
-    error = error_mse + FLAGS.lambda_divergence * error_gradient
+        # if i is one then get variables to store all trainable params and 
+        if i == 0:
+          all_params = tf.trainable_variables()
 
-    # train (hopefuly)
-    optimizer = set_optimizer(FLAGS.optimizer, FLAGS.reconstruction_lr)
-    train_op = optimizer_general(error, optimizer)
+        # loss mse
+        error_mse = loss_mse(state, x_2_o)
+        # loss gradient (see "beyond mean squared error")
+        error_gradient = loss_gradient_difference(state, x_2_o)
+        #error_gradient = loss_divergence(x_2_o)
+        error = error_mse + FLAGS.lambda_divergence * error_gradient
+        loss_gen.append(error)
+
+        # store gradients
+        grads.append(tf.gradients(loss_gen[i], all_params))
+
+    # exponential moving average for training
+    ema = tf.train.ExponentialMovingAverage(decay=.9995)
+    maintain_averages_op = tf.group(ema.apply(all_params))
+
+    # store up the loss and gradients on gpu:0
+    with tf.device('/gpu:0'):
+      for i in range(1, FLAGS.nr_gpus):
+        loss_gen[0] += loss_gen[i]
+        for j in range(len(grads[0])):
+          grads[0][j] += grads[i][j]
+
+      # train (hopefuly)
+      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op)
+
+    # set total loss for printing
+    total_loss = loss_gen[0]
+    tf.summary.scalar('total_loss', total_loss)
     
     # List of all Variables
     variables = tf.global_variables()
 
     # Build a saver
-    saver = tf.train.Saver(variables)   
+    saver = tf.train.Saver(variables, max_to_keep=1)
 
     # Summary op
     summary_op = tf.summary.merge_all()
@@ -72,6 +98,10 @@ def train():
       try:
          saver_restore.restore(sess, ckpt.model_checkpoint_path)
       except:
+         print("there was a problem using all variables in checkpoint, We will try just restoring encoder and decoder")
+      try:
+         autoencoder_variables = [variable for i, variable in enumerate(variables_to_restore) if (("decoding_template" in variable.name[:variable.name.index(':')]) or ("encode_state_template" in variable.name[:variable.name.index(':')]) or ("encode_boundary_template" in variable.name[:variable.name.index(':')]))]
+      except:
          print("there was a problem using that checkpoint! We will just use random init")
 
     # Start que runner
@@ -81,18 +111,19 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.summary.FileWriter(TRAIN_DIR, graph_def=graph_def)
 
+    t = time.time()
     for step in xrange(FLAGS.max_steps):
-      t = time.time()
-      _ , loss_value = sess.run([train_op, error],feed_dict={})
-      elapsed = time.time() - t
+      _ , loss_value = sess.run([optimizer, total_loss],feed_dict={})
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
       if step%200 == 0:
+        elapsed = time.time() - t
         print("loss value at " + str(loss_value))
-        print("time per batch is " + str(elapsed))
+        print("time per batch is " + str(elapsed/200.))
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step) 
+        t = time.time()
 
       if step%2000 == 0:
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')

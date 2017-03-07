@@ -29,7 +29,7 @@ shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
 # open video
-success = video.open('fluid_flow.mov', fourcc, 4, (3*shape[0], shape[1]), True)
+success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + '_2d_video_.mov', fourcc, 4, (3*shape[0], shape[1]), True)
 if success:
   print("opened video stream to fluid_flow.mov")
 else:
@@ -77,8 +77,6 @@ def evaluate():
       state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0+step)
       flow_true = state_feed_dict[0]
       frame_true = np.sqrt(np.square(flow_true[:,:,0:1]) + np.square(flow_true[:,:,1:2])) #*boundary_max[0,:,:,0:1]
-      print(np.sum(np.abs(frame_true - last_step_frame_true)))
-      last_step_frame_true = frame_true
       #frame_true = np.sqrt(np.square(flow_true[:,:,2:3])) #*boundary_max[0,:,:,0:1]
       #frame_true = np.sqrt(np.square(flow_true[:,:,0:1])) #*boundary_max[0,:,:,0:1]
 
