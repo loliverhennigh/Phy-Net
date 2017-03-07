@@ -46,9 +46,10 @@ def train():
         # loss mse
         error_mse = loss_mse(state, x_2_o)
         # loss gradient (see "beyond mean squared error")
-        error_gradient = loss_gradient_difference(state, x_2_o)
-        #error_gradient = loss_divergence(x_2_o)
-        error = error_mse + FLAGS.lambda_divergence * error_gradient
+        #error_gradient = loss_gradient_difference(state, x_2_o)
+        error_gradient = loss_divergence(state, x_2_o)
+        #error = error_mse + FLAGS.lambda_divergence * error_gradient
+        error = error_mse + 1.0 * error_gradient
         loss_gen.append(error)
 
         # store gradients
