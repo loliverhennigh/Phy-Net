@@ -12,6 +12,8 @@ import pylab as pl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+from lattice_utils import *
+
 import h5py
 
 from tqdm import *
@@ -36,27 +38,33 @@ def alphanum_key(s):
   return [ tryint(c) for c in re.split('([0-9]+)', s) ]
 
 def load_flow(filename, shape, frame_num):
+  ## switching to full state instead of velocity so commenting out code
   # load file
   stream_flow = h5py.File(filename, 'r')
 
   # process velocity field
-  flow_state_vel = np.array(stream_flow['Velocity_0'][:])
-  flow_state_vel = flow_state_vel.reshape(shape + [3])
-  if len(shape) == 2: # if 2D then kill the z velocity
-    flow_state_vel = flow_state_vel[:,:,0:2]
+  flow_state_vel = np.array(stream_flow['State_0'][:])
+  #flow_state_vel = np.array(stream_flow['Velocity_0'][:])
+  if len(shape) == 2:
+    shape = [1] + shape
+  flow_state_vel = flow_state_vel.reshape(shape + [frame_num])
+  #if len(shape) == 2: # if 2D then kill the z velocity
+  #  flow_state_vel = flow_state_vel[:,:,0:2]
+  weights = get_weights(frame_num)
+  flow_state_vel = subtract_lattice(flow_state_vel, weights)
 
   # process density field
-  flow_state_den = np.array(stream_flow['Density_0'][:]) + np.array(stream_flow['Gamma'][:]) - 1.0
-  flow_state_den = flow_state_den.reshape(shape + [1])
+  #flow_state_den = np.array(stream_flow['Density_0'][:]) + np.array(stream_flow['Gamma'][:]) - 1.0
+  #flow_state_den = flow_state_den.reshape(shape + [1])
 
   # concate state
-  flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
+  #flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
 
   # print for testing
-  #plt.imshow(flow_state[:,:,0])
+  #plt.imshow(flow_state_vel[0,:,:,0])
   #plt.show()
 
-  return flow_state
+  return flow_state_vel
 
 def load_boundary(filename, shape, frame_num):
   stream_boundary = h5py.File(filename, 'r')
@@ -131,7 +139,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
           flow_state = np.float32(flow_state)
           seq_frames[i] = flow_state 
         if seq_length > 2:
-          ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it do
+          ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it works
         elif seq_length == 2:
           ind_dat += 2
         elif seq_length == 1:

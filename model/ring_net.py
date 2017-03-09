@@ -22,7 +22,7 @@ FLAGS = tf.app.flags.FLAGS
 ################# system params
 tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
-tf.app.flags.DEFINE_integer('lattice_size', 3,
+tf.app.flags.DEFINE_integer('lattice_size', 9,
                            """ size of lattice """)
 tf.app.flags.DEFINE_string('dimensions', '256x256',
                            """ dimension of simulation with x between value """)
@@ -45,14 +45,14 @@ tf.app.flags.DEFINE_float('keep_p', 1.0,
                            """ keep probability for res blocks """)
 tf.app.flags.DEFINE_bool('gated', False,
                            """ gated res blocks """)
-tf.app.flags.DEFINE_integer('filter_size', 8,
+tf.app.flags.DEFINE_integer('filter_size', 16,
                            """ filter size for first res block. the rest of the filters are 2x every downsample """)
 ## compression params
 tf.app.flags.DEFINE_bool('lstm', False,
                            """ lstm or non recurrent""")
 tf.app.flags.DEFINE_integer('nr_residual_compression', 3,
                            """ number of residual compression layers """)
-tf.app.flags.DEFINE_integer('filter_size_compression', 64,
+tf.app.flags.DEFINE_integer('filter_size_compression', 128,
                            """ filter size for compression piece """)
 ## gan params (currently not in use)
 tf.app.flags.DEFINE_bool('gan', False,
