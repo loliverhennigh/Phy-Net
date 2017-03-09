@@ -4,7 +4,7 @@
 
 import tensorflow as tf
 import numpy as np
-from divergence import spatial_divergence_2d
+from divergence import *
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -15,10 +15,14 @@ def loss_mse(true, generated):
   #tf.summary.scalar('reconstruction_loss', loss)
   return loss
  
-def loss_divergence(field):
-  if len(field.get_shape()) == 5:
-    field_div = spatial_divergence_2d(field)
-  loss = tf.nn.l2_loss(field_div)
+def loss_divergence(true_field, generated_field):
+  if len(true_field.get_shape()) == 5:
+    true_field_div = spatial_divergence_2d(true_field)
+    generated_field_div = spatial_divergence_2d(generated_field)
+  if len(true_field.get_shape()) == 6:
+    true_field_div = spatial_divergence_3d(true_field)
+    generated_field_div = spatial_divergence_3d(generated_field)
+  loss = tf.abs(tf.nn.l2_loss(true_field_div) - tf.nn.l2_loss(generated_field_div))
   #tf.summary.scalar('divergence_loss', loss)
   return loss
 
