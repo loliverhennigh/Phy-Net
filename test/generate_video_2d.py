@@ -11,6 +11,7 @@ from model.ring_net import *
 from model.loss import *
 from utils.experiment_manager import make_checkpoint_path
 from systems.fluid_createTFRecords import generate_feed_dict
+from systems.lattice_utils import *
 import random
 import time
 from tqdm import *
@@ -28,8 +29,15 @@ video = cv2.VideoWriter()
 shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
+# 2d or not
+if len(shape) == 2:
+  d2d = True
+
 # open video
-success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + '_2d_video_.mov', fourcc, 4, (3*shape[0], shape[1]), True)
+if d2d:
+  success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + '_2d_video_.mov', fourcc, 4, (3*shape[0], shape[1]), True)
+else:
+  success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + '_3d_video.mov', fourcc, 4, (3*shape[2], shape[1]), True)
 if success:
   print("opened video stream to fluid_flow.mov")
 else:
@@ -58,6 +66,7 @@ def evaluate():
       exit()
 
     # get frame
+    lveloc = get_lveloc(FLAGS.lattice_size)
     state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0)
     feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
@@ -68,17 +77,21 @@ def evaluate():
       # calc generated frame compressed state
       y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
 
-      # normalize velocity
-      #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,2:3])) #*boundary_max[0,:,:,0:1]
-      #frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1])) #*boundary_max[0,:,:,0:1]
-      frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0:1]) + np.square(x_2_g[0,:,:,1:2])) #*boundary_max[0,:,:,0:1]
+      # get normalized velocity
+      x_2_g = x_2_g[0]
+      if d2d:
+        velocity_generated = lattice_to_vel(pad_2d_to_3d(x_2_g), lveloc)
+      frame_generated = vel_to_norm_vel(velocity_generated)
+      frame_generated = frame_generated[:,:,0,:]
      
       # get true normalized velocity 
       state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0+step)
-      flow_true = state_feed_dict[0]
-      frame_true = np.sqrt(np.square(flow_true[:,:,0:1]) + np.square(flow_true[:,:,1:2])) #*boundary_max[0,:,:,0:1]
-      #frame_true = np.sqrt(np.square(flow_true[:,:,2:3])) #*boundary_max[0,:,:,0:1]
-      #frame_true = np.sqrt(np.square(flow_true[:,:,0:1])) #*boundary_max[0,:,:,0:1]
+      state_feed_dict = state_feed_dict[0]
+      if d2d:
+        state_feed_dict = pad_2d_to_3d(state_feed_dict)
+      velocity_true = lattice_to_vel(state_feed_dict, lveloc) #keep first dim on and call it z
+      frame_true = vel_to_norm_vel(velocity_true)
+      frame_true = frame_true[:,:,0,:] 
 
       # make frame for video
       frame = np.concatenate([frame_generated, frame_true, np.abs(frame_generated - frame_true)], 1)
