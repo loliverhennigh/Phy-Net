@@ -39,6 +39,17 @@ def train():
         # unroll on gpu
         x_2_o = unroll_template(state, boundary)
 
+        if i == 0:
+          with tf.device('/cpu:0'):
+            if len(x_2_o.get_shape()) == 5:
+              tf.summary.image('generated_d_' + str(i), x_2_o[:,0,:,:,0:1])
+              tf.summary.image('true_d_' + str(i), x_2_o[:,0,:,:,0:1])
+            elif len(x_2_o.get_shape()) == 6:
+              tf.summary.image('generated_d_' + str(i), x_2_o[:,0,0,:,:,2:5])
+              tf.summary.image('generated_d2_' + str(i), x_2_o[:,0,0,:,:,1:2])
+              tf.summary.image('true_y_' + str(i), x_2_o[:,0,0,:,:,2:5])
+              tf.summary.image('true_y2_' + str(i), x_2_o[:,0,0,:,:,1:2])
+   
         # if i is one then get variables to store all trainable params and 
         if i == 0:
           all_params = tf.trainable_variables()
@@ -48,6 +59,7 @@ def train():
         # loss gradient (see "beyond mean squared error")
         error_gradient = loss_gradient_difference(state, x_2_o)
         #error_gradient = loss_divergence(x_2_o)
+        #error_gradient = loss_divergence(state, x_2_o)
         error = error_mse + FLAGS.lambda_divergence * error_gradient
         loss_gen.append(error)
 
