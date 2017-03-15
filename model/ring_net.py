@@ -270,12 +270,12 @@ def decoding(y):
   for i in xrange(FLAGS.nr_downsamples-1):
     filter_size = FLAGS.filter_size*pow(2,FLAGS.nr_downsamples-i-2)
     print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
-    y_i = transpose_conv_layer(y_i, 3, 2, filter_size, "up_conv_" + str(i))
+    y_i = transpose_conv_layer(y_i, 4, 2, filter_size, "up_conv_" + str(i))
 
     for j in xrange(FLAGS.nr_residual):
       y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_" + str(j+1))
 
-  y_i = transpose_conv_layer(y_i, 3, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
+  y_i = transpose_conv_layer(y_i, 4, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
 
   return tf.nn.tanh(y_i)
 ####### decoding template #######
