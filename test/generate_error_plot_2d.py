@@ -34,12 +34,13 @@ shape = map(int, shape)
 lveloc = get_lveloc(FLAGS.lattice_size)
 
 # 2d or not
+d2d = False
 if len(shape) == 2:
   d2d = True
 
 def calc_mean_and_std(values):
     values_mean = np.sum(values, axis=0) / values.shape[0]
-    values_std = np.sqrt(np.sum(np.square(values - np.expand_dims(value_mean, axis=0)), axis=0)/values.shape[0])
+    values_std = np.sqrt(np.sum(np.square(values - np.expand_dims(values_mean, axis=0)), axis=0)/values.shape[0])
     return values_mean, values_std
 
 def evaluate():
@@ -82,10 +83,14 @@ def evaluate():
 
 
     # run simulations
+    if d2d:
+      file_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test'
+    else:
+      file_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
     for sim in tqdm(xrange(FLAGS.test_nr_runs)):
       for run in xrange(FLAGS.test_nr_per_simulation):
         # get frame
-        state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', sim, run+0)
+        state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, file_name, sim, run+0)
         feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
         y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
 
@@ -97,7 +102,7 @@ def evaluate():
           if d2d:
             generated_state = pad_2d_to_3d(generated_state)
           # get true value
-          state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', sim, run+step+0)
+          state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, file_name, sim, run+step+0)
           true_state = state_feed_dict[0]
           true_boundary = boundary_feed_dict[0]
           if d2d:
@@ -218,7 +223,7 @@ def evaluate():
   
       axarr[7].errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='True', c='g', capsize=0, lw=0.3)
       axarr[7].errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='Generated', c='y', capsize=0, lw=0.3)
-      axarr[7].set_title('flux y', y=0.96)
+      axarr[7].set_title('flux z', y=0.96)
       axarr[7].set_xlabel('step')
   
       plt.legend(loc="upper_left")

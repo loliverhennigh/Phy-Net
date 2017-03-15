@@ -66,16 +66,16 @@ def lattice_to_divergence(lattice, Lveloc):
     div = velocity_x + velocity_y
  
   else:
-    velocity_x_0 = velocity[0:-2,1:-1,1:-1,0]
-    velocity_x_2 = velocity[2:  ,1:-1,1:-1,0]
+    velocity_x_0 = velocity[0:-2,1:-1,1:-1,2]
+    velocity_x_2 = velocity[2:  ,1:-1,1:-1,2]
     velocity_x = velocity_x_0 - velocity_x_2
   
     velocity_y_0 = velocity[1:-1,0:-2,1:-1,1]
     velocity_y_2 = velocity[1:-1,2:  ,1:-1,1]
     velocity_y = velocity_y_0 - velocity_y_2
    
-    velocity_z_0 = velocity[1:-1,1:-1,0:-2,2]
-    velocity_z_2 = velocity[1:-1,1:-1,2:  ,2]
+    velocity_z_0 = velocity[1:-1,1:-1,0:-2,0]
+    velocity_z_2 = velocity[1:-1,1:-1,2:  ,0]
     velocity_z = velocity_z_0 - velocity_z_2
  
     div = velocity_x + velocity_y + velocity_z
@@ -97,6 +97,7 @@ def vel_to_norm_vel(velocity):
 def lattice_to_rho(lattice):
   # lattice to density
   rho = np.sum(lattice, axis=3) 
+  rho = rho.reshape((rho.shape[0], rho.shape[1], rho.shape[2], 1)) 
   return rho 
 
 def rho_to_psi(rho):

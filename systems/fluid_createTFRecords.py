@@ -11,6 +11,7 @@ from glob import glob as glb
 import pylab as pl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from random import randint
 
 from lattice_utils import *
 
@@ -52,6 +53,8 @@ def load_flow(filename, shape, frame_num):
   #  flow_state_vel = flow_state_vel[:,:,0:2]
   weights = get_weights(frame_num)
   flow_state_vel = subtract_lattice(flow_state_vel, weights)
+  
+  stream_flow.close()
 
   # process density field
   #flow_state_den = np.array(stream_flow['Density_0'][:]) + np.array(stream_flow['Gamma'][:]) - 1.0
@@ -70,6 +73,7 @@ def load_boundary(filename, shape, frame_num):
   stream_boundary = h5py.File(filename, 'r')
   boundary_cond = np.array(stream_boundary['Gamma'][:])
   boundary_cond = boundary_cond.reshape([1]+shape+[1])
+  stream_boundary.close()
   return boundary_cond
 
 def make_feature_from_seq(seq_frames, seq_length, shape, frame_num):
@@ -96,6 +100,29 @@ def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start
 
   return flow_state, boundary_cond
 
+def generate_random_feed_dict(seq_length, shape, frame_num, dir_name, num_runs):
+
+  # pick simulation
+  runs = glb(flags.data_dir + '/' + dir_name + '/*')
+  nr_runs = len(runs)
+  selected_run = randint(0, nr_runs)
+  run = runs[selected_run]
+
+  # pick start index
+  states = glb(run + '/*.h5')
+  nr_states = len(states)
+  selected_state = randint(0, nr_runs-seq_length)
+
+  # generate boundry
+  boundary_cond = load_boundary(states[selected_state], shape, frame_num) # doesnt mater what boundary is loaded
+
+  # generate flow state
+  flow_state = np.zeros([seq_length] + shape + [frame_num])
+  for i in xrange(seq_length):
+    flow_state[i] = load_flow(states[selected_state+i], shape, frame_num)
+
+  return flow_state, boundary_cond
+
 def generate_start_state(seq_length, shape, frame_num, dir_name, run_number, start_index):
   print("not implemented")
   exit()
@@ -115,7 +142,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       writer = tf.python_io.TFRecordWriter(filename)
   
     
-      h5_filenames = glb(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/*.h5')
+      h5_filenames = glb(flags.data_dir + '/' + dir_name + '/sample_' + str(run) + '/*.h5')
       num_samples = len(h5_filenames)
      
       # first calc boundary (from first sample)

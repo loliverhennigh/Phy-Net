@@ -15,7 +15,7 @@ FLAGS = tf.app.flags.FLAGS
 # Constants describing the training process.
 tf.app.flags.DEFINE_integer('min_queue_examples', 400,
                            """ min examples to queue up""")
-tf.app.flags.DEFINE_integer('num_preprocess_threads', 3,
+tf.app.flags.DEFINE_integer('num_preprocess_threads', 2,
                            """ number of process threads for que runner """)
 tf.app.flags.DEFINE_string('data_dir', '/data',
                            """ base dir for all data""")
@@ -278,7 +278,7 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   # num tf records
   if train:
     #run_num = 100
-    run_num = 65
+    run_num = 50
     #run_num = 35
   else:
     run_num = 1

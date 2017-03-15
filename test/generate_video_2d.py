@@ -30,8 +30,10 @@ shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
 # 2d or not
+d2d = False
 if len(shape) == 2:
   d2d = True
+print(d2d)
 
 # open video
 if d2d:
@@ -66,8 +68,12 @@ def evaluate():
       exit()
 
     # get frame
+    if d2d:
+      frame_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test'
+    else:
+      frame_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
     lveloc = get_lveloc(FLAGS.lattice_size)
-    state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0)
+    state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0)
     feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
     last_step_frame_true = 0.0
@@ -80,18 +86,25 @@ def evaluate():
       # get normalized velocity
       x_2_g = x_2_g[0]
       if d2d:
-        velocity_generated = lattice_to_vel(pad_2d_to_3d(x_2_g), lveloc)
+        x_2g = pad_2d_to_3d(x_2_g)
+      velocity_generated = lattice_to_vel(x_2_g, lveloc)
       frame_generated = vel_to_norm_vel(velocity_generated)
-      frame_generated = frame_generated[:,:,0,:]
+      if d2d:
+        frame_generated = frame_generated[:,:,0,:]
+      else:
+        frame_generated = frame_generated[0,:,:,:]
      
       # get true normalized velocity 
-      state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0+step)
+      state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0+step)
       state_feed_dict = state_feed_dict[0]
       if d2d:
         state_feed_dict = pad_2d_to_3d(state_feed_dict)
       velocity_true = lattice_to_vel(state_feed_dict, lveloc) #keep first dim on and call it z
       frame_true = vel_to_norm_vel(velocity_true)
-      frame_true = frame_true[:,:,0,:] 
+      if d2d:
+        frame_true = frame_true[:,:,0,:] 
+      else:
+        frame_true = frame_true[0,:,:,:] 
 
       # make frame for video
       frame = np.concatenate([frame_generated, frame_true, np.abs(frame_generated - frame_true)], 1)
