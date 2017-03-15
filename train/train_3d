@@ -1,0 +1,12 @@
+
+echo "starting"
+export CUDA_VISIBLE_DEVICES="0"
+nohup python compress_train.py --dimensions=40x40x160 --base_dir=../checkpoints_3d --reconstruction_lr=0.00005 --filter_size=64 --filter_size_compression=128 --nr_residual_compression=3 --nr_downsamples=2 --lattice_size=15 --batch_size=1 --min_queue_examples=10 --nr_gpus=1 --unroll_length=5 --nr_residual=1 &
+
+export CUDA_VISIBLE_DEVICES="1"
+nohup python compress_train.py --dimensions=40x40x160 --base_dir=../checkpoints_3d --reconstruction_lr=0.00005 --filter_size=32 --filter_size_compression=64 --nr_residual_compression=3 --nr_downsamples=2 --lattice_size=15 --batch_size=1 --min_queue_examples=10 --nr_gpus=1 --unroll_length=5 --nr_residual=2 &
+
+export CUDA_VISIBLE_DEVICES="2"
+nohup python compress_train.py --dimensions=40x40x160 --base_dir=../checkpoints_3d --reconstruction_lr=0.00005 --filter_size=32 --filter_size_compression=64 --nr_residual_compression=3 --nr_downsamples=2 --lattice_size=15 --batch_size=1 --min_queue_examples=10 --nr_gpus=1 --unroll_length=5 --nr_residual=1 &
+
+
