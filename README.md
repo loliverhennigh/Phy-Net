@@ -35,9 +35,12 @@ A few more snap shots of simulations
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_flow_image.png)
 
-3D simulations are currently being generated and trained on. This is the current best model (not trained to convergence).
+3D simulations are currently being generated and trained on. So far these are the the best videos.
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/Byhvre_lDzI/0.jpg)](https://www.youtube.com/watch?v=Byhvre_lDzI)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/wI_3ML8O018/0.jpg)](https://www.youtube.com/watch?v=wI_3ML8O018)
+
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/LNb6mZq64r4/0.jpg)](https://www.youtube.com/watch?v=LNb6mZq64r4)
 
 ## How to run
 
