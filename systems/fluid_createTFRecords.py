@@ -142,7 +142,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       writer = tf.python_io.TFRecordWriter(filename)
   
     
-      h5_filenames = glb(flags.data_dir + '/' + dir_name + '/sample_' + str(run) + '/*.h5')
+      h5_filenames = glb(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/*.h5')
       num_samples = len(h5_filenames)
      
       # first calc boundary (from first sample)

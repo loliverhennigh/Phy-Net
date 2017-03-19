@@ -47,8 +47,8 @@ def train():
             elif len(x_2_o.get_shape()) == 6:
               tf.summary.image('generated_d_' + str(i), x_2_o[:,0,0,:,:,2:5])
               tf.summary.image('generated_d2_' + str(i), x_2_o[:,0,0,:,:,1:2])
-              tf.summary.image('true_y_' + str(i), x_2_o[:,0,0,:,:,2:5])
-              tf.summary.image('true_y2_' + str(i), x_2_o[:,0,0,:,:,1:2])
+              tf.summary.image('true_y_' + str(i), state[:,0,0,:,:,2:5])
+              tf.summary.image('true_y2_' + str(i), state[:,0,0,:,:,1:2])
    
         # if i is one then get variables to store all trainable params and 
         if i == 0:
