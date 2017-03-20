@@ -106,7 +106,7 @@ inline void Domain::WriteXDMF(char const * FileKey)
     float * Cur       = new float[3*Nx*Ny*Nz];
     float * Bvec      = new float[3*Nx*Ny*Nz];
     float * Evec      = new float[3*Nx*Ny*Nz];
-    float * State     = new float[Lat.GetCell(iVec3_t(0,0,0))->Nneigh*Nx*Ny*Nz];
+    float * State     = new float[4*Lat.GetCell(iVec3_t(0,0,0))->Nneigh*Nx*Ny*Nz];
 
     size_t i=0;
     for (size_t m=0;m<Lat.Ndim(2);m+=Step)
@@ -168,7 +168,14 @@ inline void Domain::WriteXDMF(char const * FileKey)
     for (size_t n=0;n<Lat.Ndim(0);n+=1)
     for (size_t k=0;k<Lat.GetCell(iVec3_t(0,0,0))->Nneigh;k+=1)
     {
-        State[i_cell] = Lat.GetCell(iVec3_t(n,l,m))->;
+        State[i_cell] = Lat.GetCell(iVec3_t(n,l,m))->FE[0][k];
+        i_cell++;
+        State[i_cell] = Lat.GetCell(iVec3_t(n,l,m))->FE[1][k];
+        i_cell++;
+        State[i_cell] = Lat.GetCell(iVec3_t(n,l,m))->FB[0][k];
+        i_cell++;
+        State[i_cell] = Lat.GetCell(iVec3_t(n,l,m))->FB[1][k];
+        i_cell++;
     }
 
     //Write the data
@@ -193,6 +200,10 @@ inline void Domain::WriteXDMF(char const * FileKey)
         dsname.Printf("ElecField");
         H5LTmake_dataset_float(file_id,dsname.CStr(),1,dims,Evec    );
     }
+    dims[0] = 4*Lat.GetCell(iVec3_t(0,0,0))->Nneigh*Nx*Ny*Nz;
+    dsname.Printf("State");
+    H5LTmake_dataset_float(file_id,dsname.CStr(),1,dims,State );
+
     dims[0] = 1;
     int N[1];
     N[0] = Nx;
@@ -214,6 +225,7 @@ inline void Domain::WriteXDMF(char const * FileKey)
     delete [] Cur     ;
     delete [] Bvec    ;
     delete [] Evec    ;
+    delete [] State    ;
 
 
     //Closing the file
