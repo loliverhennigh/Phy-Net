@@ -14,6 +14,7 @@ import numpy as np
 from nn import *
 import input.ring_net_input as ring_net_input
 import systems.fluid_createTFRecords as fluid
+import systems.em_createTFRecords as em
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -129,6 +130,8 @@ def inputs(empty=False, shape=None):
     boundary = tf.placeholder(tf.float32, [1] + shape + [1])
   elif FLAGS.system == "fluid_flow":
     state, boundary = ring_net_input.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
+  elif FLAGS.system == "em":
+    state, boundary = ring_net_input.em_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
  
   if FLAGS.gan:
     z = tf.placeholder("float", [None, total_unroll_length, FLAGS.z_size])
@@ -142,6 +145,8 @@ def feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
   """
   if FLAGS.system == "fluid_flow":
     state, boundary = fluid.generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index)
+  elif FLAGS.system == "em":
+    state, boundary = em.generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index)
  
   return state, boundary
 

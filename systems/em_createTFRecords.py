@@ -38,40 +38,27 @@ def tryint(s):
 def alphanum_key(s):
   return [ tryint(c) for c in re.split('([0-9]+)', s) ]
 
-def load_flow(filename, shape, frame_num):
+def load_em(filename, shape, frame_num):
   ## switching to full state instead of velocity so commenting out code
   # load file
-  stream_flow = h5py.File(filename, 'r')
+  stream_em = h5py.File(filename, 'r')
 
   # process velocity field
-  flow_state_vel = np.array(stream_flow['State_0'][:])
-  #flow_state_vel = np.array(stream_flow['Velocity_0'][:])
+  em_state_vel = np.array(stream_em['State'][:])
   if len(shape) == 2:
     shape = [1] + shape
-  flow_state_vel = flow_state_vel.reshape(shape + [frame_num])
-  #if len(shape) == 2: # if 2D then kill the z velocity
-  #  flow_state_vel = flow_state_vel[:,:,0:2]
-  weights = get_weights(frame_num)
-  flow_state_vel = subtract_lattice(flow_state_vel, weights)
-  
-  stream_flow.close()
-
-  # process density field
-  #flow_state_den = np.array(stream_flow['Density_0'][:]) + np.array(stream_flow['Gamma'][:]) - 1.0
-  #flow_state_den = flow_state_den.reshape(shape + [1])
-
-  # concate state
-  #flow_state = np.concatenate((flow_state_vel, flow_state_den), len(shape)) 
+  em_state_vel = em_state_vel.reshape(shape + [frame_num])
+  stream_em.close()
 
   # print for testing
-  #plt.imshow(flow_state_vel[0,:,:,0])
+  #plt.imshow(em_state_vel[0,:,:,0])
   #plt.show()
 
-  return flow_state_vel
+  return em_state_vel
 
 def load_boundary(filename, shape, frame_num):
   stream_boundary = h5py.File(filename, 'r')
-  boundary_cond = np.array(stream_boundary['Gamma'][:])
+  boundary_cond = np.array(stream_boundary['Epsilon'][:])
   boundary_cond = boundary_cond.reshape([1]+shape+[1])
   stream_boundary.close()
   return boundary_cond
@@ -83,25 +70,23 @@ def make_feature_from_seq(seq_frames, seq_length, shape, frame_num):
     frame = np.float32(frame)
     frame = frame.reshape([np.prod(np.array(shape))*frame_num])
     frame = frame.astype(np.float)
-    #frame = frame.tostring()
-    #frame = frame.tolist()
-    feature['flow/frame_' + str(i)] = _float_feature(frame)
+    feature['em/frame_' + str(i)] = _float_feature(frame)
   return feature
 
 def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
 
   # generate boundry
-  boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/fluid_flow_0000.h5', shape, frame_num) # doesnt mater what boundary is loaded
+  boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/em_0000.h5', shape, frame_num) # doesnt mater what boundary is loaded
 
-  # generate flow state
-  flow_state = np.zeros([seq_length] + shape + [frame_num])
+  # generate em state
+  em_state = np.zeros([seq_length] + shape + [frame_num])
   for i in xrange(seq_length):
-    flow_state[i] = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/fluid_flow_' + str(start_index + i).zfill(4) + '.h5', shape, frame_num)
+    em_state[i] = load_em(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run_number) + '/em_' + str(start_index + i).zfill(4) + '.h5', shape, frame_num)
 
-  return flow_state, boundary_cond
+  return em_state, boundary_cond
 
 def generate_random_feed_dict(seq_length, shape, frame_num, dir_name, num_runs):
-
+  ## not working yet
   # pick simulation
   runs = glb(flags.data_dir + '/' + dir_name + '/*')
   nr_runs = len(runs)
@@ -116,12 +101,12 @@ def generate_random_feed_dict(seq_length, shape, frame_num, dir_name, num_runs):
   # generate boundry
   boundary_cond = load_boundary(states[selected_state], shape, frame_num) # doesnt mater what boundary is loaded
 
-  # generate flow state
-  flow_state = np.zeros([seq_length] + shape + [frame_num])
+  # generate em state
+  em_state = np.zeros([seq_length] + shape + [frame_num])
   for i in xrange(seq_length):
-    flow_state[i] = load_flow(states[selected_state+i], shape, frame_num)
+    em_state[i] = load_em(states[selected_state+i], shape, frame_num)
 
-  return flow_state, boundary_cond
+  return em_state, boundary_cond
 
 def generate_start_state(seq_length, shape, frame_num, dir_name, run_number, start_index):
   print("not implemented")
@@ -146,7 +131,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       num_samples = len(h5_filenames)
      
       # first calc boundary (from first sample)
-      boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_0000.h5', shape, frame_num)
+      boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/em_0000.h5', shape, frame_num)
       boundary_cond = np.float32(boundary_cond)
       #boundary_flat = boundary_cond.reshape([1,np.prod(np.array(shape))])
       boundary_flat = boundary_cond.reshape([np.prod(np.array(shape))])
@@ -159,12 +144,12 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
         seq_frames = np.zeros([seq_length] + shape + [frame_num])
         for i in xrange(seq_length):
           t = time.time()
-          flow_state = load_flow(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_' + str(i+ind_dat).zfill(4) + '.h5', shape, frame_num)
+          em_state = load_em(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/em_' + str(i+ind_dat).zfill(4) + '.h5', shape, frame_num)
           elapsed = time.time() - t
           #print("time per read is " + str(elapsed))
           
-          flow_state = np.float32(flow_state)
-          seq_frames[i] = flow_state 
+          em_state = np.float32(em_state)
+          seq_frames[i] = em_state 
         if seq_length > 2:
           ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it works
         elif seq_length == 2:

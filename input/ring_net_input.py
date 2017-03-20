@@ -5,6 +5,7 @@ import tensorflow as tf
 #import utils.createTFRecords as createTFRecords
 #import systems.balls_createTFRecords as balls_createTFRecords
 import systems.fluid_createTFRecords as fluid_createTFRecords
+import systems.em_createTFRecords as em_createTFRecords
 #import systems.diffusion_createTFRecords as diffusion_createTFRecords
 from glob import glob as glb
 from tqdm import *
@@ -88,6 +89,45 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
 
   return flow, boundary
 
+def read_data_em(filename_queue, seq_length, shape, num_frames, color):
+  """ reads data from tfrecord files.
+
+  Args: 
+    filename_queue: A que of strings with filenames 
+
+  Returns:
+    frames: the frame data in size (batch_size, seq_length, image height, image width, frames)
+  """
+  reader = tf.TFRecordReader()
+  key, serialized_example = reader.read(filename_queue)
+
+  # make feature dict
+  feature_dict = {}
+  for i in xrange(seq_length):
+    feature_dict['em/frame_' + str(i)] = tf.FixedLenFeature([np.prod(np.array(shape))*num_frames],tf.float32)
+  feature_dict['boundary'] = tf.FixedLenFeature([np.prod(np.array(shape))],tf.float32)
+  
+  features = tf.parse_single_example(
+    serialized_example,
+    features=feature_dict) 
+
+  em = []
+  for i in xrange(seq_length):
+    #em.append(tf.decode_raw(features['em/frame_' + str(i)], tf.float32))
+    em.append(features['em/frame_' + str(i)])
+  #boundary = tf.decode_raw(features['boundary'], tf.float32)
+  boundary = features['boundary']
+
+  # reshape
+  em = tf.stack(em)
+  em = tf.reshape(em, [seq_length] + shape + [num_frames])
+  em = tf.to_float(em)
+  boundary = tf.reshape(boundary, [1] + shape + [1]) 
+  boundary = tf.to_float(boundary)
+
+  return em, boundary
+
+
 def _generate_image_label_batch(image, batch_size):
   """Construct a queued batch of images.
   Args:
@@ -146,6 +186,36 @@ def _generate_image_label_batch_fluid(flow, boundary, batch_size):
       capacity=3 * batch_size)
   return flows, boundarys
 
+def _generate_image_label_batch_em(em, boundary, batch_size):
+  """Construct a queued batch of images.
+  Args:
+    image: 4-D Tensor of [seq, height, width, frame_num] 
+    min_queue_examples: int32, minimum number of samples to retain
+      in the queue that provides of batches of examples.
+    batch_size: Number of images per batch.
+  Returns:
+    images: Images. 5D tensor of [batch_size, seq_lenght, height, width, frame_num] size.
+  """
+
+  num_preprocess_threads = FLAGS.num_preprocess_threads
+  if FLAGS.train:
+    #Create a queue that shuffles the examples, and then
+    #read 'batch_size' images + labels from the example queue.
+    ems, boundarys = tf.train.shuffle_batch(
+      [em, boundary],
+      batch_size=batch_size,
+      num_threads=num_preprocess_threads,
+      capacity=FLAGS.min_queue_examples + 3 * batch_size,
+      min_after_dequeue=FLAGS.min_queue_examples)
+  else:
+     ems, boundarys = tf.train.batch(
+      [em, boundary],
+      batch_size=batch_size,
+      num_threads=num_preprocess_threads,
+      capacity=3 * batch_size)
+  return ems, boundarys
+
+
 def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
   Args:
@@ -181,20 +251,6 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
 
   flow, boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
 
-  # dispay images
-  if FLAGS.tf_store_images: # not working with multi gpu traing
-    if len(shape) == 2:
-      tf.summary.image('x', flow[:,:,:,0:1])
-      tf.summary.image('y', flow[:,:,:,1:2])
-      tf.summary.image('density', flow[:,:,:,2:3])
-      tf.summary.image('boundary', boundary[:,:,:,0:1])
-    elif len(shape) == 3:
-      tf.summary.image('x', flow[:,shape[0]/2,:,:,0:1])
-      tf.summary.image('y', flow[:,shape[0]/2,:,:,1:2])
-      tf.summary.image('z', flow[:,shape[0]/2,:,:,2:3])
-      tf.summary.image('density', flow[:,shape[0]/2,:,:,3:4])
-      tf.summary.image('boundary', boundary[:,shape[0]/2,:,:,0:1])
-
   flows, boundarys = _generate_image_label_batch_fluid(flow, boundary, batch_size)
 
   return flows, boundarys
@@ -209,7 +265,7 @@ def em_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train:
-    run_num = 50
+    run_num = 10
   else:
     run_num = 1
 
@@ -232,23 +288,9 @@ def em_inputs(batch_size, seq_length, shape, num_frames, train=True):
 
   em, boundary = read_data_em(filename_queue, seq_length, shape, num_frames, False)
 
-  # dispay images
-  if FLAGS.tf_store_images: # not working with multi gpu traing
-    if len(shape) == 2:
-      tf.summary.image('x', em[:,:,:,0:1])
-      tf.summary.image('y', em[:,:,:,1:2])
-      tf.summary.image('density', em[:,:,:,2:3])
-      tf.summary.image('boundary', boundary[:,:,:,0:1])
-    elif len(shape) == 3:
-      tf.summary.image('x', em[:,shape[0]/2,:,:,0:1])
-      tf.summary.image('y', em[:,shape[0]/2,:,:,1:2])
-      tf.summary.image('z', em[:,shape[0]/2,:,:,2:3])
-      tf.summary.image('density', em[:,shape[0]/2,:,:,3:4])
-      tf.summary.image('boundary', boundary[:,shape[0]/2,:,:,0:1])
+  ems, boundarys = _generate_image_label_batch_em(em, boundary, batch_size)
 
-  em, boundarys = _generate_image_label_batch_em(em, boundary, batch_size)
-
-  return em, boundarys
+  return ems, boundarys
 
 
 
