@@ -146,127 +146,6 @@ def _generate_image_label_batch_fluid(flow, boundary, batch_size):
       capacity=3 * batch_size)
   return flows, boundarys
 
-
-def video_inputs(batch_size, seq_length):
-  """Construct video input for ring net. given a video_dir that contains videos this will check to see if there already exists tf recods and makes them. Then returns batchs
-  Args:
-    batch_size: Number of images per batch.
-    seq_length: seq of inputs.
-  Returns:
-    images: Images. 4D tensor. Possible of size [batch_size, 84x84x4].
-  """
-  params = None
-  params_loss = None
-
-  # get list of video file names
-  video_filename = glb(FLAGS.data_dir + 'videos/'+FLAGS.video_dir+'/*') 
-
-  if FLAGS.model in ("fully_connected_84x84x4", "lstm_84x84x4"):
-    shape = (84,84)
-    num_frames = 4
-    color = False
-  if FLAGS.model in ("fully_connected_84x84x3", "lstm_84x84x3"):
-    shape = (84, 84)
-    num_frames = 1 
-    color = True
-
-  print("begining to generate tf records")
-  for f in video_filename:
-    createTFRecords.generate_tfrecords(f, seq_length, shape, num_frames, color)
- 
-  # get list of tfrecords 
-  tfrecord_filename = glb('../data/tfrecords/'+FLAGS.video_dir+'/*seq_' + str(seq_length) + '_size_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(num_frames) + '_color_' + str(color) + '.tfrecords')
-  
-  
-  filename_queue = tf.train.string_input_producer(tfrecord_filename) 
-
-  image = read_data(filename_queue, seq_length, shape, num_frames, color)
-  
-  if color:
-    display_image = tf.split(3, 3, image)
-    tf.image_summary('images', display_image[0])
-  else:
-    tf.image_summary('images', image)
-
-  image = tf.div(image, 255.0) 
-
-  frames = _generate_image_label_batch(image, batch_size)
- 
-  return frames
-
-def balls_inputs(batch_size, seq_length):
-  """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
-  Args:
-    batch_size: Number of images per batch.
-    seq_length: seq of inputs.
-  Returns:
-    images: Images. 4D tensor. Possible of size [batch_size, 28x28x4].
-  """
-  params = None
-  params_loss = None
- 
-  # num samples per tfrecord 
-  num_samples = 1000
-  # num tf records
-  if FLAGS.train == True:
-    run_num = 100
-  else:
-    run_num = 5
- 
-  dir_name = 'balls'
-  if not FLAGS.train:
-    dir_name = dir_name + '_test'
- 
-  print("begining to generate tf records")
-  for i in tqdm(xrange(run_num)): 
-    balls_createTFRecords.generate_tfrecords(i, num_samples, seq_length, dir_name)
-    
-  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*num_samples_' + str(num_samples) + '_seq_length_' + str(seq_length) + '_friction_' + str(FLAGS.friction) + '_num_balls_' + str(FLAGS.num_balls) + '.tfrecords') 
- 
-  filename_queue = tf.train.string_input_producer(tfrecord_filename) 
-
-  image = read_data(filename_queue, seq_length, (32, 32), 1, True, 'float32')
-  tf.image_summary('images', image)
-  
-  #image = tf.div(image, 255.0) 
-
-  frames = _generate_image_label_batch(image, batch_size)
-
-  return frames
-
-def diffusion_inputs(batch_size, seq_length):
-  """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
-  Args:
-    batch_size: Number of images per batch.
-    seq_length: seq of inputs.
-  Returns:
-    images: Images. 4D tensor. Possible of size [batch_size, 28x28x4].
-  """
-  # num tf records
-  if FLAGS.train == True:
-    run_num = 1000
-  else:
-    run_num = 100 
-
-  shape=(32,32)
- 
-  dir_name = 'diffusion'
-  if not FLAGS.train:
-    dir_name = dir_name + '_test'
-
-  diffusion_createTFRecords.generate_tfrecords(seq_length, run_num, dir_name)
-
-  tfrecord_filename = glb(FLAGS.data_dir + 'tfrecords/' + dir_name + '/*_seq_length_' + str(seq_length) + '.tfrecords')
- 
-  filename_queue = tf.train.string_input_producer(tfrecord_filename)
-
-  image = read_data(filename_queue, seq_length, shape, 1, False, 'float32')
-  tf.image_summary('images', image[:,:,:,:])
-  
-  frames = _generate_image_label_batch(image, batch_size)
-
-  return frames
-
 def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
   Args:
@@ -319,5 +198,57 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   flows, boundarys = _generate_image_label_batch_fluid(flow, boundary, batch_size)
 
   return flows, boundarys
+
+def em_inputs(batch_size, seq_length, shape, num_frames, train=True):
+  """Construct cannon input for ring net. just a 28x28 frame video of a bouncing ball 
+  Args:
+    batch_size: Number of images per batch.
+    seq_length: seq of inputs.
+  Returns:
+    images: Images. 4D tensor. Possible of size [batch_size, 28x28x4].
+  """
+  # num tf records
+  if train:
+    run_num = 50
+  else:
+    run_num = 1
+
+  # make dir name based on shape of simulation 
+  dir_name = 'em_' + str(shape[0]) + 'x' + str(shape[1])
+  if len(shape) > 2:
+    dir_name = dir_name + 'x' + str(shape[2])
+
+  dir_name = dir_name + '_'
+
+  if not train:
+    dir_name = dir_name + '_test'
+ 
+  print("begining to generate tf records")
+  em_createTFRecords.generate_tfrecords(seq_length, run_num, shape, num_frames, dir_name)
+
+  tfrecord_filename = glb(FLAGS.tf_data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+ 
+  filename_queue = tf.train.string_input_producer(tfrecord_filename)
+
+  em, boundary = read_data_em(filename_queue, seq_length, shape, num_frames, False)
+
+  # dispay images
+  if FLAGS.tf_store_images: # not working with multi gpu traing
+    if len(shape) == 2:
+      tf.summary.image('x', em[:,:,:,0:1])
+      tf.summary.image('y', em[:,:,:,1:2])
+      tf.summary.image('density', em[:,:,:,2:3])
+      tf.summary.image('boundary', boundary[:,:,:,0:1])
+    elif len(shape) == 3:
+      tf.summary.image('x', em[:,shape[0]/2,:,:,0:1])
+      tf.summary.image('y', em[:,shape[0]/2,:,:,1:2])
+      tf.summary.image('z', em[:,shape[0]/2,:,:,2:3])
+      tf.summary.image('density', em[:,shape[0]/2,:,:,3:4])
+      tf.summary.image('boundary', boundary[:,shape[0]/2,:,:,0:1])
+
+  em, boundarys = _generate_image_label_batch_em(em, boundary, batch_size)
+
+  return em, boundarys
+
 
 
