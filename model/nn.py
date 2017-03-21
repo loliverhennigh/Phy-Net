@@ -80,8 +80,12 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
       top = inputs[:,-1:]
       bottom = inputs[:,:1]
       inputs = tf.concat([top, inputs, bottom], axis=1)
-      left = tf.zeros_like(inputs[:,:,-1:]) # make zero
-      right = tf.zeros_like(inputs[:,:,:1]) # make zero
+      if FLAGS.system == "em":
+        left = inputs[:,:,-1:] # make zero
+        right = inputs[:,:,:1] # make zero
+      else:
+        left = tf.zeros_like(inputs[:,:,-1:]) # make zero
+        right = tf.zeros_like(inputs[:,:,:1]) # make zero
       inputs = tf.concat([left, inputs, right], axis=2)
 
     if d3d:
@@ -277,7 +281,7 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
   # pad it
   out_filter = filter_size
   in_filter = int(orig_x.get_shape()[-1])
-  if out_filter != in_filter:
+  if out_filter > in_filter:
     if d2d:
       orig_x = tf.pad(
           orig_x, [[0, 0], [0, 0], [0, 0],
@@ -286,6 +290,8 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
       orig_x = tf.pad(
           orig_x, [[0, 0], [0, 0], [0, 0], [0, 0],
           [(out_filter-in_filter), 0]])
+  elif out_filter < in_filter:
+    orig_x = nin(orig_x, out_filter, name + '_nin_pad')
 
   return orig_x + x_2
 

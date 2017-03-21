@@ -85,28 +85,34 @@ def generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start
 
   return em_state, boundary_cond
 
-def generate_random_feed_dict(seq_length, shape, frame_num, dir_name, num_runs):
+def generate_random_feed_dict(batch_size, seq_length, shape, frame_num, dir_name):
   ## not working yet
-  # pick simulation
-  runs = glb(flags.data_dir + '/' + dir_name + '/*')
+
+  # simulations
+  runs = glb(FLAGS.data_dir + '/' + dir_name + '/*')
   nr_runs = len(runs)
-  selected_run = randint(0, nr_runs)
-  run = runs[selected_run]
 
-  # pick start index
-  states = glb(run + '/*.h5')
-  nr_states = len(states)
-  selected_state = randint(0, nr_runs-seq_length)
-
-  # generate boundry
-  boundary_cond = load_boundary(states[selected_state], shape, frame_num) # doesnt mater what boundary is loaded
-
-  # generate em state
-  em_state = np.zeros([seq_length] + shape + [frame_num])
-  for i in xrange(seq_length):
-    em_state[i] = load_em(states[selected_state+i], shape, frame_num)
-
-  return em_state, boundary_cond
+  em_state = np.zeros([batch_size, seq_length] + shape + [frame_num])
+  em_state = np.float32(em_state)
+  em_boundary = np.zeros([batch_size, 1] + shape + [1])
+  em_boundary = np.float32(em_boundary)
+  for b in xrange(batch_size):
+    selected_run = randint(0, nr_runs-1)
+    run = runs[selected_run]
+  
+    # pick start index
+    states = glb(run + '/*.h5')
+    nr_states = len(states)
+    selected_state = randint(0, nr_states-seq_length-1)
+  
+    # generate boundry
+    em_boundary[b,0] = load_boundary(states[selected_state], shape, frame_num) # doesnt mater what boundary is loaded
+  
+    # generate em state
+    for i in xrange(seq_length):
+      em_state[b,i] = load_em(states[selected_state+i], shape, frame_num)
+  
+  return em_state, em_boundary
 
 def generate_start_state(seq_length, shape, frame_num, dir_name, run_number, start_index):
   print("not implemented")

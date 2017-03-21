@@ -51,6 +51,8 @@ def evaluate():
   with tf.Graph().as_default():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
+    state = state[:,0]
+    boundary = boundary[:,0]
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)

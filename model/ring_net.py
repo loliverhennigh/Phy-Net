@@ -114,7 +114,7 @@ tf.app.flags.DEFINE_integer('test_nr_per_simulation', 1,
                            """ number of test runs per simulations (making error plots) """)
 
 ####### inputs #######
-def inputs(empty=False, shape=None):
+def inputs(empty=False, name="inputs", shape=None):
   """makes input vector
   Args:
     empty will just return an empty state to fill with a feed dict
@@ -126,8 +126,10 @@ def inputs(empty=False, shape=None):
     shape = map(int, shape)
   frame_num = FLAGS.lattice_size # 3 for 2D and 4 for 3D (this will change with mag stuff)
   if empty:
-    state = tf.placeholder(tf.float32, [1] + shape + [frame_num])
-    boundary = tf.placeholder(tf.float32, [1] + shape + [1])
+    print(shape)
+    state = tf.placeholder(tf.float32, [FLAGS.batch_size, FLAGS.unroll_length] + shape + [frame_num], name=name)
+    boundary = tf.placeholder(tf.float32, [FLAGS.batch_size, 1] + shape + [1], name=name)
+    print(state.get_shape())
   elif FLAGS.system == "fluid_flow":
     state, boundary = ring_net_input.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
   elif FLAGS.system == "em":
@@ -149,6 +151,28 @@ def feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index):
     state, boundary = em.generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index)
  
   return state, boundary
+
+####### rand_feed_dict #######
+def rand_feed_dict(shape=None):
+  """makes feed dict for testing
+  """
+  if shape is None:
+    shape = FLAGS.dimensions.split('x')
+    shape = map(int, shape)
+  frame_num = FLAGS.lattice_size # 3 for 2D and 4 for 3D (this will change with mag stuff)
+  if FLAGS.system == "fluid_flow":
+    dir_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_'
+    if len(shape) == 3:
+      dir_name = dir_name + str(shape[2]) + '_'
+    state, boundary = fluid.generate_random_feed_dict(FLAGS.batch_size, FLAGS.unroll_length, shape, frame_num, dir_name)
+  elif FLAGS.system == "em":
+    dir_name = 'em_' + str(shape[0]) + 'x' + str(shape[1]) + '_'
+    if len(shape) == 3:
+      dir_name = dir_name + str(shape[2]) + '_'
+    state, boundary = em.generate_random_feed_dict(FLAGS.batch_size, FLAGS.unroll_length, shape, frame_num, dir_name)
+ 
+  return state, boundary
+
 
 ####### encoding #######
 def encoding(inputs, name='', boundary=False):
