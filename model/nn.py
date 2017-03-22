@@ -114,7 +114,6 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
 def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
     input_channels = int(inputs.get_shape()[-1])
-    print(kernel_size)
      
     # determine if 2d or 3d trans conv is needed
     length_input = len(inputs.get_shape())
@@ -134,8 +133,12 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
       top = inputs_pad[:,-1:]
       bottom = inputs_pad[:,:1]
       inputs_pad = tf.concat([top, inputs_pad, bottom], axis=1)
-      left = tf.zeros_like(inputs_pad[:,:,-1:]) # make zero
-      right = tf.zeros_like(inputs_pad[:,:,:1]) # make zero
+      if FLAGS.system == "em":
+        left = inputs_pad[:,:,-1:]
+        right = inputs_pad[:,:,:1]
+      else:
+        left = tf.zeros_like(inputs_pad[:,:,-1:]) # make zero
+        right = tf.zeros_like(inputs_pad[:,:,:1]) # make zero
       inputs_pad = tf.concat([left, inputs_pad, right], axis=2)
 
     if d3d:
