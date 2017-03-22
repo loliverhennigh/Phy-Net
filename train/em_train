@@ -1,0 +1,3 @@
+
+python compress_train.py --system=em --lattice_size=48 --min_queue_examples=40 --dimensions=256x256 --filter_size=32 --filter_size_compression=256 --nr_downsamples=4 --batch_size=1
+

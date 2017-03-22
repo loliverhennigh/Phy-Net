@@ -1,0 +1,20 @@
+
+#!/bin/bash 
+SIZE=$1
+NUM_RUNS=$2
+TEST=$3
+COUNTER=0
+until [  $COUNTER -gt $NUM_RUNS ]; do
+  echo $COUNTER
+  FLUIDDIR="/data/em_$SIZE"
+  FLUIDDIR+="x"
+  FLUIDDIR+="$SIZE"
+  FLUIDDIR+="_$TEST"
+  mkdir $FLUIDDIR
+  FLUIDDIR+="/sample_$COUNTER"
+  mkdir $FLUIDDIR
+  FLUIDDIR+="/em"
+  ./generate_em_2d $SIZE $FLUIDDIR
+  let COUNTER+=1
+done
+
