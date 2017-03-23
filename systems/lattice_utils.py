@@ -9,8 +9,6 @@ OPPOSITED3Q15 = np.array([0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13])
 LVELOCD2Q9 = np.array([ [0,0,0], [1,0,0], [0,1,0], [-1,0,0], [0,-1,0], [1,1,0], [-1,1,0], [-1,-1,0], [1,-1,0] ])
 LVELOCD3Q15 = np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ])
 
-
-
 def get_weights(lattice_size):
   # returns the lattice weights given the size of lattice
   if lattice_size == 9:
@@ -47,6 +45,7 @@ def add_lattice(lattice, Weights):
 def lattice_to_vel(lattice, Lveloc):
   # get velocity vector field from lattice
   Lveloc = Lveloc.reshape((1,1,1,Lveloc.shape[0],Lveloc.shape[1]))
+  print(lattice.shape)
   lattice = lattice.reshape((lattice.shape[0],lattice.shape[1],lattice.shape[2],lattice.shape[3],1))
   velocity = np.sum(lattice * Lveloc, axis=3)
   return velocity

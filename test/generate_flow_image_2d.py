@@ -9,7 +9,9 @@ sys.path.append('../')
 from model.ring_net import *
 from model.loss import *
 from utils.experiment_manager import make_checkpoint_path
-from systems.fluid_createTFRecords import generate_feed_dict
+import systems.fluid_createTFRecords as fluid_record
+import systems.em_createTFRecords as em_record
+from systems.lattice_utils import *
 import random
 import time
 from tqdm import *
@@ -20,18 +22,25 @@ import matplotlib.gridspec as gridspec
 FLAGS = tf.app.flags.FLAGS
 
 # get restore dir
-RESTORE_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS) 
+RESTORE_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 # shape of test simulation
 shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
-time_sample = [0, 100, 200]
+# 2d or not
+d2d = False
+if len(shape) == 2:
+  d2d = True
+
+time_sample = [0 ,5, 10]
 
 def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
+    state = state[0:1,0]
+    boundary = boundary[0:1,0]
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
@@ -49,7 +58,20 @@ def evaluate():
       exit()
 
     # get frame
-    state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0)
+    if FLAGS.system == "fluid":
+      frame_name = 'fluid_flow_'
+    elif FLAGS.system == "em":
+      frame_name = 'em_'
+    if d2d:
+      frame_name = frame_name + str(shape[0]) + 'x' + str(shape[1]) + '_test'
+    else:
+      frame_name = frame_name + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
+
+    lveloc = get_lveloc(FLAGS.lattice_size)
+    if FLAGS.system == "fluid":
+      state_feed_dict, boundary_feed_dict = fluid_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0)
+    elif FLAGS.system == "em":
+      state_feed_dict, boundary_feed_dict = em_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0)
     feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
 
@@ -74,12 +96,49 @@ def evaluate():
 
       if step in time_sample:
         # generated frame
-        frame_generated = np.sqrt(np.square(x_2_g[0,:,:,0]) + np.square(x_2_g[0,:,:,1])) #*boundary_max[0,:,:,0:1]
-     
+        x_2_g = x_2_g[0]
+        if FLAGS.system == "fluid":
+          if d2d:
+            x_2_g = pad_2d_to_3d(x_2_g)
+          velocity_generated = lattice_to_vel(x_2_g, lveloc)
+          frame_generated = vel_to_norm_vel(velocity_generated)
+          if d2d:
+            frame_generated = frame_generated[:,:,0,0]
+          else:
+            frame_generated = frame_generated[0,:,:,0]
+        elif FLAGS.system == "em":
+          if d2d:
+            frame_generated = x_2_g[:,:,0]
+          else:
+            frame_generated = x_2_g[0,:,:,0]
+          frame_generated = np.abs(frame_generated) * 100.0
+          print(np.max(frame_generated))
+          print("need to implement em stuff")
+   
         # true frame
-        state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test', 0, 0+step)
-        flow_true = state_feed_dict[0]
-        frame_true = np.sqrt(np.square(flow_true[:,:,0]) + np.square(flow_true[:,:,1])) #*boundary_max[0,:,:,0:1]
+        if FLAGS.system == "fluid":
+          state_feed_dict, boundary_feed_dict = fluid_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0+step)
+        elif FLAGS.system == "em":
+          state_feed_dict, boundary_feed_dict = em_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0+step)
+        state_feed_dict = state_feed_dict[0]
+        if FLAGS.system == "fluid":
+          if d2d:
+            state_feed_dict = pad_2d_to_3d(state_feed_dict)
+          velocity_true = lattice_to_vel(state_feed_dict, lveloc) #keep first dim on and call it z
+          frame_true = vel_to_norm_vel(velocity_true)
+          if d2d:
+            frame_true = frame_true[:,:,0,0] 
+          else:
+            frame_true = frame_true[0,:,:,0] 
+        elif FLAGS.system == "em":
+          if d2d:
+            frame_true = state_feed_dict[:,:,0] 
+          else:
+            frame_true = state_feed_dict[0,:,:,0] 
+          frame_true = np.abs(frame_true) * 100.0
+          print(np.max(frame_true))
+          print("need to implement em stuff")
+   
 
 
         # make frame for video
@@ -110,6 +169,7 @@ def evaluate():
       
     plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", fontsize="x-large", y=0.98)
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_flow_image.png")
+    print("made it")
     plt.show()
 
 

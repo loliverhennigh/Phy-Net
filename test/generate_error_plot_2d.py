@@ -48,6 +48,8 @@ def evaluate():
   with tf.Graph().as_default():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
+    state = state[0]
+    boundary = boundary[0]
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
@@ -97,6 +99,8 @@ def evaluate():
         # run network 
         for step in tqdm(xrange(FLAGS.test_length)):
           # network step
+          print(y_1_g)
+          print(y_1_g)
           y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
           generated_state = x_2_g[0]
           if d2d:
