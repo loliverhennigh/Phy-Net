@@ -76,10 +76,10 @@ int main(int argc, char **argv) try
     dat.nx = nx;
     dat.ny = ny;
     dat.nz = nz;
-    double E0 = 0.001;
+    double E0 = 0.01;
     //double B0 = sqrt(2.0)*E0;
     double B0 = sqrt(2.0)*E0;
-    double alpha = 0.01;
+    double alpha = 0.006;
    //double beta  = 0.0005;
     double z0 = 40;
     double x0 = 100;
@@ -102,7 +102,7 @@ int main(int argc, char **argv) try
 
     // number of objects between 10 and 25
     //size_t num_objects = (rand() % 10) + 10;
-    size_t num_objects = 2*(nx/128)*(nx/128);
+    size_t num_objects = 4*(nx/128)*(nx/128);
 
     // set objects
     size_t h = 0;
@@ -114,21 +114,39 @@ int main(int argc, char **argv) try
         if (object_type == 0) // oval
         {
 	    // set inner obstacle
-            int radius_x = (rand() % 30) + 10;
-            int radius_y = (rand() % 30) + 10;
+            int radius_x = (rand() % 20) + 20;
+            int radius_y = (rand() % 20) + 20;
             //int radius_y = radius_x;
             int max_radius = radius_x; 
             if (radius_y > radius_x) { max_radius = radius_y; }
 	    double obsX   = (rand() % (nx-(3*max_radius))) + (1.5*max_radius) ;   // x position
-	    double obsY   = (rand() % ((nz-int(z0))-(3*max_radius))) + (1.5*max_radius+int(z0)) ;   // y position
+	    double obsY   = (rand() % ((nz-int(z0+15))-(3*max_radius))) + (1.5*max_radius+int(z0+15)) ;   // y position
             int alpha = (rand() % 90);
+            int place_object = 1; 
+            for (size_t i=0;i<nx;i++)
+            {
+                for (size_t j=0;j<nz;j++)
+                {
+                    if ((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(2.0*radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(2.0*radius_y*radius_y)<1.0)
+                    {
+                        if (Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps > 1.01)
+                        {
+                            place_object = 0;
+                        }
+                    }
+
+                }
+            }
+            if (place_object == 1)
+            {
             h++;
             for (size_t i=0;i<nx;i++)
             {
                 for (size_t j=0;j<nz;j++)
                 {
-                    Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps = max(Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps, 1.0*tanh(2.0*(-((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(radius_y*radius_y)) + 1.0)) + 1.0);
+                    Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps = max(Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps, 2.0*tanh(.3*sqrt(radius_x * radius_y)*(-((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(radius_y*radius_y)) + 1.0)) + 3.0);
                 }
+            }
             }
 
         }
@@ -140,7 +158,7 @@ int main(int argc, char **argv) try
 
     //Dom.WriteXDMF("test");
     //Dom.Solve(600.0,6.0,&Setup,NULL,"temlbm02",true,nproc);
-    Dom.Solve(1500.0,32.0,NULL,NULL,argv[2],true,nproc);
+    Dom.Solve(1500.0,24.0,NULL,NULL,argv[2],true,nproc);
 
     return 0;
 }

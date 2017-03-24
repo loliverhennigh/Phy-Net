@@ -52,10 +52,12 @@ def evaluate():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
     state = state[0:1,0]
+    if FLAGS.system == 'em':
+      state_f = 100.0 * state
     boundary = boundary[0:1,0]
 
     # unwrap
-    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
+    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state_f, boundary)
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -109,8 +111,8 @@ def evaluate():
           frame_generated = x_2_g[:,:,0:1]
         else:
           frame_generated = x_2_g[0,:,:,0:1]
-        frame_generated = np.abs(frame_generated) * 100.0
-        print(np.max(frame_generated))
+        frame_generated = np.abs(frame_generated) * 10.0
+        print(np.sum(np.abs(x_2_g)))
         print("need to implement em stuff")
        
       # get true normalized velocity 
@@ -133,8 +135,8 @@ def evaluate():
           frame_true = state_feed_dict[:,:,0:1] 
         else:
           frame_true = state_feed_dict[0,:,:,0:1] 
-        frame_true = np.abs(frame_true) * 100.0
-        print(np.max(frame_true))
+        frame_true = np.abs(frame_true) * 1000.0
+        print(np.sum(np.abs(state_feed_dict)))
         print("need to implement em stuff")
   
       # make frame for video
