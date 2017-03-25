@@ -127,7 +127,7 @@ int main(int argc, char **argv) try
             {
                 for (size_t j=0;j<nz;j++)
                 {
-                    if ((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(2.0*radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(2.0*radius_y*radius_y)<1.0)
+                    if ((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(3.0*radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(3.0*radius_y*radius_y)<1.0)
                     {
                         if (Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps > 1.01)
                         {
@@ -144,7 +144,7 @@ int main(int argc, char **argv) try
             {
                 for (size_t j=0;j<nz;j++)
                 {
-                    Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps = max(Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps, 2.0*tanh(.3*sqrt(radius_x * radius_y)*(-((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(radius_y*radius_y)) + 1.0)) + 3.0);
+                    Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps = max(Dom.Lat.GetCell(iVec3_t(i,0,j))->Eps, 2.0*tanh(.2*sqrt(radius_x * radius_y)*(-((pow(cos(alpha)*(i-obsX) + sin(alpha)*(j-obsY),2.0))/(radius_x*radius_x)+(pow(sin(alpha)*(i-obsX) - cos(alpha)*(j-obsY),2.0))/(radius_y*radius_y)) + 1.0)) + 3.0);
                 }
             }
             }
