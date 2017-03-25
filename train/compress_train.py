@@ -33,7 +33,7 @@ def train():
     for i in range(FLAGS.nr_gpus):
       # make input que runner for gpu
       state, boundary = inputs() 
-      state = state * 100.0
+      state = state * 10.0
 
       # hard set gpu
       with tf.device('/gpu:%d' % i):
