@@ -11,7 +11,7 @@ Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Conv
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/network_fig.jpg)
 
-The network learns a encoding, compression, and decoding piece. The encoding piece learns to compress the state of the physics simulation. The compression piece learns the dynamics of the simulation on this compressed piece. The decoding piece learns to decode the compressed representation. The network is kept all convolutional allowing it to be trained and evaluated on any size simulation. This means that once the model is trained on a small simulation (say 256 by 256 grid) it can then attempt to simulate the dynamics of a larger simulation (say 1024 by 1024 grid). We show that the model can still produced accurate results even with larger simulations then seen during training.
+The network learns a encoding, compression, and decoding piece. The encoding piece learns to compress the state of the physics simulation. The compression piece learns the dynamics of the simulation on this compressed piece. The decoding piece learns to decode the compressed representation. The network is kept all convolutional allowing it to be trained and evaluated on any size simulation. This means that once the model is trained on a small simulation (say 256 by 256 grid) it can then attempt to simulate the dynamics of a larger simulation (say 1024 by 1024 grid). We show that the model can still produce accurate results even with larger simulations then seen during training.
 
 ## Lattice Boltzmann Fluid Flow
 
@@ -43,6 +43,16 @@ A few more snap shots of simulations
 
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/LNb6mZq64r4/0.jpg)](https://www.youtube.com/watch?v=LNb6mZq64r4)
+
+## Lattice Boltzmann Electromagnetic Waves
+Well the Lattice Boltzmann method is actually a general partial differential equation solver (of a particular form) so why stop at fluid flow! Here are some fun electromagnetic simulations that the model learns! These simulations are of a wave hitting randomly placed objects with different dielectric constants. You can see fun effects such as reflection and refraction when the wave interacts with the surface.
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/GVjY-GqpwV8/0.jpg)](https://www.youtube.com/watch?v=GVjY-GqpwV8)
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/KmeSFajoK8k/0.jpg)](https://www.youtube.com/watch?v=KmeSFajoK8k)
+
+
+
 
 ## How to run
 
