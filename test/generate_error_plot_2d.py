@@ -9,12 +9,8 @@ sys.path.append('../')
 
 from model.ring_net import *
 from model.loss import *
+from model.lattice import *
 from utils.experiment_manager import make_checkpoint_path
-from utils.numpy_divergence import divergence_2d
-from utils.numpy_drag import drag_2d
-from utils.numpy_flux import flux_2d
-from systems.fluid_createTFRecords import generate_feed_dict
-from systems.lattice_utils import *
 import random
 import time
 from tqdm import *
@@ -29,9 +25,6 @@ RESTORE_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 # shape of test simulation
 shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
-
-# lattice properties
-lveloc = get_lveloc(FLAGS.lattice_size)
 
 # 2d or not
 d2d = False
@@ -48,11 +41,32 @@ def evaluate():
   with tf.Graph().as_default():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
-    state = state[0]
-    boundary = boundary[0]
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
+
+    # add lattice weights to renormalize
+    state_add = add_lattice(state)
+    x_2_add = add_lattice(x_2)
+
+    # calc mean squared error
+    mean_squared_error = tf.nn.l2_loss(state_add - x_2_add)
+
+    # calc divergence
+    div_generated = tf.nn.l2_loss(lattice_to_divergence(x_2_add))
+    div_true = tf.nn.l2_loss(lattice_to_divergence(state_add))
+
+    # calc flux
+    flux_generated = lattice_to_flux(x_2_add, boundary)
+    flux_generated = tf.reduce_sum(flux_generated, axis=list(xrange(len(shape)+1)))
+    flux_true = lattice_to_flux(state_add, boundary)
+    flux_true = tf.reduce_sum(flux_true, axis=list(xrange(len(shape)+1)))
+
+    # calc drag
+    drag_generated = lattice_to_force(x_2_add, boundary)
+    drag_generated = tf.reduce_sum(drag_generated, axis=list(xrange(len(shape)+1)))
+    drag_true = lattice_to_force(state_add, boundary)
+    drag_true = tf.reduce_sum(drag_true, axis=list(xrange(len(shape)+1)))
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -85,56 +99,43 @@ def evaluate():
 
 
     # run simulations
-    if d2d:
-      file_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + '_test'
-    else:
-      file_name = 'fluid_flow_' + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
     for sim in tqdm(xrange(FLAGS.test_nr_runs)):
       for run in xrange(FLAGS.test_nr_per_simulation):
         # get frame
-        state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, file_name, sim, run+0)
-        feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
-        y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
+        state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, run+0)
+        fd = {state:state_feed_dict, boundary:boundary_feed_dict}
+        y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
         # run network 
         for step in tqdm(xrange(FLAGS.test_length)):
           # network step
-          print(y_1_g)
-          print(y_1_g)
-          y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
-          generated_state = x_2_g[0]
-          if d2d:
-            generated_state = pad_2d_to_3d(generated_state)
+          state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, run+step+0)
+          fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
+          mse, d_g, d_t, f_g, f_t, dr_g, dr_t, y_1_g = sess.run([mean_squared_error, div_generated, div_true, flux_generated, flux_true, drag_generated, drag_true, y_2],feed_dict=fd)
           # get true value
-          state_feed_dict, boundary_feed_dict = generate_feed_dict(1, shape, FLAGS.lattice_size, file_name, sim, run+step+0)
-          true_state = state_feed_dict[0]
-          true_boundary = boundary_feed_dict[0]
-          if d2d:
-            true_state = pad_2d_to_3d(true_state)
-            true_boundary = pad_2d_to_3d(true_boundary)
           # calc error
-          mse_error[sim, step] = np.sqrt(np.sum(np.square(generated_state - true_state)))
+          mse_error[sim, step] = mse
           # calc divergence
-          divergence_true[sim, step] = lattice_to_divergence(true_state,lveloc)
-          divergence_generated[sim, step] = lattice_to_divergence(generated_state,lveloc)
+          divergence_generated[sim, step] = d_g
+          divergence_true[sim, step] = d_t
           # calc drag
-          force_generated = lattice_to_force(generated_state, true_boundary, lveloc)
-          drag_generated_x[sim, step] = force_generated[2]
-          drag_generated_y[sim, step] = force_generated[1]
-          drag_generated_z[sim, step] = force_generated[0]
-          force_true = lattice_to_force(true_state, true_boundary, lveloc)
-          drag_true_x[sim, step] = force_true[2]
-          drag_true_y[sim, step] = force_true[1]
-          drag_true_z[sim, step] = force_true[0]
+          drag_generated_x[sim, step] = dr_g[0]
+          drag_generated_y[sim, step] = dr_g[1]
+          if not d2d:
+            drag_generated_z[sim, step] = dr_g[2]
+          drag_true_x[sim, step] = dr_t[0]
+          drag_true_y[sim, step] = dr_t[1]
+          if not d2d:
+            drag_true_z[sim, step] = dr_t[2]
           # calc flux
-          flux_generated = np.sum(lattice_to_flux(generated_state, true_boundary, lveloc), axis=(0,1,2))
-          flux_generated_x[sim, step] = flux_generated[2]
-          flux_generated_y[sim, step] = flux_generated[1]
-          flux_generated_z[sim, step] = flux_generated[0]
-          flux_true = np.sum(lattice_to_flux(true_state, true_boundary, lveloc), axis=(0,1,2))
-          flux_true_x[sim, step] = flux_true[2]
-          flux_true_y[sim, step] = flux_true[1]
-          flux_true_z[sim, step] = flux_true[0]
+          flux_generated_x[sim, step] = f_g[0]
+          flux_generated_y[sim, step] = f_g[1]
+          if not d2d:
+            flux_generated_z[sim, step] = f_g[2]
+          flux_true_x[sim, step] = f_t[0]
+          flux_true_y[sim, step] = f_t[1]
+          if not d2d:
+            flux_true_z[sim, step] = f_t[2]
 
 
     # step count variable for plotting

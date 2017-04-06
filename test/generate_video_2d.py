@@ -9,10 +9,11 @@ sys.path.append('../')
 
 from model.ring_net import *
 from model.loss import *
+from model.lattice import *
 from utils.experiment_manager import make_checkpoint_path
 import systems.fluid_createTFRecords as fluid_record
 import systems.em_createTFRecords as em_record
-from systems.lattice_utils import *
+#from systems.lattice_utils import *
 import random
 import time
 from tqdm import *
@@ -46,18 +47,55 @@ else:
   print("unable to open video, make sure video settings are correct")
   exit()
 
+def grey_to_short_rainbow(grey):
+  a = (1-grey)/0.25
+  x = np.floor(a)
+  y = np.floor(255*(a-x))
+  rainbow = np.zeros((grey.shape[0], grey.shape[1], 3))
+  for i in xrange(x.shape[0]):
+    for j in xrange(x.shape[1]):
+      if x[i,j,0] == 0:
+        rainbow[i,j,2] = 255
+        rainbow[i,j,1] = y[i,j,0]
+        rainbow[i,j,0] = 0
+      if x[i,j,0] == 1:
+        rainbow[i,j,2] = 255 - y[i,j,0]
+        rainbow[i,j,1] = 255
+        rainbow[i,j,0] = 0
+      if x[i,j,0] == 2:
+        rainbow[i,j,2] = 0
+        rainbow[i,j,1] = 255
+        rainbow[i,j,0] = y[i,j,0] 
+      if x[i,j,0] == 3:
+        rainbow[i,j,2] = 0
+        rainbow[i,j,1] = 255 - y[i,j,0]
+        rainbow[i,j,0] = 255
+      if x[i,j,0] == 4:
+        rainbow[i,j,2] = 0
+        rainbow[i,j,1] = 0
+        rainbow[i,j,0] = 255
+  return rainbow
+
 def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
     state, boundary = inputs(empty=True, shape=shape)
-    state = state[0:1,0]
-    if FLAGS.system == 'em':
-      state_f = 100.0 * state
-    boundary = boundary[0:1,0]
 
     # unwrap
-    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state_f, boundary)
+    y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
+
+    # calc velocity
+    velocity_generated = lattice_to_vel(x_2)
+    velocity_norm_generated = vel_to_norm(velocity_generated)
+    velocity_true = lattice_to_vel(state)
+    velocity_norm_true = vel_to_norm(velocity_true)
+
+    # calc drag
+    drag_generated = lattice_to_force(x_2, boundary)
+    drag_norm_generated = drag_generated
+    drag_true = lattice_to_force(state, boundary)
+    drag_norm_true = drag_true
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -71,78 +109,23 @@ def evaluate():
       print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
       exit()
 
-    # get frame
-    if FLAGS.system == "fluid":
-      frame_name = 'fluid_flow_'
-    elif FLAGS.system == "em":
-      frame_name = 'em_'
-    if d2d:
-      frame_name = frame_name + str(shape[0]) + 'x' + str(shape[1]) + '_test'
-    else:
-      frame_name = frame_name + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
-
-    lveloc = get_lveloc(FLAGS.lattice_size)
-    if FLAGS.system == "fluid":
-      state_feed_dict, boundary_feed_dict = fluid_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0)
-    elif FLAGS.system == "em":
-      state_feed_dict, boundary_feed_dict = em_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0)
-    feed_dict = {state:state_feed_dict, boundary:boundary_feed_dict}
-    y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=feed_dict)
-    last_step_frame_true = 0.0
+    state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, 0)
+    fd = {state:state_feed_dict, boundary:boundary_feed_dict}
+    y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
     # generate video
     for step in tqdm(xrange(FLAGS.video_length)):
       # calc generated frame compressed state
-      y_1_g, x_2_g = sess.run([y_2, x_2],feed_dict={y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g})
+      state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, step)
+      fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
+      #v_n_g, v_n_t, d_n_g, d_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, drag_norm_generated, drag_norm_true, y_2],feed_dict=fd)
+      v_n_g, v_n_t, d_n_g, d_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, drag_norm_generated, drag_norm_true, y_2],feed_dict=fd)
 
-      # get normalized velocity
-      x_2_g = x_2_g[0]
-      if FLAGS.system == "fluid":
-        if d2d:
-          x_2_g = pad_2d_to_3d(x_2_g)
-        velocity_generated = lattice_to_vel(x_2_g, lveloc)
-        frame_generated = vel_to_norm_vel(velocity_generated)
-        if d2d:
-          frame_generated = frame_generated[:,:,0,:]
-        else:
-          frame_generated = frame_generated[0,:,:,:]
-      elif FLAGS.system == "em":
-        if d2d:
-          frame_generated = x_2_g[:,:,0:1]
-        else:
-          frame_generated = x_2_g[0,:,:,0:1]
-        frame_generated = np.abs(frame_generated) * 10.0
-        print(np.sum(np.abs(x_2_g)))
-        print("need to implement em stuff")
-       
-      # get true normalized velocity 
-      if FLAGS.system == "fluid":
-        state_feed_dict, boundary_feed_dict = fluid_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0+step)
-      elif FLAGS.system == "em":
-        state_feed_dict, boundary_feed_dict = em_record.generate_feed_dict(1, shape, FLAGS.lattice_size, frame_name, 0, 0+step)
-      state_feed_dict = state_feed_dict[0]
-      if FLAGS.system == "fluid":
-        if d2d:
-          state_feed_dict = pad_2d_to_3d(state_feed_dict)
-        velocity_true = lattice_to_vel(state_feed_dict, lveloc) #keep first dim on and call it z
-        frame_true = vel_to_norm_vel(velocity_true)
-        if d2d:
-          frame_true = frame_true[:,:,0,:] 
-        else:
-          frame_true = frame_true[0,:,:,:] 
-      elif FLAGS.system == "em":
-        if d2d:
-          frame_true = state_feed_dict[:,:,0:1] 
-        else:
-          frame_true = state_feed_dict[0,:,:,0:1] 
-        frame_true = np.abs(frame_true) * 1000.0
-        print(np.sum(np.abs(state_feed_dict)))
-        print("need to implement em stuff")
-  
       # make frame for video
-      frame = np.concatenate([frame_generated, frame_true, np.abs(frame_generated - frame_true)], 1)
-      frame = np.concatenate([frame, frame, frame], axis=2)
-      frame = np.uint8(np.minimum(np.maximum(0, frame*255.0*10.0), 255)) # scale
+      frame = np.concatenate([v_n_g, v_n_t, np.abs(v_n_g - v_n_t)], 2)[0]*4.0
+      #frame_2 = np.concatenate([d_n_g, d_n_t, np.abs(d_n_g - d_n_t)], 2)*20.0 + .5
+      #frame = np.concatenate([frame_2, frame_2], 1)[0]
+      frame = np.uint8(grey_to_short_rainbow(frame)) # scale
 
       # write frame to video
       video.write(frame)
