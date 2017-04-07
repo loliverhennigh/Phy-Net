@@ -33,7 +33,7 @@ def train():
     for i in range(FLAGS.nr_gpus):
       # make input que runner for gpu
       state, boundary = inputs() 
-      state = state * 10.0
+      state = state
 
       # hard set gpu
       with tf.device('/gpu:%d' % i):
@@ -63,7 +63,7 @@ def train():
         error_gradient = loss_gradient_difference(state, x_2_o)
         #error_gradient = loss_divergence(x_2_o)
         #error_gradient = loss_divergence(state, x_2_o)
-        error = error_mse + 0.0* FLAGS.lambda_divergence * error_gradient
+        error = error_mse + FLAGS.lambda_divergence * error_gradient
         loss_gen.append(error)
 
         # store gradients

@@ -27,12 +27,13 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state, boundary = inputs(empty=True, shape=shape)
+    state, boundary = inputs(empty=True)
+    state = state[0:1,0]
+    boundary = boundary[0:1,0]
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
-    
     # make variable to iterate
     compressed_shape = [x / pow(2,FLAGS.nr_downsamples) for x in shape]
     print(compressed_shape)
@@ -52,16 +53,18 @@ def evaluate():
     state_out = decoding_template(compressed_state_2)
     
     # restore network
-    variables_to_restore = tf.trainable_variables()
-    saver = tf.train.Saver(variables_to_restore)
+    init = tf.global_variables_initializer()
+    #variables_to_restore = tf.trainable_variables()
+    #saver = tf.train.Saver(variables_to_restore)
     sess = tf.Session()
-    ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
-    if ckpt and ckpt.model_checkpoint_path:
-      print("restoring file from " + ckpt.model_checkpoint_path)
-      saver.restore(sess, ckpt.model_checkpoint_path)
-    else:
-      print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
-      exit()
+    sess.run(init)
+    #ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
+    #if ckpt and ckpt.model_checkpoint_path:
+    #  print("restoring file from " + ckpt.model_checkpoint_path)
+    #  saver.restore(sess, ckpt.model_checkpoint_path)
+    #else:
+    #  print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
+    #  exit()
 
     # make fake zero frame to test on
     state_feed_dict = np.zeros([1]+shape+[FLAGS.lattice_size])
@@ -81,7 +84,6 @@ def evaluate():
       run_length = 1000
       for step in tqdm(xrange(run_length)):
         run_step.run(session=sess)
-        #state_out.eval(session=sess)
       elapsed = time.time() - t
       print("time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape)  + "\n")
       myfile.write("no decompression time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape)  + "\n")
