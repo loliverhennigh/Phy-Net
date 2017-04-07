@@ -1,0 +1,165 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+% \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading nips_2016
+%
+% to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{nips_2016}
+
+% \usepackage{nips_2016}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+\usepackage[final]{nips_2016}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+
+\title{Lat-Net: Compressing Lattice Boltzmann Fluid Simulations using Deep Neural Networks}
+
+% The \author macro works with any number of authors. There are two
+% commands used to separate the names and addresses of multiple
+% authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to
+% break the lines. Using \AND forces a line break at that point. So,
+% if LaTeX puts 3 of 4 authors names on the first line, and the last
+% on the second line, try using \AND instead of \And before the third
+% author name.
+
+\author{
+  Oliver Hennigh \\
+  Mexico \\
+  \texttt{loliverhennigh101@gmail.com} \\
+}
+
+\begin{document}
+% \nipsfinalcopy is no longer used
+
+\maketitle
+
+\begin{abstract}
+We present Net-Phy, a method for compressing both the computation time and memory usage of fluid flow simulations using deep neural networks. Net-Phy employs convolutional autoencoders and residual connections in a fully differentiable scheme to reduce the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly effecient network that can be itereated and queired to reproduce a fluid simulation or extract desire measurements such as drag and flux. We apply this method to both 2d an 3d fluid flow simulations computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
+
+\end{abstract}
+
+\section{Introduction}
+
+(breif high level paragraph)
+
+Computational fluid dynamics (CFD) is a branch of fluid dynamcis that deals with numericaly solving and analyzing fluid flow problems such as those found in aerodynaics, geological morphol, and biomedical. CFD simulations often have high computational requirements, memory usage, and run times. Becuase of this, there is an ever growing body of work on using simulation data to create surrogate or metamodels that can be evaluated with sigificantly less resources. Towards this end, we develop a neural network approach that both compresses the computation time and memory usage of fluid simulations.
+
+(Talk about type of fluid simulations)
+
+There are many different types of fluid flow . In particlular, we investigate fluid simulations that contain complex time dependet phenomena such as vortexs. Simulations of this form are difficult because they require fluid solver to have high resolution and small times steps. Never the less, they are very important for studing things like blaa. Motivated by need for these simulations and the suscess of neural network based suraget models, we choice this setting to test our model (bad wording).
+
+(Say that we are using LBM)
+
+The main approach to modeling fluid flow is with the Navier stokes equation. This partial differential equations. Relativily recently there has been a new method for solving fluid flow named the Lattice Boltzmann Method. It is derived from . The main advantage of LBM is its ability to run on massibely parallel architectures. Because of this there has 
+
+(give breif description of method)
+
+Our proposed method works by compressing the velocity and density vector fields of a simulation while learning the dynamics of the simulation on these compressed forms. The model can be broken up into three pieces, an encoder, compression mapping, and decoder. The encoder compresses the both the velocity and density vector field as well as the given boundary conditions to a compressed form. The compression mapping learns mappings on the compressed state while applying boundary conditions that corrispond to the time steps in the fluid simulation. The decoder decompresses the compressed state allowing for either the whole velocity and density vecotr field to be extracted or desired measurments.
+
+(Say that we also look at Electormagnetic simulations)
+
+We focus the content of this paper on LBM Fluid Simulations however LBM is known to be a general partial differential equation solver (of a particular form cite em paper). The Lattice Boltzmann Method can be used to solve many physical systems of interest such as Electormagnatism, Plasma, Multiphase flow, Schordiener equation etc. (find good citations for all of these). With this in mind we show evidence that our method is very general by applying it to Electromagnatism. However, Because the domanate use of LBM is on fluid flow problems we center discustion on this topic with only minor look at other problems
+
+(List the contirbutions concisly)
+
+Our method has several key contributions over other work creating surage models of fluid simulations with neural networks. First, It allows for simulations to be generated with an order of magnatude less memory. There is a crucial need for such suragat models because memory requirements grow cubic to grid size in 3d simulations. In practice this quickly results in the need for supercomputers (tokyo stuff)(bad wording). Second, once our model is trained it can be used to generate any size simulation. This allows the model to learn from a large training set of small simulations and then generate simulations as much as 16 times bigger with little effect in accuracy. While the work seen here mentions this as a possibility for their model they do not demonstrate it. Third, our method is directly applicable to a variety of physics simulations, not just fluid flow.
+
+(Maybe Talk about the need for better flow solvers)
+
+As the high performance computing (HPC) is expanding, computational fluid dynamics faces numerous chalanges in makeing 
+
+
+\section{Related Work}
+
+Our model is closely related to many video prediction works. Video prediction is the problem of generated future frames in in video data given previous frams. There is a ever growing body of work using neural networks to achevie this. To our knoweledge the first used recurrent temporal restricted Boltzmann machine (RTRBM) \cite{sutskever2009recurrent} to model videos of bouncing balls (we also look at this problem). There have also been recurrent grammar cells applied to varieous time seires tasks including bouncing balls and NORBvideos \cite{michalshi2014modeling} \cite{memisevic2013learning}. More recently there is lots of work in video prediction for application to rienforcment learning and contorl \cite{oh2015action} \cite{santana2016learning} \cite{fragkiadaki2015learning} \cite{watter2015embed}. These models use a variety of techniques for next frame prediction such as straight convolutions \cite{fragkiadaki2015learning} to LSMTs. (need to put video cnn in here).
+
+\section{The Lattice Boltzmann Method}
+
+We give a brief description of the Lattice Boltzmann method.
+
+Things I want to talk about
+
+\begin{itemize}
+  \item LBM is used in huge simulations
+  \item LBM is very memory intensive
+  \item LBM acts localy
+  \item LBM can be implemented with 3x3 convs
+  \item explain why this is important
+\end{itemize}
+
+
+\section{Deep Neural Networks for Compressed Lattice Boltzmann}
+
+
+
+As mentioned, our network can be broken up into 3 distinct pieces (encoder, compression mapping, and decoder). Each piece of the network is built by a series of residual blocks with downsampleing and upsampling present in the encoder and decoder. Residual block were chosen because of their enormous suscess in training deep neural networks. They proved a reliable and effective techneque to prevent the vanishing gradient problem when network depth became too great. This atrabute is particular important for our model because training to predict multiple frames requires the network to be unrolled through time (as seen in fig 1). This amounts to the network growing in depth and the potential for vanishing gradients. The use of residual conections prove to be an effective way to prevent this in our work
+
+\begin{itemize}
+  \item Compression and decompression peices
+  \item t
+  \item Residual Connections are good for training long seq
+\end{itemize}
+
+\section{Datasets}
+
+\section{Results}
+
+Things to talk about
+
+\begin{itemize}
+  \item Works on larger flows
+  \item computation time
+  \item compressing memory usage
+  \item trade off between compression and error
+  \item Electromagnetic results
+\end{itemize}
+
+
+\subsection{Compressing Memory Usage}
+
+\subsection{Compressing Computational Speed}
+
+\subsection{Trade 
+
+\section{Conclusion}
+
+In this work we have developed a unique method to create neural network suraget models of Lattice Boltzmann Fluid simulations. We have demonstrated it
+
+\section*{References}
+
+References follow the acknowledgments. Use unnumbered first-level
+heading for the references. Any choice of citation style is acceptable
+as long as you are consistent. It is permissible to reduce the font
+size to \verb+small+ (9 point) when listing the references. {\bf
+  Remember that you can use a ninth page as long as it contains
+  \emph{only} cited references.}
+\medskip
+
+\small
+
+[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms
+for connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and
+T.K.\ Leen (eds.), {\it Advances in Neural Information Processing
+  Systems 7}, pp.\ 609--616. Cambridge, MA: MIT Press.
+
+[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS:
+  Exploring Realistic Neural Models with the GEneral NEural SImulation
+  System.}  New York: TELOS/Springer--Verlag.
+
+[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of
+learning and recall at excitatory recurrent synapses and cholinergic
+modulation in rat hippocampal region CA3. {\it Journal of
+  Neuroscience} {\bf 15}(7):5249-5262.
+
+\end{document}
