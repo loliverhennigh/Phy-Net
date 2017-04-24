@@ -23,7 +23,6 @@ def list_all_checkpoints(base_path, FLAGS):
   for root, dirnames, filenames in os.walk(base_path):
     for filename in fnmatch.filter(filenames, 'checkpoint'):
       paths.append(root)
-  print(paths)
   return paths
 
 def set_flags_given_checkpoint_path(path, FLAGS):

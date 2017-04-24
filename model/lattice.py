@@ -27,13 +27,13 @@ BOUNDARY_EDGE_KERNEL_2D[0,0,5,0] = 1.0 # up right
 BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
 BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
 BOUNDARY_EDGE_KERNEL_2D[0,2,6,0] = 1.0 # up left
-BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,9,1))
-BOUNDARY_EDGE_KERNEL_3D[0,1,1,1,0] = 1.0 # up
+BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,15,1))
+BOUNDARY_EDGE_KERNEL_3D[0,1,1,2,0] = 1.0 # up
 BOUNDARY_EDGE_KERNEL_3D[2,1,1,1,0] = 1.0 # down
-BOUNDARY_EDGE_KERNEL_3D[1,0,1,1,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_3D[1,2,1,1,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_3D[1,1,0,1,0] = 1.0 # in
-BOUNDARY_EDGE_KERNEL_3D[1,1,2,1,0] = 1.0 # out
+BOUNDARY_EDGE_KERNEL_3D[1,0,1,4,0] = 1.0 # right
+BOUNDARY_EDGE_KERNEL_3D[1,2,1,3,0] = 1.0 # left
+BOUNDARY_EDGE_KERNEL_3D[1,1,0,6,0] = 1.0 # in
+BOUNDARY_EDGE_KERNEL_3D[1,1,2,5,0] = 1.0 # out
 BOUNDARY_EDGE_KERNEL_3D[0,0,0,1,0] = 1.0 # up right in
 BOUNDARY_EDGE_KERNEL_3D[2,2,2,1,0] = 1.0 # down left out
 BOUNDARY_EDGE_KERNEL_3D[0,0,2,1,0] = 1.0 # up right out
@@ -62,9 +62,9 @@ def simple_conv_3d(x, k):
 
 def simple_trans_conv_3d(x, k):
   """A simplified 2D convolution operation"""
-  output_shape = tf.stack([tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(x)[3], tf.shape(k)[2]]) 
-  y = tf.nn.conv3d_transpose(x, k, output_shape, [1, 1, 1, 1, 1], padding='VALID')
-  y = tf.reshape(y, [int(x.get_shape()[0]), int(x.get_shape()[1]), int(x.get_shape()[2]), int(x.get_shape()[3]), int(k.get_shape()[2])])
+  output_shape = tf.stack([tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(x)[3], tf.shape(k)[3]]) 
+  y = tf.nn.conv3d_transpose(x, k, output_shape, [1, 1, 1, 1, 1], padding='SAME')
+  y = tf.reshape(y, [int(x.get_shape()[0]), int(x.get_shape()[1]), int(x.get_shape()[2]), int(x.get_shape()[3]), int(k.get_shape()[3])])
   return y
 
 def get_weights(lattice_size):
@@ -77,7 +77,6 @@ def get_weights(lattice_size):
 def get_lveloc(lattice_size):
   # returns the lattice weights given the size of lattice
   if lattice_size == 9:
-    #return tf.constant(np.array([ [0,0], [1,0], [0,1], [-1,0], [0,-1], [1,1], [-1,1], [-1,-1], [1,-1] ]), dtype=1)
     return tf.constant(np.array([ [0,0], [0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1] ]), dtype=1)
   elif lattice_size == 15:
     return tf.constant(np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ]), dtype=1)
@@ -167,6 +166,7 @@ def lattice_to_force(lattice, boundary):
   Lveloc = tf.reshape(Lveloc, dims*[1] + Lveloc_shape)
   boundary_shape = list(map(int, boundary.get_shape()))
   boundary_edge_kernel = get_edge_kernel(int(lattice.get_shape()[-1]))
+  print(boundary_edge_kernel.get_shape())
   if len(boundary.get_shape()) == 4:
     edge = simple_trans_conv_2d(boundary,boundary_edge_kernel) 
     edge = edge[:,1:-1,1:-1,:]
@@ -178,6 +178,9 @@ def lattice_to_force(lattice, boundary):
     boundary = boundary[:,1:-1,1:-1,1:-1,:]
     lattice = lattice[:,1:-1,1:-1,1:-1,:]
   edge = edge * (-boundary + 1.0)
+  print("AAAAAAAAAAAAAAAA")
+  print(edge.get_shape())
+  print(lattice.get_shape())
   edge = edge * lattice
   edge_shape = list(map(int, edge.get_shape()))
   edge = tf.reshape(edge, edge_shape + [1])
