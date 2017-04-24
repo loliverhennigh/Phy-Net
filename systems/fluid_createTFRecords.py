@@ -148,9 +148,7 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
       # first calc boundary (from first sample)
       boundary_cond = load_boundary(FLAGS.data_dir + '/' + dir_name + '/sample_' + str(run) + '/fluid_flow_0000.h5', shape, frame_num)
       boundary_cond = np.float32(boundary_cond)
-      #boundary_flat = boundary_cond.reshape([1,np.prod(np.array(shape))])
       boundary_flat = boundary_cond.reshape([np.prod(np.array(shape))])
-      #boundary_raw = boundary_flat.tostring()
       boundary_raw = boundary_flat.astype(np.float)
 
       # save tf records
@@ -165,12 +163,8 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
           
           flow_state = np.float32(flow_state)
           seq_frames[i] = flow_state 
-        if seq_length > 2:
-          ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it works
-        elif seq_length == 2:
-          ind_dat += 2
-        elif seq_length == 1:
-          ind_dat += 1
+        overlap = min(4, seq_length)
+        ind_dat += seq_length - overlap # overlap between frames
 
         # make feature map
         feature = make_feature_from_seq(seq_frames, seq_length, shape, frame_num)

@@ -3,7 +3,7 @@
 
 #python generate_video_2d.py --dimensions=256x256 --test_nr_runs=4 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints --filter_size=8 --filter_size_compression=32 --video_length=100
 #python generate_video_2d.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints --filter_size=16 --filter_size_compression=64
-python generate_video_2d.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints --filter_size=16 --filter_size_compression=128 --video_length=20
+python generate_video_2d.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints --filter_size=16 --filter_size_compression=128 --video_length=300
 
 
 #python generate_video_2d.py --dimensions=256x256 --test_nr_runs=4 --test_dimensions=512x512 --nr_downsamples=4 --base_dir=../checkpoints
