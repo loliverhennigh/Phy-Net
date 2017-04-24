@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import os.path
 import time
@@ -20,6 +21,8 @@ def train():
   """Train ring_net for a number of steps."""
 
   with tf.Graph().as_default():
+    # global step counter
+    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
     # print important params
     print(FLAGS.system + " system!")
     print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
@@ -81,7 +84,7 @@ def train():
           grads[0][j] += grads[i][j]
 
       # train (hopefuly)
-      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op)
+      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op, global_step.assign_add(1))
 
     # set total loss for printing
     total_loss = loss_gen[0]
@@ -126,23 +129,28 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.summary.FileWriter(TRAIN_DIR, graph_def=graph_def)
 
+    # start timer
     t = time.time()
-    for step in xrange(FLAGS.max_steps):
+
+    # calc number of steps left to run
+    run_steps = FLAGS.max_steps - int(sess.run(global_step))
+    for step in xrange(run_steps):
+      current_step = int(sess.run(global_step))
       _ , loss_value = sess.run([optimizer, total_loss],feed_dict={})
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-      if step%200 == 0:
+      if current_step%200 == 0:
         elapsed = time.time() - t
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed/200.))
-        summary_str = sess.run(summary_op, feed_dict={})
-        summary_writer.add_summary(summary_str, step) 
         t = time.time()
 
-      if step%2000 == 0:
+      if current_step%2000 == 0:
+        summary_str = sess.run(summary_op, feed_dict={})
+        summary_writer.add_summary(summary_str, current_step) 
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
-        saver.save(sess, checkpoint_path, global_step=step)  
+        saver.save(sess, checkpoint_path, global_step=global_step)  
         print("saved to " + TRAIN_DIR)
 
 def main(argv=None):  # pylint: disable=unused-argument

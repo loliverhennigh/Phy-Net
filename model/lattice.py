@@ -27,14 +27,6 @@ BOUNDARY_EDGE_KERNEL_2D[0,0,5,0] = 1.0 # up right
 BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
 BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
 BOUNDARY_EDGE_KERNEL_2D[0,2,6,0] = 1.0 # up left
-"""BOUNDARY_EDGE_KERNEL_2D[0,1,1,0] = 1.0 # up
-BOUNDARY_EDGE_KERNEL_2D[1,0,2,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_2D[2,1,3,0] = 1.0 # down
-BOUNDARY_EDGE_KERNEL_2D[1,2,4,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_2D[0,0,5,0] = 1.0 # up right
-BOUNDARY_EDGE_KERNEL_2D[2,0,6,0] = 1.0 # down right
-BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
-BOUNDARY_EDGE_KERNEL_2D[0,2,8,0] = 1.0 # up left"""
 BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,9,1))
 BOUNDARY_EDGE_KERNEL_3D[0,1,1,1,0] = 1.0 # up
 BOUNDARY_EDGE_KERNEL_3D[2,1,1,1,0] = 1.0 # down
@@ -58,9 +50,7 @@ def simple_conv_2d(x, k):
 
 def simple_trans_conv_2d(x, k):
   """A simplified 2D convolution operation"""
-  print(tf.shape(x)) 
   output_shape = tf.stack([tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(k)[2]]) 
-  print(output_shape)
   y = tf.nn.conv2d_transpose(x, k, output_shape, [1, 1, 1, 1], padding='SAME')
   y = tf.reshape(y, [int(x.get_shape()[0]), int(x.get_shape()[1]), int(x.get_shape()[2]), int(k.get_shape()[2])])
   return y
@@ -72,9 +62,9 @@ def simple_conv_3d(x, k):
 
 def simple_trans_conv_3d(x, k):
   """A simplified 2D convolution operation"""
-  output_shape = tf.stack([tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(k)[2]]) 
-  y = tf.nn.conv3d_transpose(x, k, [1, 1, 1, 1, 1], padding='VALID')
-  y = tf.reshape(y, [x.get_shape()[0], x.get_shape()[1], x.get_shape()[2], k.get_shape()[2]])
+  output_shape = tf.stack([tf.shape(x)[0], tf.shape(x)[1], tf.shape(x)[2], tf.shape(x)[3], tf.shape(k)[2]]) 
+  y = tf.nn.conv3d_transpose(x, k, output_shape, [1, 1, 1, 1, 1], padding='VALID')
+  y = tf.reshape(y, [int(x.get_shape()[0]), int(x.get_shape()[1]), int(x.get_shape()[2]), int(x.get_shape()[3]), int(k.get_shape()[2])])
   return y
 
 def get_weights(lattice_size):
@@ -186,6 +176,7 @@ def lattice_to_force(lattice, boundary):
     edge = simple_trans_conv_3d(boundary, boundary_edge_kernel)
     edge = edge[:,1:-1,1:-1,1:-1,:]
     boundary = boundary[:,1:-1,1:-1,1:-1,:]
+    lattice = lattice[:,1:-1,1:-1,1:-1,:]
   edge = edge * (-boundary + 1.0)
   edge = edge * lattice
   edge_shape = list(map(int, edge.get_shape()))

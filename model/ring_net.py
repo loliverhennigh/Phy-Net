@@ -421,7 +421,6 @@ def unroll(state, boundary, z=None):
 
   x_out = tf.stack(x_out)
   perm = np.concatenate([np.array([1,0]), np.arange(2,len(x_2.get_shape())+1,1)], 0)
-  print(perm)
   x_out = tf.transpose(x_out, perm=perm)
   return x_out
 ####### unroll template #######
