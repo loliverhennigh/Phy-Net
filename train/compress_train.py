@@ -13,6 +13,8 @@ from model.loss import *
 from model.optimizer import *
 from utils.experiment_manager import make_checkpoint_path
 
+import matplotlib.pyplot as plt
+
 FLAGS = tf.app.flags.FLAGS
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)

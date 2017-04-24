@@ -14,7 +14,7 @@ from tqdm import *
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_integer('min_queue_examples', 400,
+tf.app.flags.DEFINE_integer('min_queue_examples', 1000,
                            """ min examples to queue up""")
 tf.app.flags.DEFINE_integer('num_preprocess_threads', 2,
                            """ number of process threads for que runner """)
@@ -76,7 +76,8 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
     serialized_example,
     features=feature_dict) 
 
-  seq_of_example = []
+  seq_of_flow = []
+  seq_of_boundary = []
   for sq in xrange(FLAGS.tf_seq_length - seq_length):
     flow = []
     for i in xrange(seq_length):
@@ -88,9 +89,13 @@ def read_data_fluid(filename_queue, seq_length, shape, num_frames, color):
     flow = tf.to_float(flow)
     boundary = tf.reshape(boundary, [1] + shape + [1]) 
     boundary = tf.to_float(boundary)
-    seq_of_example.append((flow, boundary))
+    seq_of_flow.append(flow)
+    seq_of_boundary.append(boundary)
+  seq_of_flow = tf.stack(seq_of_flow)
+  seq_of_boundary = tf.stack(seq_of_boundary)
+  print(seq_of_flow.get_shape())
    
-  return seq_of_example
+  return seq_of_flow, seq_of_boundary
 
 def read_data_em(filename_queue, seq_length, shape, num_frames, color):
   """ reads data from tfrecord files.
@@ -161,7 +166,7 @@ def _generate_image_label_batch(image, batch_size):
       capacity=3 * batch_size)
   return frames
 
-def _generate_image_label_batch_fluid(seq_of_examples, batch_size):
+def _generate_image_label_batch_fluid(seq_of_flow, seq_of_boundary, batch_size):
   """Construct a queued batch of images.
   Args:
     image: 4-D Tensor of [seq, height, width, frame_num] 
@@ -173,13 +178,15 @@ def _generate_image_label_batch_fluid(seq_of_examples, batch_size):
   """
 
   num_preprocess_threads = FLAGS.num_preprocess_threads
+  print(seq_of_flow.get_shape())
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
-    flows, boundarys = tf.train.shuffle_batch_join(
-      seq_of_examples,
+    flows, boundarys = tf.train.shuffle_batch(
+      [seq_of_flow, seq_of_boundary],
       batch_size=batch_size,
-      #num_threads=num_preprocess_threads,
+      num_threads=num_preprocess_threads,
+      enqueue_many=True,
       capacity=FLAGS.min_queue_examples + 3 * batch_size,
       min_after_dequeue=FLAGS.min_queue_examples)
   else:
@@ -252,9 +259,9 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
-  seq_of_examples = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
+  seq_of_flow, seq_of_boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
 
-  flows, boundarys = _generate_image_label_batch_fluid(seq_of_examples, batch_size)
+  flows, boundarys = _generate_image_label_batch_fluid(seq_of_flow, seq_of_boundary, batch_size)
 
   return flows, boundarys
 
