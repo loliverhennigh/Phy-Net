@@ -15,8 +15,8 @@ class Process:
     self.run_time = 0
 
   def start(self, gpu=0):
-    print(self.cmd)
-    self.process = ps.subprocess.Popen(self.cmd, stdout=ps.subprocess.PIPE)
+    #os.system("export CUDA_VISIBLE_DEVICES=" + str(gpu))
+    self.process = ps.subprocess.Popen(self.cmd, stdout=ps.subprocess.PIPE, env=dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu)))
     self.pid = self.process.pid
 
     self.status = "Running"
