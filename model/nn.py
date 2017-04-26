@@ -162,7 +162,6 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
     elif d3d:
       output_shape = tf.stack([tf.shape(inputs)[0], tf.shape(inputs_pad)[1]*stride, tf.shape(inputs_pad)[2]*stride, tf.shape(inputs_pad)[3]*stride, num_features]) 
       conv = tf.nn.conv3d_transpose(inputs_pad, weights, output_shape, strides=[1,stride,stride,stride,1], padding='SAME')
-      print(conv.get_shape())
       conv = conv[:,2:-2,2:-2,2:-2]
 
     conv_biased = tf.nn.bias_add(conv, biases)
@@ -171,7 +170,6 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
 
     #reshape
     shape = int_shape(inputs)
-    print(shape)
     if d2d:
       conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
     if d3d:
@@ -263,9 +261,9 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
   else:
     x = conv_layer(x, 3, 1, filter_size*2, name + '_conv_2')
     if d2d:
-      x_1, x_2 = tf.split(3,2,x)
+      x_1, x_2 = tf.split(x,2,3)
     elif d3d:
-      x_1, x_2 = tf.split(4,2,x)
+      x_1, x_2 = tf.split(x,2,4)
     x = x_1 * tf.nn.sigmoid(x_2)
 
   if int(orig_x.get_shape()[2]) > int(x.get_shape()[2]):

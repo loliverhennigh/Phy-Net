@@ -108,7 +108,7 @@ tf.app.flags.DEFINE_integer('video_length', 200,
                            """ video dimentions """)
 tf.app.flags.DEFINE_integer('test_length', 50,
                            """ sequence length for testing (making error plots) """)
-tf.app.flags.DEFINE_integer('test_nr_runs', 50,
+tf.app.flags.DEFINE_integer('test_nr_runs', 5,
                            """ number of simulations to test on (making error plots) """)
 tf.app.flags.DEFINE_integer('test_nr_per_simulation', 1,
                            """ number of test runs per simulations (making error plots) """)
