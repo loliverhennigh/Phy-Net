@@ -454,4 +454,3 @@ def continual_unroll(state, boundary, z=None):
 ####### continual unroll template #######
 continual_unroll_template = tf.make_template('unroll_template', continual_unroll) # same variable scope as unroll_template
 #########################################
-

@@ -27,16 +27,13 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state, boundary = inputs(empty=True)
-    state = state[0:1,0]
-    boundary = boundary[0:1,0]
+    state, boundary = inputs(empty=True, shape=shape)
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
     # make variable to iterate
     compressed_shape = [x / pow(2,FLAGS.nr_downsamples) for x in shape]
-    print(compressed_shape)
     compressed_state_1 = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
     small_boundary_mul_var = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
     small_boundary_add_var = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
@@ -78,7 +75,6 @@ def evaluate():
 
     # open file to log results
     with open("figs/" + "runtime_log.txt", "a") as myfile:
-  
       # run no state_out
       t = time.time()
       run_length = 1000

@@ -111,7 +111,6 @@ def read_data_em(filename_queue, seq_length, shape, num_frames, color):
 
   # make feature dict
   feature_dict = {}
-  start
   for i in xrange(seq_length):
     feature_dict['em/frame_' + str(i)] = tf.FixedLenFeature([np.prod(np.array(shape))*num_frames],tf.float32)
   feature_dict['boundary'] = tf.FixedLenFeature([np.prod(np.array(shape))],tf.float32)
@@ -120,21 +119,25 @@ def read_data_em(filename_queue, seq_length, shape, num_frames, color):
     serialized_example,
     features=feature_dict) 
 
-  em = []
-  for i in xrange(seq_length):
-    #em.append(tf.decode_raw(features['em/frame_' + str(i)], tf.float32))
-    em.append(features['em/frame_' + str(i)])
-  #boundary = tf.decode_raw(features['boundary'], tf.float32)
-  boundary = features['boundary']
+  seq_of_em = []
+  seq_of_boundary = []
+  for sq in xrange(FLAGS.tf_seq_length - seq_length):
+    em = []
+    for i in xrange(seq_length):
+      em.append(features['em/frame_' + str(i)])
+    boundary = features['boundary']
+    # reshape
+    em = tf.stack(em)
+    em = tf.reshape(em, [seq_length] + shape + [num_frames])
+    em = tf.to_float(em)
+    boundary = tf.reshape(boundary, [1] + shape + [1]) 
+    boundary = tf.to_float(boundary)
+    seq_of_em.append(em)
+    seq_of_boundary.append(boundary)
+  seq_of_em = tf.stack(seq_of_em)
+  seq_of_boundary = tf.stack(seq_of_boundary)
 
-  # reshape
-  em = tf.stack(em)
-  em = tf.reshape(em, [seq_length] + shape + [num_frames])
-  em = tf.to_float(em)
-  boundary = tf.reshape(boundary, [1] + shape + [1]) 
-  boundary = tf.to_float(boundary)
-
-  return em, boundary
+  return seq_of_em, seq_of_boundary
 
 
 def _generate_image_label_batch(image, batch_size):
@@ -178,7 +181,6 @@ def _generate_image_label_batch_fluid(seq_of_flow, seq_of_boundary, batch_size):
   """
 
   num_preprocess_threads = FLAGS.num_preprocess_threads
-  print(seq_of_flow.get_shape())
   if FLAGS.train:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
@@ -197,7 +199,7 @@ def _generate_image_label_batch_fluid(seq_of_flow, seq_of_boundary, batch_size):
       capacity=3 * batch_size)
   return flows, boundarys
 
-def _generate_image_label_batch_em(em, boundary, batch_size):
+def _generate_image_label_batch_em(seq_of_em, seq_of_boundary, batch_size):
   """Construct a queued batch of images.
   Args:
     image: 4-D Tensor of [seq, height, width, frame_num] 
@@ -213,9 +215,10 @@ def _generate_image_label_batch_em(em, boundary, batch_size):
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
     ems, boundarys = tf.train.shuffle_batch(
-      [em, boundary],
+      [seq_of_em, seq_of_boundary],
       batch_size=batch_size,
       num_threads=num_preprocess_threads,
+      enqueue_many=True,
       capacity=FLAGS.min_queue_examples + 3 * batch_size,
       min_after_dequeue=FLAGS.min_queue_examples)
   else:
@@ -274,7 +277,7 @@ def em_inputs(batch_size, seq_length, shape, num_frames, train=True):
   """
   # num tf records
   if train:
-    run_num = 10
+    run_num = 50
   else:
     run_num = 1
 
@@ -289,15 +292,15 @@ def em_inputs(batch_size, seq_length, shape, num_frames, train=True):
     dir_name = dir_name + '_test'
  
   print("begining to generate tf records")
-  em_createTFRecords.generate_tfrecords(seq_length, run_num, shape, num_frames, dir_name)
+  em_createTFRecords.generate_tfrecords(FLAGS.tf_seq_length, run_num, shape, num_frames, dir_name)
 
-  tfrecord_filename = glb(FLAGS.tf_data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(seq_length) + '.tfrecords')
+  tfrecord_filename = glb(FLAGS.tf_data_dir + '/tfrecords/' + str(dir_name) + '/*_seq_length_' + str(FLAGS.tf_seq_length) + '.tfrecords')
  
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
-  em, boundary = read_data_em(filename_queue, seq_length, shape, num_frames, False)
+  seq_of_em, seq_of_boundary = read_data_em(filename_queue, seq_length, shape, num_frames, False)
 
-  ems, boundarys = _generate_image_label_batch_em(em, boundary, batch_size)
+  ems, boundarys = _generate_image_label_batch_em(seq_of_em, seq_of_boundary, batch_size)
 
   return ems, boundarys
 

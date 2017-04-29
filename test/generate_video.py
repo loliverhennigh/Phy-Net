@@ -17,6 +17,8 @@ import systems.em_createTFRecords as em_record
 import random
 import time
 from tqdm import *
+import matplotlib
+import matplotlib.pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -88,9 +90,11 @@ def evaluate():
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
     # calc velocity
-    velocity_generated = lattice_to_vel(x_2)
+    x_2_add = add_lattice(x_2)
+    state_add = add_lattice(state)
+    velocity_generated = lattice_to_vel(x_2_add)
     velocity_norm_generated = vel_to_norm(velocity_generated)
-    velocity_true = lattice_to_vel(state)
+    velocity_true = lattice_to_vel(state_add)
     velocity_norm_true = vel_to_norm(velocity_true)
 
     # calc drag
@@ -131,6 +135,11 @@ def evaluate():
 
       # write frame to video
       video.write(frame)
+
+      # show for testing
+      #plt.figure()
+      #plt.imshow(b_m.reshape((128,256)))
+      #plt.show()
 
     # release video
     video.release()
