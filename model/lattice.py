@@ -134,6 +134,8 @@ def lattice_to_vel(lattice):
   Lveloc = tf.reshape(Lveloc, dims*[1] + Lveloc_shape)
   lattice_shape = list(map(int, lattice.get_shape()))
   lattice = tf.reshape(lattice, lattice_shape + [1])
+  print(Lveloc.get_shape())
+  print(lattice.get_shape())
   velocity = tf.reduce_sum(Lveloc * lattice, axis=dims)
   return velocity
 
@@ -193,39 +195,38 @@ def lattice_to_force(lattice, boundary):
   force = tf.reduce_sum(edge * Lveloc, axis=dims)
   return force
 
-def lattice_to_electric(lattice):
+def lattice_to_electric(lattice, boundary):
   dims = len(lattice.get_shape())-1
-  split_lattice = tf.split(lattice, 4, axis=3)
-  e_1 = split_lattice[::4]
+  split_lattice = tf.split(lattice, 48, axis=3)
+  e_1 = split_lattice[0::4]
   e_2 = split_lattice[1::4]
-  e_1 = tf.stack(e_1, axis=3)[:,:,:,0,:]
-  e_2 = tf.stack(e_2, axis=3)[:,:,:,0,:]
+  e_1 = tf.stack(e_1, axis=3)
+  e_2 = tf.stack(e_2, axis=3)
   D1, D2 = get_lelect()
   D1_shape = list(map(int, D1.get_shape()))
   D1 = tf.reshape(D1, dims*[1] + D1_shape)
   D2 = tf.reshape(D2, dims*[1] + D1_shape)
-  e_1_shape = list(map(int, e_1.get_shape()))
-  e_1 = tf.reshape(e_1, e_1_shape + [1])
-  e_2 = tf.reshape(e_2, e_1_shape + [1])
+  print(D1.get_shape())
+  print(e_1.get_shape())
   electric = tf.reduce_sum((D1 * e_1) + (D2 * e_2), axis=dims)
+  electric = electric/boundary
   return electric
 
 def lattice_to_magnetic(lattice):
   dims = len(lattice.get_shape())-1
-  split_lattice = tf.split(lattice, 4, axis=3)
+  split_lattice = tf.split(lattice, 48, axis=3)
   m_1 = split_lattice[2::4]
   m_2 = split_lattice[3::4]
-  m_1 = tf.stack(m_1, axis=3)[:,:,:,0,:]
-  m_2 = tf.stack(m_2, axis=3)[:,:,:,0,:]
-  print(m_1.get_shape())
+  m_1 = tf.stack(m_1, axis=3)
+  m_2 = tf.stack(m_2, axis=3)
   H1, H2 = get_lmagne()
   H1_shape = list(map(int, H1.get_shape()))
   H1 = tf.reshape(H1, dims*[1] + H1_shape)
   H2 = tf.reshape(H2, dims*[1] + H1_shape)
-  m_1_shape = list(map(int, m_1.get_shape()))
-  m_1 = tf.reshape(m_1, m_1_shape + [1])
-  m_2 = tf.reshape(m_2, m_1_shape + [1])
   magnetic = tf.reduce_sum((H1 * m_1) + (H2 * m_2), axis=dims)
+  #magnetic = tf.reduce_sum((H2 * m_1), axis=dims)
+  #magnetic = m_1[:,:,:,4,:] + m_1[:,:,:,5,:] + m_1[:,:,:,6,:] + m_1[:,:,:,7,:]
+  #magnetic = m_1[:,:,:,4,:] + m_1[:,:,:,5,:] + m_1[:,:,:,6,:] + m_1[:,:,:,7,:]
   return magnetic 
 
 def field_to_norm(field):

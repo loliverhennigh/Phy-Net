@@ -47,7 +47,7 @@ def load_em(filename, shape, frame_num):
   em_state_vel = np.array(stream_em['State'][:])
   if len(shape) == 2:
     shape = [1] + shape
-  em_state_vel = 100.0*em_state_vel.reshape(shape + [frame_num])
+  em_state_vel = 10.0*em_state_vel.reshape(shape + [frame_num])
   stream_em.close()
 
   # print for testing
