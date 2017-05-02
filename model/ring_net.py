@@ -112,6 +112,10 @@ tf.app.flags.DEFINE_integer('test_nr_runs', 5,
                            """ number of simulations to test on (making error plots) """)
 tf.app.flags.DEFINE_integer('test_nr_per_simulation', 1,
                            """ number of test runs per simulations (making error plots) """)
+tf.app.flags.DEFINE_string('extract_type', 'line',
+                           """ if extracting in decoder of timing tests """)
+tf.app.flags.DEFINE_integer('extract_pos', 5,
+                           """ where to extract in decoder for timing tests """)
 
 ####### inputs #######
 def inputs(empty=False, name="inputs", shape=None):
@@ -244,57 +248,8 @@ def compression(y):
 compress_template = tf.make_template('compress_template', compression)
 #################################
 
-''' # not functional yet!!!
-def compression_lstm(y, hidden_state=None):
-  """Builds compressed dynamical system part of the net.
-  Args:
-    inputs: input to system
-    keep_prob: dropout layer
-  """
-  #--------- Making the net -----------
-  # x_1 -> y_1 -> y_2 -> x_2
-  # this peice y_1 -> y_2
-
-  y_i = y
-
-  if hidden_state is not None:
-    hidden_state_1_i = hidden_state[0] 
-    hidden_state_2_i = hidden_state[1]
-
-  hidden_state_1_i_new = []
-  hidden_state_2_i_new = []
-
-  if FLAGS.multi_resolution:
-    for i in xrange(FLAGS.nr_downsamples):
-      hidden_state_1_i_j_new = []
-      hidden_state_2_i_j_new = []
-      y_i_new = []
-      for j in xrange(FLAGS.nr_residual_compression):
-        if hidden is not None:
-          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i][j], hidden_state_2_i[i][j], FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
-        else:
-          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
-        hidden_state_1_i_j_new.append(hidden_state_1_store)
-        hidden_state_2_i_j_new.append(hidden_state_2_store)
-      hidden_state_1_i_new.append(hidden_state_1_i_j_new) 
-      hidden_state_2_i_new.append(hidden_state_2_i_j_new) 
-
-  else:
-    for i in xrange(FLAGS.nr_residual_compression):
-      if hidden is not None:
-        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i], hidden_state_2_i[i], FLAGS.keep_p, name="resnet_lstm_" + str(i))
-      else:
-        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_lstm_" + str(i))
-      hidden_state_1_i_new.append(hidden_state_1_store)
-      hidden_state_2_i_new.append(hidden_state_2_store)
-
-  hidden = [hidden_state_1_i_new, hidden_state_2_i_new]
-
-  return y_i, hidden 
-'''
-
 ####### decoding #######
-def decoding(y):
+def decoding(y, extract_type=None, extract_pos=64):
   """Builds decoding part of ring net.
   Args:
     inputs: input to decoder
@@ -306,6 +261,12 @@ def decoding(y):
  
   nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
 
+  if (extract_type is not None) and (extract_type != 'False'):
+    width = (FLAGS.nr_downsamples-1)*FLAGS.nr_residual*2
+    # hard setting extract_pos for now
+    extract_pos = width + 1
+    y_i = trim_tensor(y_i, extract_pos, width, extract_type)
+
   for i in xrange(FLAGS.nr_downsamples-1):
     filter_size = FLAGS.filter_size*pow(2,FLAGS.nr_downsamples-i-2)
     print("decoding filter size for layer " + str(i) + " of encoding is " + str(filter_size))
@@ -313,6 +274,10 @@ def decoding(y):
 
     for j in xrange(FLAGS.nr_residual):
       y_i = res_block(y_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=1, gated=FLAGS.gated, name="resnet_up_sampled_" + str(i) + "_nr_residual_" + str(j+1))
+      if (extract_type is not None) and (extract_type != 'False'):
+        print(width)
+        width = width-2
+        y_i = trim_tensor(y_i, width+2, width, extract_type)
 
   y_i = transpose_conv_layer(y_i, 4, 2, FLAGS.lattice_size, "up_conv_" + str(FLAGS.nr_downsamples))
 
@@ -320,50 +285,6 @@ def decoding(y):
 ####### decoding template #######
 decoding_template = tf.make_template('decoding_template', decoding)
 #################################
-
-'''
-CURRENTLY NOT IN USE
-def add_z(y, z):
-  y_shape = int_shape(y) 
-  z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
-  z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
-  z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
-  y_new = y + z
-
-  return y_new
-
-def discriminator(output, hidden_state=None):
-
-  x_i = output
-
-  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
-
-  label = []
-
-  for split in xrange(FLAGS.nr_discriminators):
-    for i in xrange(FLAGS.nr_downsamples):
-      filter_size = FLAGS.filter_size_discriminator*pow(2,i)
-      #print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
-      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
-      for j in xrange(FLAGS.nr_residual - 1):
-        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
-  
-    with tf.variable_scope("discriminator_LSTM_" + str(split), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
-      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size_discriminator, forget_bias=1.0)
-      if hidden_state == None:
-        batch_size = x_i.get_shape()[0]
-        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
-  
-      x_i, new_state = lstm_cell(x_i, hidden_state)
-
-      x_i = fc_layer(x_i, 1, "discriminator_fc_" + str(split), False, True)
-  
-      label.append(x_i)
-
-  label = tf.pack(label)
-
-  return label
-'''
 
 ####### unroll #######
 def unroll(state, boundary, z=None):
@@ -428,7 +349,7 @@ unroll_template = tf.make_template('unroll_template', unroll)
 ###############################
 
 ####### continual unroll #######
-def continual_unroll(state, boundary, z=None):
+def continual_unroll(state, boundary, z=None, extract_type=None, extract_pos=None):
 
   if FLAGS.lstm:
     # need to implement
@@ -444,7 +365,7 @@ def continual_unroll(state, boundary, z=None):
     if FLAGS.gan:
       y_1_boundary = add_z(y_1_boundary, z)
     # unroll all
-    x_2 = decoding_template(y_1_boundary)
+    x_2 = decoding_template(y_1_boundary, extract_type=extract_type, extract_pos=extract_pos)
     if FLAGS.unroll_length > 1:
       y_2 = compress_template(y_1_boundary)
     else:
@@ -454,3 +375,98 @@ def continual_unroll(state, boundary, z=None):
 ####### continual unroll template #######
 continual_unroll_template = tf.make_template('unroll_template', continual_unroll) # same variable scope as unroll_template
 #########################################
+
+
+''' # not functional yet!!!
+def compression_lstm(y, hidden_state=None):
+  """Builds compressed dynamical system part of the net.
+  Args:
+    inputs: input to system
+    keep_prob: dropout layer
+  """
+  #--------- Making the net -----------
+  # x_1 -> y_1 -> y_2 -> x_2
+  # this peice y_1 -> y_2
+
+  y_i = y
+
+  if hidden_state is not None:
+    hidden_state_1_i = hidden_state[0] 
+    hidden_state_2_i = hidden_state[1]
+
+  hidden_state_1_i_new = []
+  hidden_state_2_i_new = []
+
+  if FLAGS.multi_resolution:
+    for i in xrange(FLAGS.nr_downsamples):
+      hidden_state_1_i_j_new = []
+      hidden_state_2_i_j_new = []
+      y_i_new = []
+      for j in xrange(FLAGS.nr_residual_compression):
+        if hidden is not None:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i][j], hidden_state_2_i[i][j], FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        else:
+          y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_downsampled_" + str(i) + "_resnet_lstm_" + str(j))
+        hidden_state_1_i_j_new.append(hidden_state_1_store)
+        hidden_state_2_i_j_new.append(hidden_state_2_store)
+      hidden_state_1_i_new.append(hidden_state_1_i_j_new) 
+      hidden_state_2_i_new.append(hidden_state_2_i_j_new) 
+
+  else:
+    for i in xrange(FLAGS.nr_residual_compression):
+      if hidden is not None:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, hidden_state_1_i[i], hidden_state_2_i[i], FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      else:
+        y_i, hidden_state_1_store, hidden_state_2_store = res_block_lstm(y_i, None, None, FLAGS.keep_p, name="resnet_lstm_" + str(i))
+      hidden_state_1_i_new.append(hidden_state_1_store)
+      hidden_state_2_i_new.append(hidden_state_2_store)
+
+  hidden = [hidden_state_1_i_new, hidden_state_2_i_new]
+
+  return y_i, hidden 
+
+CURRENTLY NOT IN USE
+def add_z(y, z):
+  y_shape = int_shape(y) 
+  z = fc_layer(z, y_shape[1]*y_shape[2], "fc_z_" + str(i))
+  z = tf.reshape(z, [-1, y_shape[1], y_shape[2], 1])
+  z = conv_layer(z, 3, 1, y_shape[3], "conv_z_" + str(i))
+  y_new = y + z
+
+  return y_new
+
+def discriminator(output, hidden_state=None):
+
+  x_i = output
+
+  nonlinearity = set_nonlinearity(FLAGS.nonlinearity)
+
+  label = []
+
+  for split in xrange(FLAGS.nr_discriminators):
+    for i in xrange(FLAGS.nr_downsamples):
+      filter_size = FLAGS.filter_size_discriminator*pow(2,i)
+      #print("filter size for discriminator layer " + str(i) + " of encoding is " + str(filter_size))
+      x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=2, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_down_sampled_" + str(i) + "_nr_residual_0") 
+      for j in xrange(FLAGS.nr_residual - 1):
+        x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p_discriminator, stride=1, gated=FLAGS.gated, name="discriminator_" + str(split) + "_resnet_discriminator_" + str(i) + "_nr_residual_" + str(j+1))
+  
+    with tf.variable_scope("discriminator_LSTM_" + str(split), initializer = tf.random_uniform_initializer(-0.01, 0.01)):
+      lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(FLAGS.lstm_size_discriminator, forget_bias=1.0)
+      if hidden_state == None:
+        batch_size = x_i.get_shape()[0]
+        hidden_state = lstm_cell.zero_state(batch_size, tf.float32)
+  
+      x_i, new_state = lstm_cell(x_i, hidden_state)
+
+      x_i = fc_layer(x_i, 1, "discriminator_fc_" + str(split), False, True)
+  
+      label.append(x_i)
+
+  label = tf.pack(label)
+
+  return label
+'''
+
+
+

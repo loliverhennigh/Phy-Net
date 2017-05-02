@@ -32,7 +32,7 @@ d2d = False
 if len(shape) == 2:
   d2d = True
 
-time_sample = [0 ,25,  26]
+time_sample = [0 ,10,  20]
 
 def evaluate():
   """ Eval the system"""
@@ -43,13 +43,15 @@ def evaluate():
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
-    # calc velocity
-    x_2_add = add_lattice(x_2)
-    state_add = add_lattice(state)
-    velocity_generated = lattice_to_vel(x_2_add)
-    velocity_norm_generated = vel_to_norm(velocity_generated)
-    velocity_true = lattice_to_vel(state_add)
-    velocity_norm_true = vel_to_norm(velocity_true)
+    # calc electric and magnetic fields
+    electric_field_generated = lattice_to_electric(x_2)
+    magnetic_field_generated = lattice_to_magnetic(x_2)
+    electric_norm_generated = field_to_norm(electric_field_generated)
+    magnetic_norm_generated = field_to_norm(magnetic_field_generated)
+    electric_field_true = lattice_to_electric(state)
+    magnetic_field_true = lattice_to_magnetic(state)
+    electric_norm_true = field_to_norm(electric_field_true)
+    magnetic_norm_true = field_to_norm(magnetic_field_true)
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -86,19 +88,20 @@ def evaluate():
       # calc generated frame compressed state
       state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, step)
       fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
-      v_n_g, v_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, y_2],feed_dict=fd)
+      x_2_g, y_1_g, e_f_g, e_f_t = sess.run([x_2, y_2, magnetic_norm_generated, magnetic_norm_true],feed_dict=fd)
+      #x_2_g, y_1_g, e_f_g, e_f_t = sess.run([x_2, y_2, magnetic_field_generated, magnetic_field_true],feed_dict=fd)
 
       if step in time_sample:
-        if not d2d:
-          v_n_g = v_n_g[:,0]
-          v_n_t = v_n_t[:,0]
-          
-        v_n_g = v_n_g[0,:,:,0]
-        v_n_t = v_n_t[0,:,:,0]
-
-        # make frame for video
+        e_f_g = e_f_g[0,:,:,0]
+        e_f_t = e_f_t[0,:,:,0]
+        #e_f_g = x_2_g[0,:,:,3]
+        #e_f_t = state_feed_dict[0,:,:,3]
+        print(e_f_t.shape)
+        print(np.min(e_f_t))
+        print(np.max(e_f_t))
+        # make frame for image
         axarr = plt.subplot(gs1[3*(index)+0])
-        axarr.imshow(v_n_g, vmin=0.0, vmax=0.18)
+        axarr.imshow(e_f_g, vmin=0.0, vmax=0.18)
         if index == 0:
           axarr.set_title("Generated", y=0.96)
         axarr.set_ylabel("step " + str(step), y = .5, x = .5)
@@ -107,14 +110,14 @@ def evaluate():
         #axarr.axis('off')
         #axarr[index, 0].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+1])
-        axarr.imshow(v_n_t, vmin=0.0, vmax=0.18)
+        axarr.imshow(e_f_t, vmin=0.0, vmax=0.18)
         if index == 0:
           axarr.set_title("True", y=0.96)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 1].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+2])
-        axarr.imshow(np.sqrt(np.square(v_n_g-v_n_t)), vmin=0.0, vmax=0.18)
+        axarr.imshow(np.sqrt(np.square(e_f_g-e_f_t)), vmin=0.0, vmax=0.18)
         if index == 0:
           axarr.set_title("Difference", y=0.96)
         axarr.get_xaxis().set_ticks([])

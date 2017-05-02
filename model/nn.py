@@ -217,6 +217,33 @@ def PS(X, r, depth):
   X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
   return X
 
+def trim_tensor(tensor, pos, width, trim_type):
+  tensor_shape = int_shape(tensor)
+  tensor_length = len(tensor_shape)
+  if tensor_length == 4:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1])):
+      print("this should probably never be called")
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      print("can not extract a plane from a plane")
+  elif tensor_length == 5:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1],tensor_shape[2])):
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      tensor = tensor[:,pos-width:pos+width+1]
+  else:
+    print("tensor size not supported") 
+    exit()
+  return tensor
+
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet", begin_nonlinearity=True):
       
   # determine if 2d or 3d trans conv is needed

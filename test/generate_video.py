@@ -97,12 +97,6 @@ def evaluate():
     velocity_true = lattice_to_vel(state_add)
     velocity_norm_true = vel_to_norm(velocity_true)
 
-    # calc drag
-    drag_generated = lattice_to_force(x_2, boundary)
-    drag_norm_generated = drag_generated
-    drag_true = lattice_to_force(state, boundary)
-    drag_norm_true = drag_true
-
     # restore network
     variables_to_restore = tf.all_variables()
     saver = tf.train.Saver(variables_to_restore)
@@ -124,7 +118,7 @@ def evaluate():
       # calc generated frame compressed state
       state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, step)
       fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
-      v_n_g, v_n_t, d_n_g, d_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, drag_norm_generated, drag_norm_true, y_2],feed_dict=fd)
+      v_n_g, v_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, y_2],feed_dict=fd)
 
       # make frame for video
       if not d2d:

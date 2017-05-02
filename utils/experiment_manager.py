@@ -3,7 +3,7 @@ import fnmatch
 import os
 
 # flags to not include in checkpoint path
-non_checkpoint_flags = ['min_queue_examples', 'data_dir', 'tf_data_dir', 'num_preprocess_threads', 'train', 'base_dir', 'restore', 'max_steps', 'restore_unroll_length', 'batch_size', 'unroll_from_true', 'unroll_length', 'video_shape', 'video_length', 'test_length', 'test_nr_runs', 'test_nr_per_simulation', 'test_dimensions', 'lstm', 'gan', 'nr_discriminators', 'z_size', 'nr_downsamples_discriminator', 'nr_residual_discriminator', 'keep_p_discriminator', 'filter_size_discriminator', 'lstm_size_discriminator', 'lambda_reconstruction', 'nr_gpus', 'tf_store_images', 'gan_lr', 'init_unroll_length', 'tf_seq_length']
+non_checkpoint_flags = ['min_queue_examples', 'data_dir', 'tf_data_dir', 'num_preprocess_threads', 'train', 'base_dir', 'restore', 'max_steps', 'restore_unroll_length', 'batch_size', 'unroll_from_true', 'unroll_length', 'video_shape', 'video_length', 'test_length', 'test_nr_runs', 'test_nr_per_simulation', 'test_dimensions', 'lstm', 'gan', 'nr_discriminators', 'z_size', 'nr_downsamples_discriminator', 'nr_residual_discriminator', 'keep_p_discriminator', 'filter_size_discriminator', 'lstm_size_discriminator', 'lambda_reconstruction', 'nr_gpus', 'tf_store_images', 'gan_lr', 'init_unroll_length', 'tf_seq_length', 'extract_type', 'extract_pos']
 
 def str2bool(v):
   return v == 'TRUE'

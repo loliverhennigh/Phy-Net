@@ -46,10 +46,6 @@ def evaluate():
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
-    # add lattice weights to renormalize
-    state_add = add_lattice(state)
-    x_2_add = add_lattice(x_2)
-
     # calc mean squared error
     mean_squared_error = tf.nn.l2_loss(state_add - x_2_add)
 
@@ -167,7 +163,7 @@ def evaluate():
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 4}
+        'size'   : 6}
 
     matplotlib.rc('font', **font)
 

@@ -81,6 +81,16 @@ def get_lveloc(lattice_size):
   elif lattice_size == 15:
     return tf.constant(np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ]), dtype=1)
 
+def get_lelect():
+  D1 = tf.constant(np.array([ [-0.5, 0.5, 0.0], [-0.5,-0.5, 0.0], [ 0.5,-0.5, 0.0], [ 0.5, 0.5, 0.0], [-0.5, 0.0, 0.5], [-0.5, 0.0,-0.5], [ 0.5, 0.0,-0.5], [ 0.5, 0.0, 0.5], [ 0.0,-0.5, 0.5], [ 0.0,-0.5,-0.5], [ 0.0, 0.5,-0.5], [ 0.0, 0.5, 0.5] ]), dtype=1)
+  D2 =  tf.constant(np.array([ [ 0.5,-0.5, 0.0], [ 0.5, 0.5, 0.0], [-0.5, 0.5, 0.0], [-0.5,-0.5, 0.0], [ 0.5, 0.0,-0.5], [ 0.5, 0.0, 0.5], [-0.5, 0.0, 0.5], [-0.5, 0.0,-0.5], [ 0.0, 0.5,-0.5], [ 0.0, 0.5, 0.5], [ 0.0,-0.5, 0.5], [ 0.0,-0.5,-0.5] ]), dtype=1)
+  return D1, D2
+
+def get_lmagne():
+  H1 = tf.constant(np.array([ [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0] ]), dtype=1)
+  H2 =  tf.constant(np.array([ [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0] ]), dtype=1)
+  return H1, H2
+
 def get_opposite(lattice_size):
   # returns the lattice weights given the size of lattice
   if lattice_size == 9:
@@ -166,7 +176,6 @@ def lattice_to_force(lattice, boundary):
   Lveloc = tf.reshape(Lveloc, dims*[1] + Lveloc_shape)
   boundary_shape = list(map(int, boundary.get_shape()))
   boundary_edge_kernel = get_edge_kernel(int(lattice.get_shape()[-1]))
-  print(boundary_edge_kernel.get_shape())
   if len(boundary.get_shape()) == 4:
     edge = simple_trans_conv_2d(boundary,boundary_edge_kernel) 
     edge = edge[:,1:-1,1:-1,:]
@@ -178,13 +187,53 @@ def lattice_to_force(lattice, boundary):
     boundary = boundary[:,1:-1,1:-1,1:-1,:]
     lattice = lattice[:,1:-1,1:-1,1:-1,:]
   edge = edge * (-boundary + 1.0)
-  print("AAAAAAAAAAAAAAAA")
-  print(edge.get_shape())
-  print(lattice.get_shape())
   edge = edge * lattice
   edge_shape = list(map(int, edge.get_shape()))
   edge = tf.reshape(edge, edge_shape + [1])
   force = tf.reduce_sum(edge * Lveloc, axis=dims)
   return force
+
+def lattice_to_electric(lattice):
+  dims = len(lattice.get_shape())-1
+  split_lattice = tf.split(lattice, 4, axis=3)
+  e_1 = split_lattice[::4]
+  e_2 = split_lattice[1::4]
+  e_1 = tf.stack(e_1, axis=3)[:,:,:,0,:]
+  e_2 = tf.stack(e_2, axis=3)[:,:,:,0,:]
+  D1, D2 = get_lelect()
+  D1_shape = list(map(int, D1.get_shape()))
+  D1 = tf.reshape(D1, dims*[1] + D1_shape)
+  D2 = tf.reshape(D2, dims*[1] + D1_shape)
+  e_1_shape = list(map(int, e_1.get_shape()))
+  e_1 = tf.reshape(e_1, e_1_shape + [1])
+  e_2 = tf.reshape(e_2, e_1_shape + [1])
+  electric = tf.reduce_sum((D1 * e_1) + (D2 * e_2), axis=dims)
+  return electric
+
+def lattice_to_magnetic(lattice):
+  dims = len(lattice.get_shape())-1
+  split_lattice = tf.split(lattice, 4, axis=3)
+  m_1 = split_lattice[2::4]
+  m_2 = split_lattice[3::4]
+  m_1 = tf.stack(m_1, axis=3)[:,:,:,0,:]
+  m_2 = tf.stack(m_2, axis=3)[:,:,:,0,:]
+  print(m_1.get_shape())
+  H1, H2 = get_lmagne()
+  H1_shape = list(map(int, H1.get_shape()))
+  H1 = tf.reshape(H1, dims*[1] + H1_shape)
+  H2 = tf.reshape(H2, dims*[1] + H1_shape)
+  m_1_shape = list(map(int, m_1.get_shape()))
+  m_1 = tf.reshape(m_1, m_1_shape + [1])
+  m_2 = tf.reshape(m_2, m_1_shape + [1])
+  magnetic = tf.reduce_sum((H1 * m_1) + (H2 * m_2), axis=dims)
+  return magnetic 
+
+def field_to_norm(field):
+  field_norm = tf.sqrt(tf.square(field[:,:,:,0:1]) + tf.square(field[:,:,:,1:2]) + tf.square(field[:,:,:,2:3]))
+  return field_norm
+
+
+
+ 
 
 
