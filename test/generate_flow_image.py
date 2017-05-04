@@ -32,7 +32,9 @@ d2d = False
 if len(shape) == 2:
   d2d = True
 
-time_sample = [0 ,25,  26]
+time_sample = [0, 100, 200]
+#time_sample = [0 , 1, 2, 3]
+#time_sample = [0 , 3, 6, 9, 12, 15, 18, 21, 24, 27]
 
 def evaluate():
   """ Eval the system"""
@@ -95,6 +97,7 @@ def evaluate():
           
         v_n_g = v_n_g[0,:,:,0]
         v_n_t = v_n_t[0,:,:,0]
+        #v_n_t = boundary_feed_dict[0,:,:,0]
 
         # make frame for video
         axarr = plt.subplot(gs1[3*(index)+0])
@@ -125,7 +128,7 @@ def evaluate():
     plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", fontsize="x-large", y=0.98)
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_flow_image.png")
     print("made it")
-    plt.show()
+    #plt.show()
 
 
        

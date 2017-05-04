@@ -11,6 +11,7 @@ from model.ring_net import *
 from model.loss import *
 from model.lattice import *
 from utils.experiment_manager import make_checkpoint_path
+from utils.plot_helper import grey_to_short_rainbow
 import systems.fluid_createTFRecords as fluid_record
 import systems.em_createTFRecords as em_record
 #from systems.lattice_utils import *
@@ -48,37 +49,6 @@ if success:
 else:
   print("unable to open video, make sure video settings are correct")
   exit()
-
-def grey_to_short_rainbow(grey):
-  max_grey = np.max(grey)
-  grey = grey/max_grey
-  a = (1-grey)/0.25
-  x = np.floor(a)
-  y = np.floor(255*(a-x))
-  rainbow = np.zeros((grey.shape[0], grey.shape[1], 3))
-  for i in xrange(x.shape[0]):
-    for j in xrange(x.shape[1]):
-      if x[i,j,0] == 0:
-        rainbow[i,j,2] = 255
-        rainbow[i,j,1] = y[i,j,0]
-        rainbow[i,j,0] = 0
-      if x[i,j,0] == 1:
-        rainbow[i,j,2] = 255 - y[i,j,0]
-        rainbow[i,j,1] = 255
-        rainbow[i,j,0] = 0
-      if x[i,j,0] == 2:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 255
-        rainbow[i,j,0] = y[i,j,0] 
-      if x[i,j,0] == 3:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 255 - y[i,j,0]
-        rainbow[i,j,0] = 255
-      if x[i,j,0] == 4:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 0
-        rainbow[i,j,0] = 255
-  return rainbow
 
 def evaluate():
   """ Eval the system"""
@@ -125,15 +95,11 @@ def evaluate():
         v_n_g = v_n_g[:,0]
         v_n_t = v_n_t[:,0]
       frame = np.concatenate([v_n_g, v_n_t, np.abs(v_n_g - v_n_t)], 2)[0]
-      frame = np.uint8(grey_to_short_rainbow(frame))
+      frame = np.uint8(255 * frame/min(.25, np.max(frame)))
+      frame = cv2.applyColorMap(frame[:,:,0], 2)
 
       # write frame to video
       video.write(frame)
-
-      # show for testing
-      #plt.figure()
-      #plt.imshow(b_m.reshape((128,256)))
-      #plt.show()
 
     # release video
     video.release()

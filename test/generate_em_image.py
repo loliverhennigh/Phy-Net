@@ -32,7 +32,7 @@ d2d = False
 if len(shape) == 2:
   d2d = True
 
-time_sample = [0 ,5,  10, 50]
+time_sample = [0 ,5, 30]
 
 def evaluate():
   """ Eval the system"""
@@ -120,7 +120,7 @@ def evaluate():
         index += 1
       
     plt.suptitle("Magnetic Field " + str(shape[0]) + "x" + str(shape[1]) + " Simulation", fontsize="x-large", y=0.98)
-    plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_flow_image.png")
+    plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_em_image.png")
     print("made it")
     plt.show()
 

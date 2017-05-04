@@ -1,4 +1,4 @@
-#python generate_video.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
-#python generate_video.py --dimensions=256x256 --test_dimensions=512x512 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
-#python generate_video.py --dimensions=256x256 --test_dimensions=1024x1024 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
+python generate_video.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
+python generate_video.py --dimensions=256x256 --test_dimensions=512x512 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
+python generate_video.py --dimensions=256x256 --test_dimensions=1024x1024 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250
 python generate_video.py --dimensions=256x256 --test_dimensions=2048x2048 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250

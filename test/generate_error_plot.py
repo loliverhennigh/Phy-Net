@@ -16,7 +16,6 @@ import time
 from tqdm import *
 import matplotlib
 import matplotlib.pyplot as plt
-import seaborn
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -167,13 +166,13 @@ def evaluate():
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 4}
+        'size'   : 6}
 
     matplotlib.rc('font', **font)
 
     if d2d:
       f, axarr = plt.subplots(6, sharex=True, figsize=(5,7))
-      plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", y=0.94)
+      plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", fontsize="x-large", y=0.94)
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
       axarr[0].set_title('error', y=0.96)
       axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
@@ -198,8 +197,8 @@ def evaluate():
 
     else:
       f, axarr = plt.subplots(8, sharex=True, figsize=(5,8.5))
-      plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", y=0.94)
-      #plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", fontsize="x-large", y=0.94)
+      #plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", y=0.94)
+      plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", fontsize="x-large", y=0.94)
   
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
       axarr[0].set_title('error', y=0.96)
