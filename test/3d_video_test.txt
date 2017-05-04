@@ -1,0 +1,2 @@
+python generate_video.py --dimensions=40x40x160 --test_dimensions=40x40x160 --nr_downsamples=2 --filter_size_compression=128  --base_dir=../checkpoints_show_case --lattice_size=15 --filter_size=64 --reconstruction_lr=0.00005 --nr_residual_compression=3 --nr_residual=1 --video_length=25
+python generate_video.py --dimensions=40x40x160 --test_dimensions=80x80x320 --nr_downsamples=2 --filter_size_compression=128  --base_dir=../checkpoints_show_case --lattice_size=15 --filter_size=64 --reconstruction_lr=0.00005 --nr_residual_compression=3 --nr_residual=1 --video_length=120

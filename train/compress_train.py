@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import os.path
 import time
@@ -12,6 +13,8 @@ from model.loss import *
 from model.optimizer import *
 from utils.experiment_manager import make_checkpoint_path
 
+import matplotlib.pyplot as plt
+
 FLAGS = tf.app.flags.FLAGS
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
@@ -20,6 +23,8 @@ def train():
   """Train ring_net for a number of steps."""
 
   with tf.Graph().as_default():
+    # global step counter
+    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
     # print important params
     print(FLAGS.system + " system!")
     print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
@@ -33,7 +38,6 @@ def train():
     for i in range(FLAGS.nr_gpus):
       # make input que runner for gpu
       state, boundary = inputs() 
-      state = state * 10.0
 
       # hard set gpu
       with tf.device('/gpu:%d' % i):
@@ -59,11 +63,8 @@ def train():
 
         # loss mse
         error_mse = loss_mse(state, x_2_o)
-        # loss gradient (see "beyond mean squared error")
         error_gradient = loss_gradient_difference(state, x_2_o)
-        #error_gradient = loss_divergence(x_2_o)
-        #error_gradient = loss_divergence(state, x_2_o)
-        error = error_mse + 0.0* FLAGS.lambda_divergence * error_gradient
+        error = error_mse + FLAGS.lambda_divergence * error_gradient
         loss_gen.append(error)
 
         # store gradients
@@ -81,7 +82,7 @@ def train():
           grads[0][j] += grads[i][j]
 
       # train (hopefuly)
-      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op)
+      optimizer = tf.group(adam_updates(all_params, grads[0], lr=FLAGS.reconstruction_lr, mom1=0.95, mom2=0.9995), maintain_averages_op, global_step.assign_add(1))
 
     # set total loss for printing
     total_loss = loss_gen[0]
@@ -126,23 +127,28 @@ def train():
     graph_def = sess.graph.as_graph_def(add_shapes=True)
     summary_writer = tf.summary.FileWriter(TRAIN_DIR, graph_def=graph_def)
 
+    # start timer
     t = time.time()
-    for step in xrange(FLAGS.max_steps):
+
+    # calc number of steps left to run
+    run_steps = FLAGS.max_steps - int(sess.run(global_step))
+    for step in xrange(run_steps):
+      current_step = int(sess.run(global_step))
       _ , loss_value = sess.run([optimizer, total_loss],feed_dict={})
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-      if step%200 == 0:
+      if current_step%200 == 0:
         elapsed = time.time() - t
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed/200.))
-        summary_str = sess.run(summary_op, feed_dict={})
-        summary_writer.add_summary(summary_str, step) 
         t = time.time()
 
-      if step%2000 == 0:
+      if current_step%2000 == 0:
+        summary_str = sess.run(summary_op, feed_dict={})
+        summary_writer.add_summary(summary_str, current_step) 
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
-        saver.save(sess, checkpoint_path, global_step=step)  
+        saver.save(sess, checkpoint_path, global_step=global_step)  
         print("saved to " + TRAIN_DIR)
 
 def main(argv=None):  # pylint: disable=unused-argument

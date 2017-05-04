@@ -1,4 +1,4 @@
 
-python compress_train.py --system=em --lattice_size=48 --min_queue_examples=40 --filter_size=32 --filter_size_compression=256 --nr_downsamples=4 --batch_size=1 --nr_residual=1 --reconstruction_lr=0.00001 --base_dir=../checkpiont_em --nr_gpus=3
+python compress_train.py --system=em --lattice_size=48 --min_queue_examples=40 --filter_size=32 --filter_size_compression=256 --nr_downsamples=4 --batch_size=1 --nr_residual=1 --reconstruction_lr=0.00001 --base_dir=../checkpoints_em --nr_gpus=1 --tf_seq_length=15
 #python compress_train.py --system=em --lattice_size=48 --min_queue_examples=40 --filter_size=32 --filter_size_compression=256 --nr_downsamples=4 --batch_size=1 --dimensions=128x128
 

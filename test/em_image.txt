@@ -1,0 +1,3 @@
+python generate_em_image.py --dimensions=256x256 --test_dimensions=256x256 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250 --system=em --lattice_size=48 
+#python generate_em_image.py --dimensions=256x256 --test_dimensions=512x512 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250 --system=em --lattice_size=48 
+#python generate_em_image.py --dimensions=256x256 --test_dimensions=1024x1024 --nr_downsamples=4 --base_dir=../checkpoints_show_case --filter_size=16 --filter_size_compression=128 --video_length=250 --system=em --lattice_size=48 

@@ -1,0 +1,1 @@
+python -u compress_train.py --filter_size=16 --filter_size_compression=128 --unroll_length=5 --max_steps=500000 --base_dir=../checkpoints_show_case

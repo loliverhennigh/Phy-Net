@@ -49,6 +49,9 @@
 \begin{abstract}
 We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann fluid flow simulations using deep neural networks. Lat-Net works by reduceing the state space size of a simulation and mimicing the dynamics on this compressed form. The result is a small memory and computationaly effecient neural network that can be itereated and queired to reproduce a fluid simulation or extract desired values such as 2D cross section or single. While we apply Lat-Net to fluid simulations   and in addition to applying it to both 2d an 3d fluid flow simulations, we also show it can be used  computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
 
+
+We present Net-Phy, a method for compressing both the computation time and memory usage of fluid flow simulations using deep neural networks. Net-Phy employs convolutional autoencoders and residual connections in a fully differentiable scheme to reduce the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly effecient network that can be itereated and queired to reproduce a fluid simulation or extract desire measurements such as drag and flux. We apply this method to both 2d an 3d fluid flow simulations computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
+
 \end{abstract}
 
 \section{Introduction}
@@ -116,6 +119,13 @@ The important aspect of the LBM for our purposes is that it acts localy on grid 
 
 The goal of our model is to learn a compressiong mapping $\phi_{encoder}(f_i) \rightarrow g_j$, a decompressing mapping $\phi_{decoder}(g_j) \rightarrow f_i$, and a compression mapping $\phi_{dynamics}(g_j) \rightarrow g_{j+1}$ where $g_j$ corrisponds with $f_i$. We use fully convolutional networks with residual connections to represent each one of these mappings. Once they are learned a simulation can be generated with by iterating $\phi_{dynamics}$ on $g_j$ and then extrancting the simulation state with $\phi_{decoder}$. 
 
+Our model is closely related to many video prediction works. Video prediction is the problem of generated future frames in in video data given previous frams. There is a ever growing body of work using neural networks to achevie this. To our knoweledge the first used recurrent temporal restricted Boltzmann machine (RTRBM) to model videos of bouncing balls (we also look at this problem). There have also been recurrent grammar cells applied to varieous time seires tasks including bouncing balls and NORBvideos. More recently there is lots of work in video prediction for application to rienforcment learning and control. These models use a variety of techniques for next frame prediction such as straight convolutions  to LSMTs. (need to put video cnn in here).
+
+\section{The Lattice Boltzmann Method}
+
+We give a brief description of the Lattice Boltzmann method.
+
+Things I want to talk about
 
 \begin{itemize}
   \item LBM is used in huge simulations
@@ -124,6 +134,15 @@ The goal of our model is to learn a compressiong mapping $\phi_{encoder}(f_i) \r
   \item LBM can be implemented with 3x3 convs
   \item explain why this is important
 \end{itemize}
+
+(Say why we are going over LBM)
+
+As mentioned above, our method is centered around the LBM. There are several key reasons for doing this but discusing then requires a breif overview of the LBM. 
+
+
+
+
+\section{Deep Neural Networks for Compressed Lattice Boltzmann}
 
 Go over method
 \begin{itemize}
@@ -149,6 +168,9 @@ We take a unique approach to inputing the boundary condictions into our model. A
 To
 
 \subsection{Dataset Generation}
+As mentioned, our network can be broken up into 3 distinct pieces (encoder, compression mapping, and decoder). Each piece of the network is built by a series of residual blocks with downsampleing and upsampling present in the encoder and decoder. Residual block were chosen because of their enormous suscess in training deep neural networks. They proved a reliable and effective techneque to prevent the vanishing gradient problem when network depth became too great. This atrabute is particular important for our model because training to predict multiple frames requires the network to be unrolled through time (as seen in fig 1). This amounts to the network growing in depth and the potential for vanishing gradients. The use of residual conections prove to be an effective way to prevent this in our work
+
+\section{Dataset Generation}
 
 The train set for the 2 dimensional fluid simulation are grid size 256 by 256 and use 9 directional flows in the lattice boltzmann solver (D2Q9 scheme). The simulation used periocid boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes rangeing from 140 to 20 cells. The test set for the 2 dimesional simulations are of size 256, 512, and 1024. The same left, right, top and bottom boundary conditions are used with the number of objects being placed 8, 32, 128 respective to the size of the simulation. 
 
@@ -163,6 +185,9 @@ We evaluate our model on a var
 Things to talk about \cite{tompson2016accelerating}
 
 The force is calculated with the momentum transfer method \cite{guo2013lattice}
+\section{Results}
+
+Things to talk about
 
 \begin{itemize}
   \item Works on larger flows
@@ -209,17 +234,51 @@ Size of Simulation & Extract Full State & Extract 1D Slice & Just Compressed Sim
 
 \section{Conclusion}
 
+<<<<<<< HEAD
 Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and data needy. In this work we have developed a unique method to tackle these problems using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions. We have also shown that our method can be readly applied problems other then flow.
 
 The main limitation in our current model is blaa and. Future imporvements 
 
 \begin{itemize}
   \item future work, customized loss
+=======
+In this work we have developed a unique method to create neural network suraget models of Lattice Boltzmann Fluid simulations. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions.
+
+\begin{itemize}
+  \item future work, customized loss
+  \item future work, customized loss
+>>>>>>> aa5b09f0202306e6ab088728e78021a27ffb4bf9
 \end{itemize}
 
 \section*{References}
 
+<<<<<<< HEAD
 \bibliography{references}
 \bibliographystyle{ieeetr}
+=======
+References follow the acknowledgments. Use unnumbered first-level
+heading for the references. Any choice of citation style is acceptable
+as long as you are consistent. It is permissible to reduce the font
+size to \verb+small+ (9 point) when listing the references. {\bf
+  Remember that you can use a ninth page as long as it contains
+  \emph{only} cited references.}
+\medskip
+
+\small
+
+[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms
+for connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and
+T.K.\ Leen (eds.), {\it Advances in Neural Information Processing
+  Systems 7}, pp.\ 609--616. Cambridge, MA: MIT Press.
+
+[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS:
+  Exploring Realistic Neural Models with the GEneral NEural SImulation
+  System.}  New York: TELOS/Springer--Verlag.
+
+[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of
+learning and recall at excitatory recurrent synapses and cholinergic
+modulation in rat hippocampal region CA3. {\it Journal of
+  Neuroscience} {\bf 15}(7):5249-5262.
+>>>>>>> aa5b09f0202306e6ab088728e78021a27ffb4bf9
 
 \end{document}

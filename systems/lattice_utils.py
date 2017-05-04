@@ -45,7 +45,6 @@ def add_lattice(lattice, Weights):
 def lattice_to_vel(lattice, Lveloc):
   # get velocity vector field from lattice
   Lveloc = Lveloc.reshape((1,1,1,Lveloc.shape[0],Lveloc.shape[1]))
-  print(lattice.shape)
   lattice = lattice.reshape((lattice.shape[0],lattice.shape[1],lattice.shape[2],lattice.shape[3],1))
   velocity = np.sum(lattice * Lveloc, axis=3)
   return velocity

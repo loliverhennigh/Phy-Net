@@ -89,15 +89,9 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
       inputs = tf.concat([left, inputs, right], axis=2)
 
     if d3d:
-      top = inputs[:,-1:]
-      bottom = inputs[:,:1]
-      inputs = tf.concat([top, inputs, bottom], axis=1)
-      left = inputs[:,:,-1:]
-      right = inputs[:,:,:1]
-      inputs = tf.concat([left, inputs, right], axis=2)
-      z_in = tf.zeros_like(inputs[:,:,:,-1:])
-      z_out = tf.zeros_like(inputs[:,:,:,:1])
-      inputs = tf.concat([z_in, inputs, z_out], axis=3)
+      inputs = tf.pad(
+          inputs, [[0, 0], [1, 1], [1, 1], [1, 1],
+          [0, 0]], "REFLECT")
 
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
@@ -106,10 +100,10 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
     elif d3d:
       conv = tf.nn.conv3d(inputs, weights, strides=[1, stride, stride, stride, 1], padding='VALID')
 
-    conv_biased = tf.nn.bias_add(conv, biases)
+    conv = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
-      conv_biased = nonlinearity(conv_biased)
-    return conv_biased
+      conv = nonlinearity(conv)
+    return conv
 
 def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_trans_conv'.format(idx)) as scope:
@@ -168,7 +162,6 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
     elif d3d:
       output_shape = tf.stack([tf.shape(inputs)[0], tf.shape(inputs_pad)[1]*stride, tf.shape(inputs_pad)[2]*stride, tf.shape(inputs_pad)[3]*stride, num_features]) 
       conv = tf.nn.conv3d_transpose(inputs_pad, weights, output_shape, strides=[1,stride,stride,stride,1], padding='SAME')
-      print(conv.get_shape())
       conv = conv[:,2:-2,2:-2,2:-2]
 
     conv_biased = tf.nn.bias_add(conv, biases)
@@ -177,7 +170,6 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
 
     #reshape
     shape = int_shape(inputs)
-    print(shape)
     if d2d:
       conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
     if d3d:
@@ -225,6 +217,33 @@ def PS(X, r, depth):
   X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
   return X
 
+def trim_tensor(tensor, pos, width, trim_type):
+  tensor_shape = int_shape(tensor)
+  tensor_length = len(tensor_shape)
+  if tensor_length == 4:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1])):
+      print("this should probably never be called")
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      print("can not extract a plane from a plane")
+  elif tensor_length == 5:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1],tensor_shape[2])):
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      tensor = tensor[:,pos-width:pos+width+1]
+  else:
+    print("tensor size not supported") 
+    exit()
+  return tensor
+
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet", begin_nonlinearity=True):
       
   # determine if 2d or 3d trans conv is needed
@@ -243,15 +262,15 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
   if begin_nonlinearity: 
     x = nonlinearity(x) 
   if stride == 1:
-    x_1 = conv_layer(x, 3, stride, filter_size, name + '_conv_1')
+    x = conv_layer(x, 3, stride, filter_size, name + '_conv_1')
   elif stride == 2:
-    x_1 = conv_layer(x, 4, stride, filter_size, name + '_conv_1')
+    x = conv_layer(x, 4, stride, filter_size, name + '_conv_1')
   else:
     print("stride > 2 is not supported")
     exit()
   if a is not None:
     shape_a = int_shape(a) 
-    shape_x_1 = int_shape(x_1)
+    shape_x_1 = int_shape(x)
     if d2d:
       a = tf.pad(
         a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]],
@@ -260,22 +279,22 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
       a = tf.pad(
         a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]], [0, shape_x_1[3]-shape_a[3]],
         [0, 0]])
-    x_1 += nin(nonlinearity(a), filter_size, name + '_nin')
-  x_1 = nonlinearity(x_1)
+    x += nin(nonlinearity(a), filter_size, name + '_nin')
+  x = nonlinearity(x)
   if keep_p < 1.0:
-    x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
+    x = tf.nn.dropout(x, keep_prob=keep_p)
   if not gated:
-    x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
+    x = conv_layer(x, 3, 1, filter_size, name + '_conv_2')
   else:
-    x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
+    x = conv_layer(x, 3, 1, filter_size*2, name + '_conv_2')
     if d2d:
-      x_2_1, x_2_2 = tf.split(3,2,x_2)
+      x_1, x_2 = tf.split(x,2,3)
     elif d3d:
-      x_2_1, x_2_2 = tf.split(4,2,x_2)
-    x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
+      x_1, x_2 = tf.split(x,2,4)
+    x = x_1 * tf.nn.sigmoid(x_2)
 
-  if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
-    assert(int(orig_x.get_shape()[2]) == 2*int(x_2.get_shape()[2]), "res net block only supports stirde 2")
+  if int(orig_x.get_shape()[2]) > int(x.get_shape()[2]):
+    assert(int(orig_x.get_shape()[2]) == 2*int(x.get_shape()[2]), "res net block only supports stirde 2")
     if d2d:
       orig_x = tf.nn.avg_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
     elif d3d:
@@ -296,7 +315,7 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
   elif out_filter < in_filter:
     orig_x = nin(orig_x, out_filter, name + '_nin_pad')
 
-  return orig_x + x_2
+  return orig_x + x
 
 def res_block_lstm(x, hidden_state_1=None, hidden_state_2=None, keep_p=1.0, name="resnet_lstm"):
 
