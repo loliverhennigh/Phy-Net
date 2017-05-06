@@ -9,7 +9,7 @@ Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Conv
 
 ## Network Details
 
-![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/fig_1.pdf)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/fig_1.png)
 
 The network learns a encoding, compression, and decoding piece. The encoding piece learns to compress the state of the physics simulation. The compression piece learns the dynamics of the simulation on this compressed piece. The decoding piece learns to decode the compressed representation. The network is kept all convolutional allowing it to be trained and evaluated on any size simulation. This means that once the model is trained on a small simulation (say 256 by 256 grid) it can then attempt to simulate the dynamics of a larger simulation (say 1024 by 1024 grid). We show that the model can still produce accurate results even with larger simulations then seen during training.
 
