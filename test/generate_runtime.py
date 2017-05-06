@@ -86,7 +86,7 @@ def evaluate():
         run_step.run(session=sess)
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
-      myfile.write(str(shape) + " & " + str(time_per_step))
+      myfile.write(str(shape) + " & %.3f ms " % (time_per_step*1000))
   
       # run with full state out
       t = time.time()
@@ -94,7 +94,7 @@ def evaluate():
         state_out_full.eval(session=sess)
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
-      myfile.write(" & " + str(time_per_step))
+      myfile.write(" & %.3f ms " % (time_per_step*1000))
    
       # run with plane out
       if len(shape) == 3: 
@@ -103,7 +103,7 @@ def evaluate():
           state_out_plane.eval(session=sess)
         elapsed = time.time() - t
         time_per_step = elapsed/run_length
-        myfile.write(" & " + str(time_per_step))
+        myfile.write(" & %.3f ms " % (time_per_step*1000))
       else:
         myfile.write(" & na")
    
@@ -113,7 +113,7 @@ def evaluate():
         state_out_line.eval(session=sess)
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
-      myfile.write(" & " + str(time_per_step))
+      myfile.write(" & %.3f ms " % (time_per_step*1000))
    
       # run with point state out
       t = time.time()
@@ -121,13 +121,7 @@ def evaluate():
         state_out_point.eval(session=sess)
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
-      myfile.write(" & " + str(time_per_step) + " \\\ \n")
-  
-
-
-
-
-
+      myfile.write(" & %.3f ms \\\ \n" % (time_per_step*1000))
 
        
 def main(argv=None):  # pylint: disable=unused-argument

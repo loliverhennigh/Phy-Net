@@ -64,7 +64,7 @@ def evaluate_compression_error():
     for sim in tqdm(xrange(FLAGS.test_nr_runs)):
       for step in tqdm(xrange(FLAGS.test_length)):
         # get frame
-        state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, 0)
+        state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, step)
         fd = {state:state_feed_dict, boundary:boundary_feed_dict}
         mse += sess.run(mean_squared_error, feed_dict=fd)
     mse = mse/(FLAGS.test_nr_runs*FLAGS.test_length)

@@ -122,7 +122,6 @@ def evaluate():
     plt.suptitle("Magnetic Field " + str(shape[0]) + "x" + str(shape[1]) + " Simulation", fontsize="x-large", y=0.98)
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_em_image.png")
     print("made it")
-    plt.show()
 
 
        

@@ -18,8 +18,8 @@ for i in xrange(len(data)):
     mse_2d.append(float(seperated_line[1]))
     compression_factor_2d.append(float(seperated_line[2]))
   elif int(seperated_line[0]) == 3:
-    mse_3d[i].append(float(seperated_line[1]))
-    compression_factor_3d[i].append(float(seperated_line[2]))
+    mse_3d.append(float(seperated_line[1]))
+    compression_factor_3d.append(float(seperated_line[2]))
 
 mse_2d = np.array(mse_2d)
 compression_factor_2d = np.array(compression_factor_2d)
@@ -30,16 +30,16 @@ plt.style.use('seaborn-darkgrid')
 
 font = {'family' : 'normal',
     'weight' : 'normal',
-    'size'   : 6}
+    'size'   : 10}
 
 matplotlib.rc('font', **font)
 
-plt.scatter(compression_factor_2d, mse_2d)
-plt.scatter(compression_factor_3d, mse_3d)
+plt.scatter(np.log(compression_factor_2d), np.log(mse_2d), color='red', label="2D")
+plt.scatter(np.log(compression_factor_3d), np.log(mse_3d), color='purple', label="3D")
 
 plt.title('Compression Vs Error', y=0.96)
-plt.xlabel('Compression Ratio')
-plt.ylabel('Mean Squared Error')
+plt.xlabel(r'$\log{ \frac{compressed \  size}{state \  size}}$')
+plt.ylabel(r'$\log{(MSError)}$')
 plt.legend(loc="upper_left")
 plt.savefig("figs/compression_error_plot.png")
 

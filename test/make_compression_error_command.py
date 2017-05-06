@@ -16,7 +16,7 @@ for i in xrange(len(checkpoint_paths)):
 # 3d sims
 checkpoint_paths = list_all_checkpoints('../checkpoints_3d_compression_experiments')
 for i in xrange(len(checkpoint_paths)):
-  flags = make_flags_string_given_checkpoint_path(checkpoint_paths[i]) + ' --base_dir=../checkpoints_3d_compression_experiments' + ' --unroll_length=1'
+  flags = make_flags_string_given_checkpoint_path(checkpoint_paths[i]) + ' --base_dir=../checkpoints_3d_compression_experiments' + ' --unroll_length=1' + ' --test_dimensions=40x40x160'
   cmd.append('python generate_compression_error_plot.py' + flags) 
 
 with open("compression_error_run_command.txt", "a") as myfile:

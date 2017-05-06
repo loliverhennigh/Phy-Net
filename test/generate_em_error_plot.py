@@ -101,7 +101,6 @@ def evaluate():
     plt.ylabel('Mean Squared Error')
     plt.legend(loc="upper_left")
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_em_error_plot.png")
-    plt.show()
 
        
 def main(argv=None):  # pylint: disable=unused-argument
