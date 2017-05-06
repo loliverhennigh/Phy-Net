@@ -113,16 +113,6 @@ The Lattice Boltzmann algorithm comes down to the
 
 The important aspect of the LBM for our purposes is that it acts localy on grid cells. The area of effect a cell is directly proporitional to the number of applications of the evolution equation. This means that in $n$ time steps a cells value can be determinied exaclty with only the infomation of the cells within $n$ distance. This is important to know for our purposes becasue if we expect to treat the lattice boltzmann simulation as deterministic we must make sure our model 
 
-\subsection{Proposed Architecture}
-
-Figure \cite{fig_1} shows a general scetch of the model. The idea is to compress the simulation 
-
-The first the network compresses both the state of the fluid simulation $f_t$ and a binary representation of the boundary conditions $b$.
-
-The goal of our model is to compress the state of $f_t$ and learn the dynamics on this compressed form. 
-The goal of our model is to learn a compressiong mapping $\phi_{enc}(f_ni) \rightarrow g_i$, a decompressing mapping $\phi_{dec}(g_i) \rightarrow f_ni$, and a compression mapping $\phi_{comp}(g_i) \rightarrow g_{i+1}$ where $n$ is the number of Lattice Boltzmann steps to a single step of our model. We use fully convolutional networks with residual connections to represent each one of these mappings ($\phi_{enc}$, $\phi_{dec}$, $\phi_{comp}$). Once they are learned, a simulation can be generated with by iterating $\phi_{dynamics}$ on $g_j$ and then extrancting the simulation state with $\phi_{decoder}$.
-
-
 \begin{itemize}
   \item LBM is used in huge simulations
   \item LBM is very memory intensive
@@ -131,92 +121,101 @@ The goal of our model is to learn a compressiong mapping $\phi_{enc}(f_ni) \righ
   \item explain why this is important
 \end{itemize}
 
-Go over method
-\begin{itemize}
-  \item mention online implementation
-  \item maybe talk about area of effect :/
-  \item use of residual connections
-  \item Residual Connections are good for training long seq
-  \item how boundarys are applied
-\end{itemize}
-
-(go over importance of residual connections
-
-Residual connections have been used in many tasks with much sucess. Adding redidual connections allows for much deeper networks to be trained. In most tasks such as object reconition, deeper networks result in higher accuracy. When training our model it is necesarry to unroll the compression network over several time steps. This has the same effect as making the network deeper when training. For this reason it seems advantagouse to take advantage of this network architecture. We have seen that removing removing these conections results in much slower convergence and worse accuracy.
-
-As discused in above, the LBM works localing on the grid cells. This means that 
-
-We take a unique approach to inputing the boundary condictions into our model. As seen in (fig 1) we learn a compression mapping $\phi_{boundary encoder}(b) \rightarrow (b_1, b_2)$ that takes in a binary representation of the boundarys $b$ and computes two equal sized compressed representations $b_1, b_2$ ($\phi_{boundary encoder}(b) \rightarrow (b_1, b_2)$) These compressed 
+\subsection{Proposed Architecture}
 
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.3]{../test/figs/fig_1.pdf}}
-\caption{Accuracy of 2d fluid simulations }
+\caption{Lat-Net architeture }
 \label{fig_1}
 \end{figure}
 
-\subsection{Extracting Flow from Compressed State}
+Figure \cite{fig_1} shows a general scetch of the model. The figure can be understood by following the arrows starting from the flow state $f_t$ and the boundary $b$. Bellow we walk through each step of our method.
 
-Talk about how its possible to extract the flow from compressed state
+First the network compresses both the state of the fluid simulation $f_t$ and a binary representation of the boundary conditions $b$ using two seperate neural networks $\phi_{enc}$ and $\phi'_{enc}$ respectively. The result from $\phi_{enc}$ is a compressed representation of the flow $g_t$ and the result of $\phi'_{enc}$ are two tensors $b_{mul}$ and $b_{add}$ of equal size to $g_t$. These three tensors represent the entirety of the compressed state of the simulation.
+
+In a lattice boltzmann solver the boundary conditions are used at each timestep to modify the propogation operator. In a similar way, our model applies the compressed boundary conditions to the compressed state every timestep. We do this in the following way,
+\begin{equation}
+  g_t = (g_t \odot b_{mul}) + b_{add}
+\end{equation}
+This method has proved extremely succesfull at keeping the boundary firmly planted through the diration of the simulation. This method of applying boundary conditions was inspired by\cite{vondrick2016generating} where they use a similar method to combine forground and background imformation in video prediction.
+
+One timestep of the LBM is
+After the boundary is applied to $g_t$ we can run the state through another neural network to emulate the dynamics, $\phi_{comp}$. 
+
+After $g_t$ is computed we can extract out the generated state of the simulation with a decoder network $\phi_{dec}$. 
+
+\subsection{Network Implementation}
+
+(go over why the network is kept convolutional)
+
+As mentioned above, each network is kept entirley convolutional. This allows spatial information to be preserved. During the course of this work, fully connected layers were explored for use in the compression mapping however this produce extremely poor results.
+
+(go over importance of residual connections)
+
+Residual connections have been used in many machine learning tasks with much sucess. Adding redidual connections allows for much deeper networks to be trained often resulting in improved results. When training our model it is necesarry to unroll the compression network over several time steps. This has the same effect as making the network deeper when training. For this reason it seems advantagouse to take advantage of this network architecture. We have seen that removing removing these conections results in much slower convergence and worse accuracy.
+
+Down sampling is produced by 4 by 4 convolutions with stride 2. Some of the simulations trained on have periodic boundary conditions. In these cases, we pad the opropriot edges periodicily before the convolution operations.
+
+
+\subsection{Training Details}
+
+Lat-Net is trained with the Adam optimizer. 
+Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}.
 
 \subsection{Electromagnetic Simulations}
 
-Talk about how it can apply to any type of lattice boltzmann simulation
+The LBM with the 
 
 \section{Experiments}
 
-In this section we descirbe our experiments testting Lat-Net on a variety of problems. Our experiments are designed to tests our models ability to acuratly generate large simulations as well as the trade of between memory compression and error. We give results on the computational speed increase.
+In this section we descirbe our experiments testting Lat-Net on a variety of problems. Our experiments are designed to tests our models ability to generate large simulations as well as the trade of between memory compression and error. We also give results on the computational speed increase and its effectiveness at generating Electormagnetic Simulations.
 
 \subsection{Dataset Generation}
-In order to train our model. We needed to generate 
-
+In order to train and test our model, we generated sets of fluid and electromagnetic simulations.
 
 The train set for the 2 dimensional fluid simulation are grid size 256 by 256 and use 9 directional flows in the lattice boltzmann solver (D2Q9 scheme). The simulation used periocid boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes rangeing from 140 to 20 cells. The test set for the 2 dimesional simulations are of size 256, 512, and 1024. The same left, right, top and bottom boundary conditions are used with the number of objects being placed 8, 32, 128 respective to the size of the simulation. 
 
-The train set for the 3 dimensional fluid simulations are grid size 40 by 40 by 160 and use 15 directional flows in the lattice boltzmann solver (D3Q15 scheme). Similar to the 2d simulations, periodic boundary conditions are used with same inlet and outlet flow. 3 spheres are randomly placed with height and width 24. The reason different object geometrys and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice boltzmann solver and larger objects required too large a simulation size. The test set comprises (not sure yet).
+The train set for the 3 dimensional fluid simulations are grid size 40 by 40 by 160 and use 15 directional flows in the lattice boltzmann solver (D3Q15 scheme). Similar to the 2d simulations, periodic boundary conditions are used with same inlet and outlet flow. 4 spheres are randomly placed with height and width 24. The reason different object geometrys and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice boltzmann solver and larger objects required too large a simulation size. The test set comprises (not sure yet).
 
 (em dataset)
 
 \subsection{Generating Large Simulation}
 
+
+
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_flow_image.png}}
 \subfigure{\includegraphics[scale=0.9]{../test/figs/1024x1024_2d_flow_image.png}}
+\caption{Accuracy of 2d fluid simulations }
+\label{fig:bouncing_balls_error_3}
+\end{figure}
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.3]{../test/figs/1024x1024_2d_error_plot.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{fig:bouncing_balls_error_3}
 \end{figure}
 
 The force is calculated with the momentum transfer method \cite{guo2013lattice}
 
-\subsection{Memory Compresion and Effect on Error}
+\subsection{Memory Compression and Effect on Error}
+\begin{figure}[!t]
+\centering
+\includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
+\caption{The effecto of Compression on MSE}
+\label{}
+\end{figure}
 
-One of purposes of Lat-Net is to be able to compress the memory usage of large simulations and so it is a natural question to ask what effect the compression has on error.
+One of purposes of Lat-Net is to be able to compress the memory usage of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models and compare their accuracy. Unforcunatly training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
+
+By keeping the architeture of $\phi_{enc}$ and $\phi_{dec}$ the same and vareing the final compressed filter size we see the trade off between compression and error. It is interesting to see a diminising return effect for low compression ratios.
 
 \subsection{Computational Speed Up}
 
-The 
-
-\subsection{Electromagnetic Results}
-
-
-\begin{figure}[!t]
-\centering
-\subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.9]{../test/figs/1024x1024_2d_flow_image.png}}
-\caption{Accuracy of 2d fluid simulations }
-\label{fig:bouncing_balls_error_3}
-\end{figure}
-
-\begin{figure}[!t]
-\centering
-\subfigure{\includegraphics[scale=0.3]{../test/figs/fig_1.pdf}}
-\caption{Accuracy of 2d fluid simulations }
-\label{fig:bouncing_balls_error_3}
-\end{figure}
-
-
-\subsection{Speed Comparison}
+Lattice Bolztmann Compression 
 
 \begin{table}[]
 \caption{Computation time of Networks peices} \label{compute_times}
@@ -230,9 +229,30 @@ Simulation    & Compression Mapping & Full State  & Plane      & Line       & Po
 \end{tabular}
 \end{table}
 
+\subsection{Electromagnetic Results}
+
+
+
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_em_image.png}}
+\subfigure{\includegraphics[scale=0.9]{../test/figs/512x512_2d_em_image.png}}
+\caption{Accuracy of 2d fluid simulations }
+\label{fig:bouncing_balls_error_3}
+\end{figure}
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_em_error_plot.png}}
+%\subfigure{\includegraphics[scale=0.9]{../test/figs/512x512_2d_em_error_plot.png}}
+\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_em_error_plot.png}}
+\caption{Accuracy of 2d fluid simulations }
+\label{fig:bouncing_balls_error_3}
+\end{figure}
+
+
 \section{Conclusion}
 
-Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory needy. In this work we have developed a unique method to tackle this problems using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions. We have also shown that our method can be readly applied problems other then flow.
+Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory intensive. In this work we have developed a unique method to tackle this problems using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions. We have also shown that our method can be readly applied problems other then flow.
 
 The main limitation in our current model is blaa and. Future imporvements 
 
