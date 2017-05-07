@@ -37,6 +37,12 @@ A few more snap shots of simulations
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_flow_image.png)
 
+Now we can apply it to other datasets. Check this out!
+
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x512_2d_flow_image.png)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/bX0_4zjYtHo/0.jpg)](https://www.youtube.com/watch?v=bX0_4zjYtHo)
+
+
 Here are some 3D simulations
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/ZG_gmkFbE2I/0.jpg)](https://www.youtube.com/watch?v=ZG_gmkFbE2I)
