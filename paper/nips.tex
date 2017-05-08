@@ -47,7 +47,9 @@
 \maketitle
 
 \begin{abstract}
-We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. While we apply Lat-Net to fluid simulations   and in addition to applying it to both 2d an 3d fluid flow simulations, we also show it can be used  computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
+We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that Lat-Net generalizes well by accuratly generating simulations as much as 16 times larger then the test set as well as 
+
+While we apply Lat-Net to fluid simulations   and in addition to applying it to both 2d an 3d fluid flow simulations, we also show it can be used  computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
 
 \end{abstract}
 
@@ -59,23 +61,23 @@ Computational fluid dynamics (CFD) is a branch of fluid dynamcis that deals with
 
 (Talk about type of fluid simulations)
 
-There are many different types of fluid flow . In particlular, we investigate fluid simulations that contain complex time dependet phenomena such as vortexs. Simulations of this form are difficult because they require fluid solver to have high resolution and small times steps. Never the less, they are very important for studing things like blaa. Motivated by need for these simulations and the suscess of neural network based suraget models in related areas, we choice this setting to test our model (bad wording).
+There are many different types of fluid flow . In particlular, we investigate fluid simulations that contain complex time dependet phenomena such as vortexs. Simulations of this form are difficult because they require fluid solver to have high resolution and small times steps. Never the less, they are very important for studing things like blaa. Motivated by need for these simulations and the suscess of neural network based suraget models in related areas \cite{tompson2016accelerating} \cite{guo2016convolutional}, we choice this setting to test our model.
 
 (Say that we are using LBM and why)
 
-The most popular approach to modeling fluid flow is with the Navier stokes equation. This partial differential equations (blaa). Relativily recently there has been a new method for solving fluid flow named the Lattice Boltzmann Method. It is derived from . The main advantage of LBM is its ability to run on massibely parallel architectures. Because of this there has been much development in the area. Because of this methods popularity and techinqual details we will go over later, our approach is centered around this method of simulation.
+The most popular approach to modeling fluid flow is with the Navier stokes equation. This partial differential equations (blaa). Recently, there has been a new method for solving fluid flow named the Lattice Boltzmann Method (LBM). It is derived from the boltzmann equation. The main advantage of LBM is its ability to run on massibely parallel architectures. Because of this there has been much development in the area. Because of this methods popularity and techinqual details we will discuss later, our approach is centered around this method of simulation.
 
 (give breif description of method)
 
-Our proposed method works by compressing state of the simulation while learning the dynamics of the simulation on these compressed forms. The model can be broken up into three pieces, an encoder, compression mapping, and decoder. The encoder compresses the both the velocity and density vector field as well as the given boundary conditions to a compressed form. The compression mapping learns mappings on the compressed state while applying boundary conditions that corrispond to the time steps in the fluid simulation. The decoder decompresses the compressed state allowing for either the whole velocity and density vecotr field to be extracted or desired measurments.
+Our proposed method works by compressing state of the simulation while learning the dynamics of the simulation on these compressed forms. The model can be broken up into three pieces, an encoder, compression mapping, and decoder. The encoder compresses the both the state of the simulation as well as the given boundary conditions. The compression mapping learn dynamics on the compressed state that corrispond to the dynamics in the fluid simulation. The decoder decompresses the compressed state allowing for either the whole simulation state to be extracted or pieces of the simulation.
 
 (Say that we also look at Electormagnetic simulations)
 
-We focus the content of this paper on LBM Fluid Simulations because this is the most popular use of LBM however LBM is known to be a general partial differential equation solver (of a particular form cite em paper). LBM can in fact be used to solve many physical systems of interest such as Electormagnatism, Plasma, Multiphase flow, Schordiener equation etc. (find good citations for all of these). With this in mind we keep our method general and show evidence our method works equaly effectively on Electromagnatism simulations. However, Because the domanate use of LBM is on fluid flow problems we center discustion on this subject with only minor look at other problems
+We focus the content of this paper on LBM Fluid Simulations because this is the most popular use of LBM however LBM is known to be a general partial differential equation solver (of a particular form cite em paper). LBM can in fact be used to solve many physical systems of interest such as Electormagnatism, Plasma, Multiphase flow, Schordiener equation etc \cite{mendoza2010three}. (find good citations for all of these). With this in mind we keep our method general and show evidence our method works equaly effectively on Electromagnatism simulations. However, Because the domanate use of LBM is on fluid flow problems we center discustion on this subject with only minor look at other problems
 
 (List the contirbutions concisly)
 
-Our method has several key contributions over other work creating surage models of fluid simulations with neural networks. First, It allows for simulations to be generated with an order of magnatude less memory. There is a crucial need for such suragat models because memory requirements grow cubic to grid size in 3d simulations. In practice this quickly results in the need for supercomputers (tokyo stuff)(bad wording). Second, once our model is trained it can be used to generate significantly larger simulations. This allows the model to learn from a large training set of small simulations and then generate simulations as much as 16 times bigger with little effect in accuracy. Third, our method is directly applicable to a variety of physics simulations, not just fluid flow.
+Our method has several key contributions over other work creating surage models of fluid simulations with neural networks. First, It allows for simulations to be generated with an order of magnatude less memory. There is a crucial need for such suragat models because memory requirements grow cubic to grid size in 3D simulations. In practice, this quickly results in the need for supercomputers (tokyo stuff)(bad wording). Second, once our model is trained it can be used to generate significantly larger simulations. This allows the model to learn from a large training set of small simulations and then generate simulations as much as 16 times bigger with little effect in accuracy. Third, our method is directly applicable to a variety of physics simulations, not just fluid flow.
 
 (Maybe Talk about the need for better flow solvers)
 
@@ -130,92 +132,99 @@ The important aspect of the LBM for our purposes is that it acts localy on grid 
 \label{fig_1}
 \end{figure}
 
-Figure \cite{fig_1} shows a general scetch of the model. The figure can be understood by following the arrows starting from the flow state $f_t$ and the boundary $b$. Bellow we walk through each step of our method.
+Figure \ref{fig_1} shows a general scetch of the model. The figure can be understood by following the arrows starting from the flow state $f_t$ and the boundary $b$. Bellow we walk through each step of our method.
 
 First the network compresses both the state of the fluid simulation $f_t$ and a binary representation of the boundary conditions $b$ using two seperate neural networks $\phi_{enc}$ and $\phi'_{enc}$ respectively. The result from $\phi_{enc}$ is a compressed representation of the flow $g_t$ and the result of $\phi'_{enc}$ are two tensors $b_{mul}$ and $b_{add}$ of equal size to $g_t$. These three tensors represent the entirety of the compressed state of the simulation.
 
-In a lattice boltzmann solver the boundary conditions are used at each timestep to modify the propogation operator. In a similar way, our model applies the compressed boundary conditions to the compressed state every timestep. We do this in the following way,
+In a lattice boltzmann solver, the boundary conditions are used at each timestep to add collision to the propogation operator. In a similar way, our model applies the compressed boundary conditions to the compressed state every timestep. We do this in the following way,
 \begin{equation}
   g_t = (g_t \odot b_{mul}) + b_{add}
 \end{equation}
-This method has proved extremely succesfull at keeping the boundary firmly planted through the diration of the simulation. This method of applying boundary conditions was inspired by\cite{vondrick2016generating} where they use a similar method to combine forground and background imformation in video prediction.
+This method has proved extremely succesfull at keeping the boundary firmly planted through the duration of the simulation. (Say what happends when you dont do this). This method of applying boundary conditions was inspired by\cite{vondrick2016generating} where they use a similar method to combine forground and background imformation in video prediction.
 
-One timestep of the LBM is
-After the boundary is applied to $g_t$ we can run the state through another neural network to emulate the dynamics, $\phi_{comp}$. 
+After the boundary is applied to $g_t$ we can run the state through another neural network to emulate the dynamics, ie. $\phi_{comp}:g_{t} \rightarrow g_{t+1}$. Each step in through $\phi_{comp}$ is equivolent to $n$ time step of the Lattice Boltzmann solver.
 
 After $g_t$ is computed we can extract out the generated state of the simulation with a decoder network $\phi_{dec}$. 
 
+
 \subsection{Network Implementation}
 
-(go over why the network is kept convolutional)
+As mentioned above, each network is kept entirley convolutional. Fluid flow is enheriently spatialy corilated so using convlutional layers allows this spatial information to be preserved. Keeping the network entirley convolutional also allows different input sizes to be used. This means that the network can train on small simulations and then generate larger simulations. During the course of this work, fully connected layers were explored however they produced extremely poor results.
 
-As mentioned above, each network is kept entirley convolutional. This allows spatial information to be preserved. During the course of this work, fully connected layers were explored for use in the compression mapping however this produce extremely poor results.
-
-(go over importance of residual connections)
-
-Residual connections have been used in many machine learning tasks with much sucess. Adding redidual connections allows for much deeper networks to be trained often resulting in improved results. When training our model it is necesarry to unroll the compression network over several time steps. This has the same effect as making the network deeper when training. For this reason it seems advantagouse to take advantage of this network architecture. We have seen that removing removing these conections results in much slower convergence and worse accuracy.
+Residual connections have been used in many machine learning tasks with much sucess. Adding redidual connections allows for much deeper networks to be trained often resulting in improved results. When training our model, it is necesarry to unroll the compression network over several time steps. This has the same effect as making the network deeper when training. For this reason it seems logical to take advantage of this network architecture. We have seen that removing removing these residual conections results in much slower convergence and worse accuracy.
 
 Down sampling is produced by 4 by 4 convolutions with stride 2. Some of the simulations trained on have periodic boundary conditions. In these cases, we pad the opropriot edges periodicily before the convolution operations.
 
 
 \subsection{Training Details}
 
-Lat-Net is trained with the Adam optimizer. 
-Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}.
-
-\subsection{Electromagnetic Simulations}
-
-The LBM with the 
+Lat-Net is trained by unrolling the network and comparing the produced flow to the generated. Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}. The GDL loss is slightly modified to handle 3D inputs and larger filter sizes then images. Lat-Net is trained with the Adam optimizer\cite{kingma2014adam}.
 
 \section{Experiments}
 
-In this section we descirbe our experiments testting Lat-Net on a variety of problems. Our experiments are designed to tests our models ability to generate large simulations as well as the trade of between memory compression and error. We also give results on the computational speed increase and its effectiveness at generating Electormagnetic Simulations.
+In this section we descirbe our experiments testing Lat-Net on a variety of problems. Our experiments are designed to tests our models ability to generate large simulation as well as its transferability to new datasets. We also explore computaitonal speed increase and trade off between memory compression and error. Finaly, we breifly show results applying this method to electromagnetic simulations.
 
 \subsection{Dataset Generation}
-In order to train and test our model, we generated sets of fluid and electromagnetic simulations.
+In order to train and test our model, we generated sets of fluid and electromagnetic simulations. All simulations were generated with the MechSys library (find citation)
 
-The train set for the 2 dimensional fluid simulation are grid size 256 by 256 and use 9 directional flows in the lattice boltzmann solver (D2Q9 scheme). The simulation used periocid boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes rangeing from 140 to 20 cells. The test set for the 2 dimesional simulations are of size 256, 512, and 1024. The same left, right, top and bottom boundary conditions are used with the number of objects being placed 8, 32, 128 respective to the size of the simulation. 
+The train set for the 2 dimensional fluid simulation are grid size 256 by 256 and use 9 directional flows in the lattice boltzmann solver (D2Q9 scheme)\cite{guo2013lattice}. The simulation used periocid boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes rangeing from 140 to 20 cells. The test set for the 2 dimesional simulations are of size 256 by 256, and 1024 by 1024 with the same boundary conditions and object densitys. We also generate a test set of size 256 by 512 with car cross sections as objects. There are 28 car cross sections used ranging from trucks to minivans.
 
-The train set for the 3 dimensional fluid simulations are grid size 40 by 40 by 160 and use 15 directional flows in the lattice boltzmann solver (D3Q15 scheme). Similar to the 2d simulations, periodic boundary conditions are used with same inlet and outlet flow. 4 spheres are randomly placed with height and width 24. The reason different object geometrys and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice boltzmann solver and larger objects required too large a simulation size. The test set comprises (not sure yet).
+The train set for the 3 dimensional fluid simulations are grid size 40 by 40 by 160 and use 15 directional flows in the lattice boltzmann solver (D3Q15 scheme)\cite{guo2013lattice}. Similar to the 2d simulations, periodic boundary conditions are used with same inlet and outlet flow. 4 spheres are randomly placed with height and width 24. The reason different object geometrys and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice boltzmann solver and larger objects required too large a simulation size. The test set comprises (not sure yet).k
 
-(em dataset)
+The train set for the electromagnetic simulations are grid size 256 by 256 with periodic boundarys. An electromagetic wave is initialized in the top of the simulations and procedes to interact with various objects of different dielectric constants. When the wave hits these objects the reflection and refraction phonomemon is seen. The test set consists of simulations of size 256 by 256 and 512 by 512 with the same object density.
 
 \subsection{Generating Large Simulation}
-
-
 
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_flow_image.png}}
 \subfigure{\includegraphics[scale=0.9]{../test/figs/1024x1024_2d_flow_image.png}}
 \caption{Accuracy of 2d fluid simulations }
-\label{fig:bouncing_balls_error_3}
+\label{2d_image_plot}
 \end{figure}
+
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
 \subfigure{\includegraphics[scale=0.3]{../test/figs/1024x1024_2d_error_plot.png}}
 \caption{Accuracy of 2d fluid simulations }
-\label{fig:bouncing_balls_error_3}
+\label{2d_error_plot}
 \end{figure}
 
-The force is calculated with the momentum transfer method \cite{guo2013lattice}
 
-\subsection{Memory Compression and Effect on Error}
+A key componet of our model is its ability to generate larger simulations then those trained on. To test its effectiveness in doing so, we generate various sized 2D and 3D simulations and compare accuracy to ground truth simulations.
+
+Comparing the accuracy of simulations is somewhat difficult. The simplest approach is to compare the MSE between the generated and true simulation at various timesteps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perdibations in flow quickley compound leading to dramatic diffrences. For this reason, we develop a multi metric approach for evaluating the generated flows accuracy. Similar to \cite{} we compare the divergence of the generated and tru velocity vector field. These values should be small (need to come back to this). We also compare computed values from the flow such as drag and flux. Flow simulations are often run to calculate such values so comparing is a strong indecator of our models real world applicability. The drag is calculated with the momentum transfer method \cite{guo2013lattice}.
+
+In figure \ref{2d_error_plot} we see the predicted values . We notice in the 2D case, the 
+
+\subsection{Transferability to different datasets}
+
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.9]{../test/figs/256x512_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.4]{../test/figs/256x512_2d_error_plot.png}}
+\caption{2d fluid simulations on car dataset}
+\label{car_dataset}
+\end{figure}
+
+For Lat-Net to be successful as a method, it must be able to generalize to new datasets. To test this ability, we run our 2D model on flows around car crossections. 
+
+\subsection{Memory Compression}
 \begin{figure}[!t]
 \centering
 \includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
-\caption{The effecto of Compression on MSE}
-\label{}
+\caption{The effect of Compression on MSE}
+\label{compression_plot}
 \end{figure}
 
-One of purposes of Lat-Net is to be able to compress the memory usage of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models and compare their accuracy. Unforcunatly training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
+One of purposes of Lat-Net is to be able to compress the memory usage of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unforcunatly, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
 
-By keeping the architeture of $\phi_{enc}$ and $\phi_{dec}$ the same and vareing the final compressed filter size we see the trade off between compression and error. It is interesting to see a diminising return effect for low compression ratios.
+By keeping the architeture of $\phi_{enc}$ and $\phi_{dec}$ the same and vareing the final compressed filter size we see the trade off between compression and error. The results of this can be seen in figure \ref{compression_plot}. It is interesting to see a slight diminising return effect for low compression ratios. In chosing a network architeture for Lat-Net, there is always a trade off between compression and error. By plotting corrilation we have demostrated an effective tool picking a network with the desired trade off.
 
 \subsection{Computational Speed Up}
 
-Lattice Bolztmann Compression 
+Lattice Bolztmann Compression
 
 \begin{table}[]
 \caption{Computation time of Networks peices} \label{compute_times}
@@ -231,6 +240,7 @@ Simulation    & Compression Mapping & Full State  & Plane      & Line       & Po
 
 \subsection{Electromagnetic Results}
 
+Finally, we illustrate the generatlity of our method by applying it to electromagnetic simulations. The same nueral network architecture is used as in the 2D flow simulations. The only diffrence in training is the 
 
 
 \begin{figure}[!t]
@@ -252,13 +262,7 @@ Simulation    & Compression Mapping & Full State  & Plane      & Line       & Po
 
 \section{Conclusion}
 
-Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory intensive. In this work we have developed a unique method to tackle this problems using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions. We have also shown that our method can be readly applied problems other then flow.
-
-The main limitation in our current model is blaa and. Future imporvements 
-
-\begin{itemize}
-  \item future work, customized loss
-\end{itemize}
+Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory intensive. In this work we have developed a unique method to overcome this using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions with significantly less computation and memory. We have also shown that our method can be readly applied to other physics simulations such as electromagnetic simulations. While our method has proved succesful on the problems in this paper, there is still significant room for improvment. A customized loss function that takes into account the inherent statistical nature of fluid flow might produce sharper more realistic flows. We leave these improvements for future work.
 
 \section*{References}
 
