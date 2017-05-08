@@ -89,9 +89,19 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
       inputs = tf.concat([left, inputs, right], axis=2)
 
     if d3d:
-      inputs = tf.pad(
-          inputs, [[0, 0], [1, 1], [1, 1], [1, 1],
-          [0, 0]], "REFLECT")
+      top = inputs[:,-1:]
+      bottom = inputs[:,:1]
+      inputs = tf.concat([top, inputs, bottom], axis=1)
+      left = inputs[:,:,-1:]
+      right = inputs[:,:,:1]
+      inputs = tf.concat([left, inputs, right], axis=2)
+      z_in = tf.zeros_like(inputs[:,:,:,-1:])
+      z_out = tf.zeros_like(inputs[:,:,:,:1])
+      inputs = tf.concat([z_in, inputs, z_out], axis=3)
+
+      #inputs = tf.pad(
+      #    inputs, [[0, 0], [1, 1], [1, 1], [1, 1],
+      #    [0, 0]], "REFLECT")
 
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
