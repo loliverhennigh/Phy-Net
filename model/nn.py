@@ -89,9 +89,19 @@ def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None
       inputs = tf.concat([left, inputs, right], axis=2)
 
     if d3d:
-      inputs = tf.pad(
-          inputs, [[0, 0], [1, 1], [1, 1], [1, 1],
-          [0, 0]], "REFLECT")
+      top = inputs[:,-1:]
+      bottom = inputs[:,:1]
+      inputs = tf.concat([top, inputs, bottom], axis=1)
+      left = inputs[:,:,-1:]
+      right = inputs[:,:,:1]
+      inputs = tf.concat([left, inputs, right], axis=2)
+      z_in = tf.zeros_like(inputs[:,:,:,-1:])
+      z_out = tf.zeros_like(inputs[:,:,:,:1])
+      inputs = tf.concat([z_in, inputs, z_out], axis=3)
+
+      #inputs = tf.pad(
+      #    inputs, [[0, 0], [1, 1], [1, 1], [1, 1],
+      #    [0, 0]], "REFLECT")
 
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
@@ -216,6 +226,33 @@ def PS(X, r, depth):
   Xc = tf.split(3, depth, X)
   X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
   return X
+
+def trim_tensor(tensor, pos, width, trim_type):
+  tensor_shape = int_shape(tensor)
+  tensor_length = len(tensor_shape)
+  if tensor_length == 4:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1])):
+      print("this should probably never be called")
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      print("can not extract a plane from a plane")
+  elif tensor_length == 5:
+    if (pos-width < 0) or (pos+width+1 > max(tensor_shape[0],tensor_shape[1],tensor_shape[2])):
+      return tensor
+    elif trim_type == "point":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "line":
+      tensor = tensor[:,pos-width:pos+width+1,pos-width:pos+width+1]
+    elif trim_type == "plane":
+      tensor = tensor[:,pos-width:pos+width+1]
+  else:
+    print("tensor size not supported") 
+    exit()
+  return tensor
 
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet", begin_nonlinearity=True):
       

@@ -11,12 +11,15 @@ from model.ring_net import *
 from model.loss import *
 from model.lattice import *
 from utils.experiment_manager import make_checkpoint_path
+from utils.plot_helper import grey_to_short_rainbow
 import systems.fluid_createTFRecords as fluid_record
 import systems.em_createTFRecords as em_record
 #from systems.lattice_utils import *
 import random
 import time
 from tqdm import *
+import matplotlib
+import matplotlib.pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -47,37 +50,6 @@ else:
   print("unable to open video, make sure video settings are correct")
   exit()
 
-def grey_to_short_rainbow(grey):
-  max_grey = np.max(grey)
-  grey = grey/max_grey
-  a = (1-grey)/0.25
-  x = np.floor(a)
-  y = np.floor(255*(a-x))
-  rainbow = np.zeros((grey.shape[0], grey.shape[1], 3))
-  for i in xrange(x.shape[0]):
-    for j in xrange(x.shape[1]):
-      if x[i,j,0] == 0:
-        rainbow[i,j,2] = 255
-        rainbow[i,j,1] = y[i,j,0]
-        rainbow[i,j,0] = 0
-      if x[i,j,0] == 1:
-        rainbow[i,j,2] = 255 - y[i,j,0]
-        rainbow[i,j,1] = 255
-        rainbow[i,j,0] = 0
-      if x[i,j,0] == 2:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 255
-        rainbow[i,j,0] = y[i,j,0] 
-      if x[i,j,0] == 3:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 255 - y[i,j,0]
-        rainbow[i,j,0] = 255
-      if x[i,j,0] == 4:
-        rainbow[i,j,2] = 0
-        rainbow[i,j,1] = 0
-        rainbow[i,j,0] = 255
-  return rainbow
-
 def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
@@ -88,16 +60,12 @@ def evaluate():
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
     # calc velocity
-    velocity_generated = lattice_to_vel(x_2)
+    x_2_add = add_lattice(x_2)
+    state_add = add_lattice(state)
+    velocity_generated = lattice_to_vel(x_2_add)
     velocity_norm_generated = vel_to_norm(velocity_generated)
-    velocity_true = lattice_to_vel(state)
+    velocity_true = lattice_to_vel(state_add)
     velocity_norm_true = vel_to_norm(velocity_true)
-
-    # calc drag
-    drag_generated = lattice_to_force(x_2, boundary)
-    drag_norm_generated = drag_generated
-    drag_true = lattice_to_force(state, boundary)
-    drag_norm_true = drag_true
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -120,14 +88,15 @@ def evaluate():
       # calc generated frame compressed state
       state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, step)
       fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
-      v_n_g, v_n_t, d_n_g, d_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, drag_norm_generated, drag_norm_true, y_2],feed_dict=fd)
+      v_n_g, v_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, y_2],feed_dict=fd)
 
       # make frame for video
       if not d2d:
         v_n_g = v_n_g[:,0]
         v_n_t = v_n_t[:,0]
       frame = np.concatenate([v_n_g, v_n_t, np.abs(v_n_g - v_n_t)], 2)[0]
-      frame = np.uint8(grey_to_short_rainbow(frame))
+      frame = np.uint8(255 * frame/min(.25, np.max(frame)))
+      frame = cv2.applyColorMap(frame[:,:,0], 2)
 
       # write frame to video
       video.write(frame)

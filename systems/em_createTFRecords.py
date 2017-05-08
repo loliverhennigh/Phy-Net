@@ -47,7 +47,7 @@ def load_em(filename, shape, frame_num):
   em_state_vel = np.array(stream_em['State'][:])
   if len(shape) == 2:
     shape = [1] + shape
-  em_state_vel = em_state_vel.reshape(shape + [frame_num])
+  em_state_vel = 10.0*em_state_vel.reshape(shape + [frame_num])
   stream_em.close()
 
   # print for testing
@@ -156,12 +156,8 @@ def generate_tfrecords(seq_length, num_runs, shape, frame_num, dir_name):
           
           em_state = np.float32(em_state)
           seq_frames[i] = em_state 
-        if seq_length > 2:
-          ind_dat = ind_dat + (seq_length+1)/2 # this can be made much more efficent but for now this is how it works
-        elif seq_length == 2:
-          ind_dat += 2
-        elif seq_length == 1:
-          ind_dat += 1
+        overlap = min(4, seq_length)
+        ind_dat += seq_length - overlap # overlap between frames
 
         # make feature map
         feature = make_feature_from_seq(seq_frames, seq_length, shape, frame_num)

@@ -197,6 +197,7 @@ def evaluate():
 
     else:
       f, axarr = plt.subplots(8, sharex=True, figsize=(5,8.5))
+      #plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", y=0.94)
       plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", fontsize="x-large", y=0.94)
   
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)

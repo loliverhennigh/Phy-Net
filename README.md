@@ -9,7 +9,7 @@ Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Conv
 
 ## Network Details
 
-![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/network_fig.jpg)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/fig_1.png)
 
 The network learns a encoding, compression, and decoding piece. The encoding piece learns to compress the state of the physics simulation. The compression piece learns the dynamics of the simulation on this compressed piece. The decoding piece learns to decode the compressed representation. The network is kept all convolutional allowing it to be trained and evaluated on any size simulation. This means that once the model is trained on a small simulation (say 256 by 256 grid) it can then attempt to simulate the dynamics of a larger simulation (say 1024 by 1024 grid). We show that the model can still produce accurate results even with larger simulations then seen during training.
 
@@ -17,11 +17,11 @@ The network learns a encoding, compression, and decoding piece. The encoding pie
 
 Using the Mechsys library we generated 2D and 3D fluid simulations to train our model. For the 2D case we simulate a variety of random objects interacting with a steady flow and periodic boundary conditions. The simulation is a 256 by 256 grid. Using the trained model we evaluate on grid size 256 by 256, 512 by 512, and 1024 by 1024. Here are examples of generated simulations (network design is being iterated on).
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/tXEqXBAOnws/0.jpg)](https://www.youtube.com/watch?v=tXEqXBAOnws)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/Nuf_Jw4fGFk/0.jpg)](https://www.youtube.com/watch?v=Nuf_Jw4fGFk)
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/HUkx8RoxaBw/0.jpg)](https://www.youtube.com/watch?v=HUkx8RoxaBw)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/YtsQX9L56Dg/0.jpg)](https://www.youtube.com/watch?v=YtsQX9L56Dg)
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/1TnNSnyRVmI/0.jpg)](https://www.youtube.com/watch?v=1TnNSnyRVmI)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/vPrHXMlDW0k/0.jpg)](https://www.youtube.com/watch?v=vPrHXMlDW0k)
 
 We can look at various properties of the true versus generated simulations such as mean squared error, divergence of the velocity vector field, drag, and flux. Averaging over several test simulations we see the that the generated simulation produces realistic values. The following graphs show this for 256, 512, and 1024 sized simulations.
 
@@ -37,22 +37,42 @@ A few more snap shots of simulations
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_flow_image.png)
 
-3D simulations are currently being generated and trained on. So far these are the the best videos.
+Now we can apply it to other datasets. Check this out!
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/wI_3ML8O018/0.jpg)](https://www.youtube.com/watch?v=wI_3ML8O018)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x512_2d_flow_image.png)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/bX0_4zjYtHo/0.jpg)](https://www.youtube.com/watch?v=bX0_4zjYtHo)
 
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/LNb6mZq64r4/0.jpg)](https://www.youtube.com/watch?v=LNb6mZq64r4)
+Here are some 3D simulations
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/ZG_gmkFbE2I/0.jpg)](https://www.youtube.com/watch?v=ZG_gmkFbE2I)
+
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/ilCuHTo0Ul4/0.jpg)](https://www.youtube.com/watch?v=ilCuHTo0Ul4)
+
+Here are the plots for the 3D simulations. There may be a bug in how the drag is calculated right now.
+
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/40x40x160_3d_error_plot.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/80x80x320_3d_error_plot.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/40x40x160_3d_flow_image.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/80x80x320_3d_flow_image.png)
+
+
 
 ## Lattice Boltzmann Electromagnetic Waves
 Well the Lattice Boltzmann method is actually a general partial differential equation solver (of a particular form) so why stop at fluid flow! Here are some fun electromagnetic simulations that the model learns! These simulations are of a wave hitting randomly placed objects with different dielectric constants. You can see fun effects such as reflection and refraction when the wave interacts with the surface.
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/GVjY-GqpwV8/0.jpg)](https://www.youtube.com/watch?v=GVjY-GqpwV8)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/s57No66p_40/0.jpg)](https://www.youtube.com/watch?v=s57No66p_40)
 
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/KmeSFajoK8k/0.jpg)](https://www.youtube.com/watch?v=KmeSFajoK8k)
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/jaYd1YLDzXo/0.jpg)](https://www.youtube.com/watch?v=jaYd1YLDzXo)
+
+Here are the plots for EM simulations
 
 
-
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x256_2d_em_error_plot.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_em_error_plot.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x256_2d_em_image.png)
+![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_em_image.png)
 
 ## How to run
 

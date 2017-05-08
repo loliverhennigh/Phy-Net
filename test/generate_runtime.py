@@ -27,16 +27,13 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state, boundary = inputs(empty=True)
-    state = state[0:1,0]
-    boundary = boundary[0:1,0]
+    state, boundary = inputs(empty=True, shape=shape)
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
 
     # make variable to iterate
     compressed_shape = [x / pow(2,FLAGS.nr_downsamples) for x in shape]
-    print(compressed_shape)
     compressed_state_1 = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
     small_boundary_mul_var = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
     small_boundary_add_var = tf.Variable(np.zeros([1] + compressed_shape + [FLAGS.filter_size_compression], dtype=np.float32), trainable=False) 
@@ -50,7 +47,11 @@ def evaluate():
     compressed_state_1_boundary = (small_boundary_mul_var * compressed_state_1) + small_boundary_add_var
     compressed_state_2 = compress_template(compressed_state_1_boundary)
     run_step = tf.group(compressed_state_1.assign(compressed_state_2))
-    state_out = decoding_template(compressed_state_2)
+    state_out_full = decoding_template(compressed_state_2)
+    if len(shape) == 3: 
+      state_out_plane = decoding_template(compressed_state_2, extract_type='plane')
+    state_out_line = decoding_template(compressed_state_2, extract_type='line')
+    state_out_point = decoding_template(compressed_state_2, extract_type='point')
     
     # restore network
     init = tf.global_variables_initializer()
@@ -76,30 +77,51 @@ def evaluate():
     assign_boundary_add_step.run(session=sess, feed_dict=feed_dict)
     run_step.run(session=sess)
 
-    # open file to log results
+    # open file to log results (this log file will get directly copied into the paper)
+    run_length = 1000
     with open("figs/" + "runtime_log.txt", "a") as myfile:
-  
-      # run no state_out
+      # run just compression
       t = time.time()
-      run_length = 1000
       for step in tqdm(xrange(run_length)):
         run_step.run(session=sess)
       elapsed = time.time() - t
-      print("time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape)  + "\n")
-      myfile.write("no decompression time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape)  + "\n")
+      time_per_step = elapsed/run_length
+      myfile.write(str(shape) + " & %.3f ms " % (time_per_step*1000))
   
-      # run with state out
+      # run with full state out
       t = time.time()
-      run_length = 1000
       for step in tqdm(xrange(run_length)):
-        run_step.run(session=sess)
-        state_out.eval(session=sess)
+        state_out_full.eval(session=sess)
       elapsed = time.time() - t
-      print("with decompression time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape))
-      myfile.write("with decompression time per " + str(run_length) + " step is " + str(elapsed) + " with shape " + str(shape) + " and compression shape " + str(compressed_shape)  + "\n")
-  
-
-
+      time_per_step = elapsed/run_length
+      myfile.write(" & %.3f ms " % (time_per_step*1000))
+   
+      # run with plane out
+      if len(shape) == 3: 
+        t = time.time()
+        for step in tqdm(xrange(run_length)):
+          state_out_plane.eval(session=sess)
+        elapsed = time.time() - t
+        time_per_step = elapsed/run_length
+        myfile.write(" & %.3f ms " % (time_per_step*1000))
+      else:
+        myfile.write(" & na")
+   
+      # run with line out
+      t = time.time()
+      for step in tqdm(xrange(run_length)):
+        state_out_line.eval(session=sess)
+      elapsed = time.time() - t
+      time_per_step = elapsed/run_length
+      myfile.write(" & %.3f ms " % (time_per_step*1000))
+   
+      # run with point state out
+      t = time.time()
+      for step in tqdm(xrange(run_length)):
+        state_out_point.eval(session=sess)
+      elapsed = time.time() - t
+      time_per_step = elapsed/run_length
+      myfile.write(" & %.3f ms \\\ \n" % (time_per_step*1000))
 
        
 def main(argv=None):  # pylint: disable=unused-argument

@@ -28,20 +28,20 @@ BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
 BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
 BOUNDARY_EDGE_KERNEL_2D[0,2,6,0] = 1.0 # up left
 BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,15,1))
-BOUNDARY_EDGE_KERNEL_3D[0,1,1,2,0] = 1.0 # up
-BOUNDARY_EDGE_KERNEL_3D[2,1,1,1,0] = 1.0 # down
-BOUNDARY_EDGE_KERNEL_3D[1,0,1,4,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_3D[1,2,1,3,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_3D[1,1,0,6,0] = 1.0 # in
-BOUNDARY_EDGE_KERNEL_3D[1,1,2,5,0] = 1.0 # out
-BOUNDARY_EDGE_KERNEL_3D[0,0,0,1,0] = 1.0 # up right in
-BOUNDARY_EDGE_KERNEL_3D[2,2,2,1,0] = 1.0 # down left out
-BOUNDARY_EDGE_KERNEL_3D[0,0,2,1,0] = 1.0 # up right out
-BOUNDARY_EDGE_KERNEL_3D[2,2,0,1,0] = 1.0 # down left in 
-BOUNDARY_EDGE_KERNEL_3D[0,2,0,1,0] = 1.0 # up left in 
-BOUNDARY_EDGE_KERNEL_3D[2,0,2,1,0] = 1.0 # down right out
-BOUNDARY_EDGE_KERNEL_3D[0,2,2,1,0] = 1.0 # up left out
-BOUNDARY_EDGE_KERNEL_3D[2,0,0,1,0] = 1.0 # down right in 
+BOUNDARY_EDGE_KERNEL_3D[0,1,1,2 ,0] = 1.0 # up
+BOUNDARY_EDGE_KERNEL_3D[2,1,1,1 ,0] = 1.0 # down
+BOUNDARY_EDGE_KERNEL_3D[1,0,1,4 ,0] = 1.0 # right
+BOUNDARY_EDGE_KERNEL_3D[1,2,1,3 ,0] = 1.0 # left
+BOUNDARY_EDGE_KERNEL_3D[1,1,0,6 ,0] = 1.0 # in
+BOUNDARY_EDGE_KERNEL_3D[1,1,2,5 ,0] = 1.0 # out
+BOUNDARY_EDGE_KERNEL_3D[0,0,0,8 ,0] = 1.0 # up right in
+BOUNDARY_EDGE_KERNEL_3D[2,2,2,7 ,0] = 1.0 # down left out
+BOUNDARY_EDGE_KERNEL_3D[0,0,2,10,0] = 1.0 # up right out
+BOUNDARY_EDGE_KERNEL_3D[2,2,0,9 ,0] = 1.0 # down left in 
+BOUNDARY_EDGE_KERNEL_3D[0,2,0,12,0] = 1.0 # up left in 
+BOUNDARY_EDGE_KERNEL_3D[2,0,2,11,0] = 1.0 # down right out
+BOUNDARY_EDGE_KERNEL_3D[0,2,2,14,0] = 1.0 # up left out
+BOUNDARY_EDGE_KERNEL_3D[2,0,0,13,0] = 1.0 # down right in 
 
 def simple_conv_2d(x, k):
   """A simplified 2D convolution operation"""
@@ -80,6 +80,16 @@ def get_lveloc(lattice_size):
     return tf.constant(np.array([ [0,0], [0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1] ]), dtype=1)
   elif lattice_size == 15:
     return tf.constant(np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ]), dtype=1)
+
+def get_lelect():
+  D1 = tf.constant(np.array([ [-0.5, 0.5, 0.0], [-0.5,-0.5, 0.0], [ 0.5,-0.5, 0.0], [ 0.5, 0.5, 0.0], [-0.5, 0.0, 0.5], [-0.5, 0.0,-0.5], [ 0.5, 0.0,-0.5], [ 0.5, 0.0, 0.5], [ 0.0,-0.5, 0.5], [ 0.0,-0.5,-0.5], [ 0.0, 0.5,-0.5], [ 0.0, 0.5, 0.5] ]), dtype=1)
+  D2 =  tf.constant(np.array([ [ 0.5,-0.5, 0.0], [ 0.5, 0.5, 0.0], [-0.5, 0.5, 0.0], [-0.5,-0.5, 0.0], [ 0.5, 0.0,-0.5], [ 0.5, 0.0, 0.5], [-0.5, 0.0, 0.5], [-0.5, 0.0,-0.5], [ 0.0, 0.5,-0.5], [ 0.0, 0.5, 0.5], [ 0.0,-0.5, 0.5], [ 0.0,-0.5,-0.5] ]), dtype=1)
+  return D1, D2
+
+def get_lmagne():
+  H1 = tf.constant(np.array([ [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0, 0.0, 1.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 0.0,-1.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0], [ 1.0, 0.0, 0.0] ]), dtype=1)
+  H2 =  tf.constant(np.array([ [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 0.0,-1.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [ 0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0] ]), dtype=1)
+  return H1, H2
 
 def get_opposite(lattice_size):
   # returns the lattice weights given the size of lattice
@@ -124,6 +134,8 @@ def lattice_to_vel(lattice):
   Lveloc = tf.reshape(Lveloc, dims*[1] + Lveloc_shape)
   lattice_shape = list(map(int, lattice.get_shape()))
   lattice = tf.reshape(lattice, lattice_shape + [1])
+  print(Lveloc.get_shape())
+  print(lattice.get_shape())
   velocity = tf.reduce_sum(Lveloc * lattice, axis=dims)
   return velocity
 
@@ -166,7 +178,6 @@ def lattice_to_force(lattice, boundary):
   Lveloc = tf.reshape(Lveloc, dims*[1] + Lveloc_shape)
   boundary_shape = list(map(int, boundary.get_shape()))
   boundary_edge_kernel = get_edge_kernel(int(lattice.get_shape()[-1]))
-  print(boundary_edge_kernel.get_shape())
   if len(boundary.get_shape()) == 4:
     edge = simple_trans_conv_2d(boundary,boundary_edge_kernel) 
     edge = edge[:,1:-1,1:-1,:]
@@ -178,13 +189,52 @@ def lattice_to_force(lattice, boundary):
     boundary = boundary[:,1:-1,1:-1,1:-1,:]
     lattice = lattice[:,1:-1,1:-1,1:-1,:]
   edge = edge * (-boundary + 1.0)
-  print("AAAAAAAAAAAAAAAA")
-  print(edge.get_shape())
-  print(lattice.get_shape())
   edge = edge * lattice
   edge_shape = list(map(int, edge.get_shape()))
   edge = tf.reshape(edge, edge_shape + [1])
   force = tf.reduce_sum(edge * Lveloc, axis=dims)
   return force
+
+def lattice_to_electric(lattice, boundary):
+  dims = len(lattice.get_shape())-1
+  split_lattice = tf.split(lattice, 48, axis=3)
+  e_1 = split_lattice[0::4]
+  e_2 = split_lattice[1::4]
+  e_1 = tf.stack(e_1, axis=3)
+  e_2 = tf.stack(e_2, axis=3)
+  D1, D2 = get_lelect()
+  D1_shape = list(map(int, D1.get_shape()))
+  D1 = tf.reshape(D1, dims*[1] + D1_shape)
+  D2 = tf.reshape(D2, dims*[1] + D1_shape)
+  print(D1.get_shape())
+  print(e_1.get_shape())
+  electric = tf.reduce_sum((D1 * e_1) + (D2 * e_2), axis=dims)
+  electric = electric/boundary
+  return electric
+
+def lattice_to_magnetic(lattice):
+  dims = len(lattice.get_shape())-1
+  split_lattice = tf.split(lattice, 48, axis=3)
+  m_1 = split_lattice[2::4]
+  m_2 = split_lattice[3::4]
+  m_1 = tf.stack(m_1, axis=3)
+  m_2 = tf.stack(m_2, axis=3)
+  H1, H2 = get_lmagne()
+  H1_shape = list(map(int, H1.get_shape()))
+  H1 = tf.reshape(H1, dims*[1] + H1_shape)
+  H2 = tf.reshape(H2, dims*[1] + H1_shape)
+  magnetic = tf.reduce_sum((H1 * m_1) + (H2 * m_2), axis=dims)
+  #magnetic = tf.reduce_sum((H2 * m_1), axis=dims)
+  #magnetic = m_1[:,:,:,4,:] + m_1[:,:,:,5,:] + m_1[:,:,:,6,:] + m_1[:,:,:,7,:]
+  #magnetic = m_1[:,:,:,4,:] + m_1[:,:,:,5,:] + m_1[:,:,:,6,:] + m_1[:,:,:,7,:]
+  return magnetic 
+
+def field_to_norm(field):
+  field_norm = tf.sqrt(tf.square(field[:,:,:,0:1]) + tf.square(field[:,:,:,1:2]) + tf.square(field[:,:,:,2:3]))
+  return field_norm
+
+
+
+ 
 
 
