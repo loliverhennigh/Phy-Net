@@ -108,7 +108,7 @@ tf.app.flags.DEFINE_integer('video_length', 200,
                            """ video dimentions """)
 tf.app.flags.DEFINE_integer('test_length', 50,
                            """ sequence length for testing (making error plots) """)
-tf.app.flags.DEFINE_integer('test_nr_runs', 5,
+tf.app.flags.DEFINE_integer('test_nr_runs', 30,
                            """ number of simulations to test on (making error plots) """)
 tf.app.flags.DEFINE_integer('test_nr_per_simulation', 1,
                            """ number of test runs per simulations (making error plots) """)
@@ -148,7 +148,8 @@ def feed_dict(seq_length, shape, frame_num, run_number, start_index):
   if FLAGS.system == "fluid_flow":
     dir_name = "fluid_flow_"
     if len(shape) == 2:
-      dir_name = dir_name + str(shape[0]) + 'x' + str(shape[1]) + '_test'
+      #dir_name = dir_name + str(shape[0]) + 'x' + str(shape[1]) + '_test'
+      dir_name = dir_name + str(shape[0]) + 'x' + str(shape[1]) + '_'
     else:
       dir_name = dir_name + str(shape[0]) + 'x' + str(shape[1]) + 'x' + str(shape[2]) + '_test'
     state, boundary = fluid.generate_feed_dict(seq_length, shape, frame_num, dir_name, run_number, start_index)

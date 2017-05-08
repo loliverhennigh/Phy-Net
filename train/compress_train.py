@@ -144,7 +144,7 @@ def train():
         print("time per batch is " + str(elapsed/200.))
         t = time.time()
 
-      if current_step%2000 == 0:
+      if (current_step+1)%2000 == 0:
         time.sleep(60)
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, current_step) 

@@ -34,7 +34,7 @@ font = {'family' : 'normal',
 
 matplotlib.rc('font', **font)
 
-plt.scatter(compression_factor_2d, mse_2d)
+plt.scatter(np.log2(compression_factor_2d), np.log(mse_2d))
 plt.scatter(compression_factor_3d, mse_3d)
 
 plt.title('Compression Vs Error', y=0.96)
