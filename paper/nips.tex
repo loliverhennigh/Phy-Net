@@ -22,6 +22,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage[pdftex]{graphicx}
 \usepackage{subfigure}
+\usepackage{wrapfig}
 
 \title{Lat-Net: Compressing Lattice Boltzmann Fluid Simulations using Deep Neural Networks}
 
@@ -135,7 +136,7 @@ The important aspect of the LBM for our purposes is that it acts localy on grid 
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.3]{../test/figs/fig_1.pdf}}
+\subfigure{\includegraphics[scale=0.5]{../test/figs/fig_1.pdf}}
 \caption{Lat-Net architeture }
 \label{fig_1}
 \end{figure}
@@ -185,17 +186,19 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.9]{../test/figs/1024x1024_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.20]{../test/figs/256x256_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.20]{../test/figs/1024x1024_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.45]{../test/figs/80x80x320_3d_flow_image.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{2d_image_plot}
 \end{figure}
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
-\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
-\subfigure{\includegraphics[scale=0.3]{../test/figs/1024x1024_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.280]{../test/figs/256x256_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.280]{../test/figs/1024x1024_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.280]{../test/figs/40x40x160_3d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.280]{../test/figs/80x80x320_3d_error_plot.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{2d_error_plot}
 \end{figure}
@@ -211,8 +214,8 @@ In figure \ref{2d_error_plot} we see the predicted values averaged over (number)
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.9]{../test/figs/256x512_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.4]{../test/figs/256x512_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.5]{../test/figs/car_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.35]{../test/figs/256x512_2d_error_plot.png}}
 \caption{2d fluid simulations on car dataset}
 \label{car_dataset}
 \end{figure}
@@ -220,12 +223,13 @@ In figure \ref{2d_error_plot} we see the predicted values averaged over (number)
 For Lat-Net to be successful as a method, it must be able to generalize to new datasets. To test this ability, we run our 2D model on flows around car crossections. 
 
 \subsection{Memory Compression}
-\begin{figure}[!t]
-\centering
-\includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
-\caption{The effect of Compression on MSE}
-\label{compression_plot}
-\end{figure}
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \centering
+  \includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
+  \caption{The effect of Compression on MSE}
+  \label{compression_plot}
+\end{wrapfigure}
 
 One of the main purposes of Lat-Net is to compress the memory requirement of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unforcunatly, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
 
@@ -255,16 +259,8 @@ Finally, we illustrate the generatlity of our method by applying it to electroma
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.9]{../test/figs/256x256_2d_em_image.png}}
-\subfigure{\includegraphics[scale=0.9]{../test/figs/512x512_2d_em_image.png}}
-\caption{Accuracy of 2d fluid simulations }
-\label{fig:bouncing_balls_error_3}
-\end{figure}
-\begin{figure}[!t]
-\centering
-\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_em_error_plot.png}}
-%\subfigure{\includegraphics[scale=0.9]{../test/figs/512x512_2d_em_error_plot.png}}
-\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_em_error_plot.png}}
+\subfigure{\includegraphics[scale=0.28]{../test/figs/512x512_2d_em_image.png}}
+\subfigure{\includegraphics[scale=0.28]{../test/figs/512x512_2d_em_error_plot.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{fig:bouncing_balls_error_3}
 \end{figure}
