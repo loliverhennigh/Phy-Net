@@ -47,7 +47,9 @@
 \maketitle
 
 \begin{abstract}
-We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that Lat-Net generalizes well by accuratly generating simulations as much as 16 times larger then the test set as well as 
+We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. 
+
+We show that Lat-Net generalizes well by accuratly generating simulations as much as 16 times larger then the test set as well as 
 
 While we apply Lat-Net to fluid simulations   and in addition to applying it to both 2d an 3d fluid flow simulations, we also show it can be used  computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
 
@@ -65,7 +67,7 @@ There are many different types of fluid flow . In particlular, we investigate fl
 
 (Say that we are using LBM and why)
 
-The most popular approach to modeling fluid flow is with the Navier stokes equation. This partial differential equations (blaa). Recently, there has been a new method for solving fluid flow named the Lattice Boltzmann Method (LBM). It is derived from the boltzmann equation. The main advantage of LBM is its ability to run on massibely parallel architectures. Because of this there has been much development in the area. Because of this methods popularity and techinqual details we will discuss later, our approach is centered around this method of simulation.
+The most popular approach to modeling fluid flow is with the Navier stokes equation. This partial differential equations (blaa). Recently, there has been a new method for simulating fluid flow named the Lattice Boltzmann Method (LBM). It is derived from the boltzmann equation. The main advantage of LBM is its ability to run on massibely parallel architectures. Because of this there has been much development in the area. Because of this methods popularity and techinqual details we will discuss later, our approach is centered around this method of simulation.
 
 (give breif description of method)
 
@@ -86,11 +88,11 @@ As the high performance computing (HPC) is expanding, computational fluid dynami
 
 \section{Related Work}
 
-Recently, there have been several papers applying neural network to fluid flow problems. Xiaoxiao etc \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from the boundary conditions to the steady state flow. In China guy paper, noone knows what they did because there is no way to get the paper. Most related to our own work, Tompson ect. \cite{tompson2016accelerating} uses a network to solve the (blaa) to accelerate eulerian fluid simulations. The key difference between this and our proposal is the ability to compresse the memory and the generability of our method.
+Recently, there have been several papers applying neural network to fluid flow problems. Guo etc \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from the boundary conditions to the steady state flow. In China guy paper, noone knows what they did because there is no way to get the paper. Most related to our own work, Tompson ect. \cite{tompson2016accelerating} uses a network to solve the (blaa) to accelerate eulerian fluid simulations. The key difference between this and our proposal is the ability to compresse the memory and the generability of our method.
 
-There
+There has also been an increasing body of work applying neural networks other physics problems. In Mills ect \cite{mills2017deep} and Giuseppe ect \cite{caleo2017solving}, neural networks are used to approximate solutions to the schodiener equation. 
 
-Our model is closely related to many video prediction works. Video prediction is the problem of generated future frames in in video data given previous frams. There is a ever growing body of work using neural networks to achevie this. To our knoweledge the first used recurrent temporal restricted Boltzmann machine (RTRBM) to model videos of bouncing balls (we also look at this problem). There have also been recurrent grammar cells applied to varieous time seires tasks including bouncing balls and NORBvideos. More recently there is lots of work in video prediction for application to rienforcment learning and control. These models use a variety of techniques for next frame prediction such as straight convolutions  to LSMTs. (need to put video cnn in here).
+Outside of the machine learning world, there has been supstantial work in so called Reduced order Modeling (ROM. 
 
 (Reduced order modeling)
 
@@ -105,6 +107,12 @@ As mentioned above, our method is centered around the LBM. There are several key
 (high level overview of method)
 
 The Lattice Boltzmann Method has been developled relatively recently having evolved from the Lattice Gas Automata in the 90s. It has a fundamentaly different approach to modeling fluid then typical PDE approaches. While there are a variety of ways to derive and view the LBM, the simplest discritption is that it models fluid with cells containing a flow flow distrobutions. These cells are updated 
+
+\begin{equation}
+  f_i(x+c_i \delta{t}, t+ \delta{t}) - f_i(x,t) = -\frac{1}{\tau} [f_i(x,t) - f_i^{eq}(x,t)]
+\end{equation}
+
+where $\tau$ is the relaxation time, $f_i(x,t)$ is the density distribution function for
 
 (talk more specific about collision operator and e)
 
@@ -186,6 +194,7 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.3]{../test/figs/256x256_2d_error_plot.png}}
 \subfigure{\includegraphics[scale=0.3]{../test/figs/1024x1024_2d_error_plot.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{2d_error_plot}
@@ -194,9 +203,9 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 
 A key componet of our model is its ability to generate larger simulations then those trained on. To test its effectiveness in doing so, we generate various sized 2D and 3D simulations and compare accuracy to ground truth simulations.
 
-Comparing the accuracy of simulations is somewhat difficult. The simplest approach is to compare the MSE between the generated and true simulation at various timesteps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perdibations in flow quickley compound leading to dramatic diffrences. For this reason, we develop a multi metric approach for evaluating the generated flows accuracy. Similar to \cite{} we compare the divergence of the generated and tru velocity vector field. These values should be small (need to come back to this). We also compare computed values from the flow such as drag and flux. Flow simulations are often run to calculate such values so comparing is a strong indecator of our models real world applicability. The drag is calculated with the momentum transfer method \cite{guo2013lattice}.
+Comparing the accuracy of simulations is somewhat difficult. The simplest approach is to compare the MSE between the generated and true simulation at various timesteps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perdibations in flow quickley compound leading to dramatic diffrences. For this reason, we develop a multi metric approach for evaluating the generated flows accuracy. Similar to \cite{} we compare the divergence of the generated and tru velocity vector field. These values should be small (need to come back to this). We also compare the computed values of drag and flux from the simulation. Flow simulations are often run to calculate such values so comparing is a strong indecator of our models real world applicability. The drag is calculated directly from the lattice state via the momentum transfer method \cite{guo2013lattice}. Evaluating 
 
-In figure \ref{2d_error_plot} we see the predicted values . We notice in the 2D case, the 
+In figure \ref{2d_error_plot} we see the predicted values averaged over (number) simulations. We notice in the 2D case, the 
 
 \subsection{Transferability to different datasets}
 
@@ -218,11 +227,13 @@ For Lat-Net to be successful as a method, it must be able to generalize to new d
 \label{compression_plot}
 \end{figure}
 
-One of purposes of Lat-Net is to be able to compress the memory usage of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unforcunatly, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
+One of the main purposes of Lat-Net is to compress the memory requirement of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unforcunatly, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fassion and then measure the reconsturction MSE on the test set. This less computationaly expensive approach allows many models to be trained and evaluated.
 
 By keeping the architeture of $\phi_{enc}$ and $\phi_{dec}$ the same and vareing the final compressed filter size we see the trade off between compression and error. The results of this can be seen in figure \ref{compression_plot}. It is interesting to see a slight diminising return effect for low compression ratios. In chosing a network architeture for Lat-Net, there is always a trade off between compression and error. By plotting corrilation we have demostrated an effective tool picking a network with the desired trade off.
 
 \subsection{Computational Speed Up}
+
+In this section we investigate the computational speed up of our model. Lattice Boltzmann Codes have a standard unit for comparing computational speeds, that is the Million Lattice Updates per Second (MLUPs). A modern high performance LBM solver optimized for GPU use can achieve 820 MLUPS in the 2D case and 
 
 Lattice Bolztmann Compression
 
@@ -240,8 +251,7 @@ Simulation    & Compression Mapping & Full State  & Plane      & Line       & Po
 
 \subsection{Electromagnetic Results}
 
-Finally, we illustrate the generatlity of our method by applying it to electromagnetic simulations. The same nueral network architecture is used as in the 2D flow simulations. The only diffrence in training is the 
-
+Finally, we illustrate the generatlity of our method by applying it to electromagnetic simulations. The same nueral network architecture is used as in the 2D flow simulations. 
 
 \begin{figure}[!t]
 \centering
