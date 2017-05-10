@@ -48,11 +48,7 @@
 \maketitle
 
 \begin{abstract}
-We present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. 
-
-We show that Lat-Net generalizes well by accuratly generating simulations as much as 16 times larger then the test set as well as 
-
-While we apply Lat-Net to fluid simulations   and in addition to applying it to both 2d an 3d fluid flow simulations, we also show it can be used  computed with the Lattice Boltzmann method. We also show that by training on small scale simulations we can use the learned network to generated larger simulations accuratly.
+Computational Fluid Dynamics (CFD) is a hugely important field with applications in Biomedical, Chemical, and Aronotical engineering, however, it is an extremely computationaly and memory demanding task. To this end, we present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that this method can produce realistic flows on large grid sizes as well as complex geometrys. We also show that Lat-Net is extremely general and can be easly applied to other Lattice Boltzmann based simulations such as Electromagnatism.
 
 \end{abstract}
 
@@ -91,9 +87,11 @@ As the high performance computing (HPC) is expanding, computational fluid dynami
 
 Recently, there have been several papers applying neural network to fluid flow problems. Guo etc \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from the boundary conditions to the steady state flow. In China guy paper, noone knows what they did because there is no way to get the paper. Most related to our own work, Tompson ect. \cite{tompson2016accelerating} uses a network to solve the (blaa) to accelerate eulerian fluid simulations. The key difference between this and our proposal is the ability to compresse the memory and the generability of our method.
 
-There has also been an increasing body of work applying neural networks other physics problems. In Mills ect \cite{mills2017deep} and Giuseppe ect \cite{caleo2017solving}, neural networks are used to approximate solutions to the schodiener equation. 
+There has also been an increasing body of work applying neural networks other physics related problems. In Mills ect \cite{mills2017deep} and Giuseppe ect \cite{caleo2017solving}, neural networks are used to approximate solutions to the schodiener equation. 
 
-Outside of the machine learning world, there has been supstantial work in so called Reduced order Modeling (ROM. 
+Reduced order Modeling (ROM) is closely realated the this work. 
+
+There has been supstantial work in so called Reduced order Modeling (ROM).
 
 (Reduced order modeling)
 
@@ -210,8 +208,6 @@ Comparing the accuracy of simulations is somewhat difficult. The simplest approa
 
 In figure \ref{2d_error_plot} we see the predicted values averaged over (number) simulations. We notice in the 2D case, the 
 
-\subsection{Transferability to different datasets}
-
 \begin{figure}[!t]
 \centering
 \subfigure{\includegraphics[scale=0.5]{../test/figs/car_2d_flow_image.png}}
@@ -220,7 +216,6 @@ In figure \ref{2d_error_plot} we see the predicted values averaged over (number)
 \label{car_dataset}
 \end{figure}
 
-For Lat-Net to be successful as a method, it must be able to generalize to new datasets. To test this ability, we run our 2D model on flows around car crossections. 
 
 \subsection{Memory Compression}
 
@@ -237,7 +232,21 @@ By keeping the architeture of $\phi_{enc}$ and $\phi_{dec}$ the same and vareing
 
 \subsection{Computational Speed Up}
 
-In this section we investigate the computational speed up of our model. Lattice Boltzmann Codes have a standard unit for comparing computational speeds, that is the Million Lattice Updates per Second (MLUPs). A modern high performance LBM solver optimized for GPU use can achieve 820 MLUPS in the 2D case and 
+In this section we investigate the computational speed up of our model. The standard performance metric for Lattice Boltzmann Codes is Million Lattice Updates per Second (MLUPs). This metric is calculated by the following equation,
+\begin{equation}
+  MLUP = \frac{n_x \times n_y \times n_z \times 10^{-6}}{Compute \ Time}
+\end{equation}
+ where $n_x$, $n_y$, and $n_z$ are the dimenstions of the simulation. For 3 dimensitonal simulations like the ones seen in this paper, a speed of 1,200 MLUPS can be achieved with a high end GPU \cite{januszewski2014sailfish}. We use this as our benchmark value to compare agianst.
+
+There are several things consider when compareing our achieved speeds with this.
+
+LBM simulations with lattice connectivity 
+
+The s
+
+\begin{itemize}
+  \item D3Q15 600 MLUPS with K20 \cite{januszewski2014sailfish}
+\end{itemize}
 
 Lattice Bolztmann Compression
 
