@@ -48,7 +48,7 @@
 \maketitle
 
 \begin{abstract}
-Computational Fluid Dynamics (CFD) is a hugely important field with applications in Biomedical, Chemical, and Aronotical engineering, however, it is an extremely computationaly and memory demanding task. To this end, we present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that this method can produce realistic flows on large grid sizes as well as complex geometrys. We also show that Lat-Net is extremely general and can be easly applied to other Lattice Boltzmann based simulations such as Electromagnatism.
+Computational Fluid Dynamics (CFD) is a hugely important field with applications in Biomedical, Chemical, and Aronotical engineering, however, it is an extremely computationaly and memory demanding field. To this end, we present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that once Lat-Net is trained, it can generalize to large grid sizes and complex geometyres while maintaining accuracy. We also show that Lat-Net is a general method for compressing other Lattice Boltzmann based simulations such as Electromagnatism.
 
 \end{abstract}
 
@@ -87,9 +87,9 @@ As the high performance computing (HPC) is expanding, computational fluid dynami
 
 Recently, there have been several papers applying neural network to fluid flow problems. Guo etc \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from the boundary conditions to the steady state flow. In China guy paper, noone knows what they did because there is no way to get the paper. Most related to our own work, Tompson ect. \cite{tompson2016accelerating} uses a network to solve the (blaa) to accelerate eulerian fluid simulations. The key difference between this and our proposal is the ability to compresse the memory and the generability of our method.
 
-There has also been an increasing body of work applying neural networks other physics related problems. In Mills ect \cite{mills2017deep} and Giuseppe ect \cite{caleo2017solving}, neural networks are used to approximate solutions to the schodiener equation. 
+There has also been an increasing body of work applying neural networks to other physics modeling problems. For example, neural networks have been readly addopted in many chemisty aplications such as predicting molecular properties from descriptors, protein contact prediction and computational material design \cite{goh2017deep}. Very recently, neural networks have been applied to quantum mechanics problems as seen in Mills ect \cite{mills2017deep} and Giuseppe ect \cite{carleo2017solving} where neural networks are used to approximate solutions to the schodiener equation. In Paganini etc \cite{2017arXiv170502355P}, they use generative advesarial networks \cite{goodfellow2014generative} to model electromagnetic showers in a longitudinally segmented calorimeter. Many of these applications are relatively recent and indecate a resurgance of interest in applications of neural networks to modeling physics.
 
-Reduced order Modeling (ROM) is closely realated the this work. 
+Reduced order Modeling (ROM) is the method 
 
 There has been supstantial work in so called Reduced order Modeling (ROM).
 
