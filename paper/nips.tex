@@ -160,7 +160,7 @@ After $g_t$ is computed we can extract out the generated state of the simulation
 
 \subsection{Network Implementation}
 
-As mentioned above, each network is kept entirley convolutional. Fluid flow is enheriently spatialy corilated so using convlutional layers allows this spatial information to be preserved. Keeping the network entirley convolutional also allows different input sizes to be used. This means that the network can train on small simulations and then generate larger simulations. During the course of this work, fully connected layers were explored however they produced extremely poor results.
+As mentioned above, each network is kept entirley convolutional. Fluid flow is enheriently spatialy corilated so using convlutional layers allows this spatial information to be preserved. Keeping the network entirley convolutional also allows different input sizes to be used. This means that the network can be train on small simulations and then generate larger simulations. During the course of this work, fully connected layers were explored however they produced extremely poor results.
 
 Residual connections have been used in many machine learning tasks with much sucess. Adding redidual connections allows for much deeper networks to be trained often resulting in improved results. When training our model, it is necesarry to unroll the compression network over several time steps. This has the same effect as making the network deeper when training. For this reason it seems logical to take advantage of this network architecture. We have seen that removing removing these residual conections results in much slower convergence and worse accuracy.
 
@@ -214,9 +214,14 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 
 A key componet of our model is its ability to generate larger simulations then those trained on. To test its effectiveness in doing so, we generate various sized 2D and 3D simulations and compare accuracy to ground truth simulations.
 
-Comparing the accuracy of simulations is somewhat difficult. The simplest approach is to compare the MSE between the generated and true simulation at various timesteps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perdibations in flow quickley compound leading to dramatic diffrences. For this reason, we develop a multi metric approach for evaluating the generated flows accuracy. Similar to \cite{} we compare the divergence of the generated and tru velocity vector field. These values should be small (need to come back to this). We also compare the computed values of drag and flux from the simulation. Flow simulations are often run to calculate such values so comparing is a strong indecator of our models real world applicability. The drag is calculated directly from the lattice state via the momentum transfer method \cite{guo2013lattice}. Evaluating 
+Comparing the accuracy of our simulations require some consideration. The simplest approach is to compare the MSE between the generated and true simulation at various timesteps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perdibations in flow quickley compound leading to dramatic diffrences. For this reason, we compare a variety of metrics in evaluating the generated flows accuracy. Similar to \cite{tompson2016accelerating}, we compare the divergence of the generated and true velocity vector field. These values should be small (need to come back to this). We also compare the computed values of drag and flux from the simulation. Flow simulations are often run to calculate such values so comparing this is a strong indecator of our models real world applicability. The drag is calculated directly from the lattice state via the momentum transfer method \cite{guo2013lattice}. The flux value is the sum of the flux in each non boundary cell. These values can be used to calculate important quantities such as drag coefiencet and reynolds number. Lastley, we visualy inspect the produced flow to check for instabilityes and bluring effects.
 
-In figure \ref{2d_error_plot} we see the predicted values averaged over (number) simulations. We notice in the 2D case, the 
+In figure \ref{2d_error_plot} we see the predicted values averaged over the test set of simulations along with the standard deviation. We also see that in the 2D simulations, Lat-Net is able to effectively transfer to larger domain sizes with similar calculated values of drag and flux. We also see that while our 3D model tends to have a bias in predicting (need actual figs).
+
+When visually inspecting our produced flows we see a slight blurring effect but overal similar structure. We attribute this blur effect to the use of MSE loss. This can possibly be overcome with the use of generative advesarial network \cite{goodfellow2014generative} where the loss (blaa). Another solution may be to craft a loss function that takes advantage of the statistical properties of fluid flow such as the (I will leave blank for now) \cite{kim2008wavelet}. We leave these pursutes to future work.
+
+The test set boundarys used in the above evaluation are drawn from the same distrobution as the train set. This motivates the question of how our model performs on drasticly different geometries. To test this, we apply our model to predicting flow around vehical cross sections. Supprisingly, even though are model is only trained on flows around simple shapes (ovals and rectangles) it can effectively generalize to this distinctly different dataset. In figure \ref{car_dataset}, we see the predicted flows are quite similar but with the same bluring effect. Calculating the same values seen above, we notice blaa.
+
 
 \begin{figure}[!t]
 \centering
@@ -246,35 +251,33 @@ In this section we investigate the computational speed up of our model. The stan
 \begin{equation}
   MLUP = \frac{n_x \times n_y \times n_z \times 10^{-6}}{Compute \ Time}
 \end{equation}
- where $n_x$, $n_y$, and $n_z$ are the dimenstions of the simulation. For 3 dimensitonal simulations like the ones seen in this paper, a speed of 1,200 MLUPS can be achieved with a high end GPU \cite{januszewski2014sailfish}. We use this as our benchmark value to compare agianst.
+ where $n_x$, $n_y$, and $n_z$ are the dimenstions of the simulation. For 3 dimensitonal simulations like the ones seen in this paper, a speed of 1,200 MLUPS can be achieved with a high end GPU and single percision floats \cite{januszewski2014sailfish}. We use this as our benchmark value to compare agianst.
 
-There are several things consider when compareing our achieved speeds with this.
+The computation time and memory usage of the encoder can be neglected because this is a one time cost for the simulation. In addition, if the simulation is started with uniformly initialized flow as seen in our experiments, the computation to compress the flow is extremely redudent and easily be optimized.
 
-LBM simulations with lattice connectivity 
+As seen in table \ref{computation_table}, the computation time of the compression step is shown to be 13.8 ms (change after run on 1080) for a 3D simulation of grid size 80x80x320. Because each step of the compression mapping is equevilent to 60 lattice boltzmann steps, this equates to 10,000 MLUPS (change to 1080) and a roughly 10x speed increase (a slightly higher speed up is seen with 2D simulation). This does not give a complete picture though. Once the compressed states have been generated, the generated flow must be extracted with the decoder. Unforcunatly this requires considerable amounts of computation and memory because it requires applying convolutions to the full state size. Forcunatly, there are ways around this. In many applications of CFD, it is not nesicary to to have the full state information of the flow. For example, calculating the drag only requires integrating over the surface of the object. By using the convolutional nature of the decoder, we can extract spesicif pieces of the flow out without needing to extract the full state (If i have time I will make a fig). In table \ref{computation_table} we show computation times for exracting out the flow information of a plane, line and single point in the 3D simulation. While these computations can still be somewhat expensive, they do not nececarly need to be performed at every time step and require very little working memory. 
 
-The s
+Regretably, there are some measurements that do require the full state information to compute such as the flux seen in our tests. Our current method is currently unable to handle these in its current form without requiring high runtimes and large working memory. A possible to solution to this is training a seperate neural network that takes in the compressed state and predicts the desired values such as flux. This would negate the need to extract out the full state and keep memory usage low. We leave this and similar ideas for future work.
 
-\begin{itemize}
-  \item D3Q15 600 MLUPS with K20 \cite{januszewski2014sailfish}
-\end{itemize}
+While Lat-Net does compress the simulation state size by more then an order of magnetude, the working memory requirements 
 
-Lattice Bolztmann Compression
 
 \begin{table}[]
 \caption{Computation time of Networks peices} \label{compute_times}
 \centering
-\begin{tabular}{|l|lllll|}
+\begin{tabular}{|l|llllll|}
 \hline
-Simulation    & Compression Mapping & Full State  & Plane      & Line       & Point   \\ \hline
-(1024, 1024)  & 1.042 ms            & 15.832 ms   & na         & 2.647 ms   & 2.490 ms \\ 
-(80, 80, 320) & 13.819 ms           & 127.553 ms  & 30.860 ms  & 18.457 ms  & 14.392 ms \\ 
+Simulation    & Compression Factor & Compression Mapping & Full State  & Plane      & Line       & Point   \\ \hline
+(1024, 1024)  & 18                 & 1.042 ms            & 15.832 ms   & na         & 2.647 ms   & 2.490 ms \\ 
+(80, 80, 320) & 15                 & 13.819 ms           & 127.553 ms  & 30.860 ms  & 18.457 ms  & 14.392 ms \\ 
 \hline
+\label{computation_table}
 \end{tabular}
 \end{table}
 
 \subsection{Electromagnetic Results}
 
-Finally, we illustrate the generatlity of our method by applying it to electromagnetic simulations. The same nueral network architecture is used as in the 2D flow simulations. 
+Finally, we illustrate the generatlity of our method by applying it to electromagnetic simulations. The same nueral network architecture is used as in the 2D flow simulations. In this case,
 
 \begin{figure}[!t]
 \centering
