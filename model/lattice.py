@@ -19,29 +19,38 @@ VELOCITY_KERNEL_3D[1,1,2,0,0] =  1.0
 VELOCITY_KERNEL_3D[1,1,0,0,0] = -1.0
 
 BOUNDARY_EDGE_KERNEL_2D = np.zeros((3,3,9,1))
-BOUNDARY_EDGE_KERNEL_2D[0,1,2,0] = 1.0 # up
 BOUNDARY_EDGE_KERNEL_2D[1,0,1,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_2D[2,1,4,0] = 1.0 # down
+BOUNDARY_EDGE_KERNEL_2D[0,1,2,0] = 1.0 # up
 BOUNDARY_EDGE_KERNEL_2D[1,2,3,0] = 1.0 # left
+BOUNDARY_EDGE_KERNEL_2D[2,1,4,0] = 1.0 # down
 BOUNDARY_EDGE_KERNEL_2D[0,0,5,0] = 1.0 # up right
-BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
-BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
 BOUNDARY_EDGE_KERNEL_2D[0,2,6,0] = 1.0 # up left
+BOUNDARY_EDGE_KERNEL_2D[2,2,7,0] = 1.0 # down left
+BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
 BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,15,1))
-BOUNDARY_EDGE_KERNEL_3D[0,1,1,2 ,0] = 1.0 # up
-BOUNDARY_EDGE_KERNEL_3D[2,1,1,1 ,0] = 1.0 # down
-BOUNDARY_EDGE_KERNEL_3D[1,0,1,4 ,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_3D[1,2,1,3 ,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_3D[1,1,0,6 ,0] = 1.0 # in
-BOUNDARY_EDGE_KERNEL_3D[1,1,2,5 ,0] = 1.0 # out
-BOUNDARY_EDGE_KERNEL_3D[0,0,0,8 ,0] = 1.0 # up right in
-BOUNDARY_EDGE_KERNEL_3D[2,2,2,7 ,0] = 1.0 # down left out
-BOUNDARY_EDGE_KERNEL_3D[0,0,2,10,0] = 1.0 # up right out
-BOUNDARY_EDGE_KERNEL_3D[2,2,0,9 ,0] = 1.0 # down left in 
-BOUNDARY_EDGE_KERNEL_3D[0,2,0,12,0] = 1.0 # up left in 
-BOUNDARY_EDGE_KERNEL_3D[2,0,2,11,0] = 1.0 # down right out
-BOUNDARY_EDGE_KERNEL_3D[0,2,2,14,0] = 1.0 # up left out
-BOUNDARY_EDGE_KERNEL_3D[2,0,0,13,0] = 1.0 # down right in 
+
+# maybe correct
+#BOUNDARY_EDGE_KERNEL_3D[0,1,1,3 ,0] = 1.0 # down
+#BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
+#BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # down
+#BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
+#BOUNDARY_EDGE_KERNEL_3D[1,1,2,5 ,0] = 1.0 # down
+#BOUNDARY_EDGE_KERNEL_3D[1,1,0,6 ,0] = 1.0 # up
+
+BOUNDARY_EDGE_KERNEL_3D[1,1,0,1 ,0] = 1.0 # left
+BOUNDARY_EDGE_KERNEL_3D[1,1,2,2 ,0] = 1.0 # right
+BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # left
+BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # right
+BOUNDARY_EDGE_KERNEL_3D[0,1,1,5 ,0] = 1.0 # out
+BOUNDARY_EDGE_KERNEL_3D[2,1,1,6 ,0] = 1.0 # in
+#BOUNDARY_EDGE_KERNEL_3D[0,0,0,7 ,0] = 1.0 # down left out
+#BOUNDARY_EDGE_KERNEL_3D[2,2,2,8 ,0] = 1.0 # up right in
+#BOUNDARY_EDGE_KERNEL_3D[0,2,0,9 ,0] = 1.0 # down left in 
+#BOUNDARY_EDGE_KERNEL_3D[2,0,2,10,0] = 1.0 # up right out
+#BOUNDARY_EDGE_KERNEL_3D[2,0,0,11,0] = 1.0 # down right out
+#BOUNDARY_EDGE_KERNEL_3D[0,2,2,12,0] = 1.0 # up left in 
+#BOUNDARY_EDGE_KERNEL_3D[2,2,0,13,0] = 1.0 # down right in 
+#BOUNDARY_EDGE_KERNEL_3D[0,0,2,14,0] = 1.0 # up left out
 
 def simple_conv_2d(x, k):
   """A simplified 2D convolution operation"""
@@ -79,6 +88,7 @@ def get_lveloc(lattice_size):
   if lattice_size == 9:
     return tf.constant(np.array([ [0,0], [0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1] ]), dtype=1)
   elif lattice_size == 15:
+    #return tf.constant(np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ]), dtype=1)
     return tf.constant(np.array([ [ 0, 0, 0], [ 1, 0, 0], [-1, 0, 0], [ 0, 1, 0], [ 0,-1, 0], [ 0, 0, 1], [ 0, 0,-1], [ 1, 1, 1], [-1,-1,-1], [ 1, 1,-1], [-1,-1, 1], [ 1,-1, 1], [-1, 1,-1], [ 1,-1,-1], [-1, 1, 1] ]), dtype=1)
 
 def get_lelect():
@@ -184,10 +194,19 @@ def lattice_to_force(lattice, boundary):
     boundary = boundary[:,1:-1,1:-1,:]
     lattice = lattice[:,1:-1,1:-1,:]
   else: 
+    top = boundary[:,-1:]
+    bottom = boundary[:,:1]
+    boundary = tf.concat([top, boundary, bottom], axis=1)
+    left = boundary[:,:,-1:]
+    right = boundary[:,:,:1]
+    boundary = tf.concat([left, boundary, right], axis=2)
     edge = simple_trans_conv_3d(boundary, boundary_edge_kernel)
-    edge = edge[:,1:-1,1:-1,1:-1,:]
-    boundary = boundary[:,1:-1,1:-1,1:-1,:]
-    lattice = lattice[:,1:-1,1:-1,1:-1,:]
+    top = lattice[:,-1:]
+    bottom = lattice[:,:1]
+    lattice = tf.concat([top, lattice, bottom], axis=1)
+    left = lattice[:,:,-1:]
+    right = lattice[:,:,:1]
+    lattice = tf.concat([left, lattice, right], axis=2)
   edge = edge * (-boundary + 1.0)
   edge = edge * lattice
   edge_shape = list(map(int, edge.get_shape()))

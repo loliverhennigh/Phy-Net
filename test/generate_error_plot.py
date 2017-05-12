@@ -166,32 +166,39 @@ def evaluate():
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 6}
+        'size'   : 10}
 
     matplotlib.rc('font', **font)
 
     if d2d:
-      f, axarr = plt.subplots(6, sharex=True, figsize=(5,7))
+      f, axarr = plt.subplots(6, sharex=True, figsize=(4.5,8.5))
       plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", fontsize="x-large", y=0.94)
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
-      axarr[0].set_title('error', y=0.96)
+      axarr[0].set_ylabel('error', fontsize="x-large")
+      axarr[0].yaxis.set_label_coords(-0.108, 0.5)
+      #axarr[0]
       axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
       axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
-      axarr[1].set_title('divergence', y=0.96)
+      axarr[1].set_ylabel('div', fontsize="x-large")
+      axarr[1].yaxis.set_label_coords(-0.108, 0.5)
       axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
       axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
-      axarr[2].set_title('drag x', y=0.96)
+      axarr[2].set_ylabel('drag x', fontsize="x-large")
+      axarr[2].yaxis.set_label_coords(-0.108, 0.5)
       axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
       axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
-      axarr[3].set_title('drag y', y=0.96)
+      axarr[3].set_ylabel('drag y', fontsize="x-large")
+      axarr[3].yaxis.set_label_coords(-0.108, 0.5)
       axarr[4].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
       axarr[4].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
-      axarr[4].set_title('flux x', y=0.96)
+      axarr[4].set_ylabel('flux x', fontsize="x-large")
+      axarr[4].yaxis.set_label_coords(-0.108, 0.5)
       axarr[5].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
       axarr[5].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
-      axarr[5].set_title('flux y', y=0.96)
-      axarr[5].set_xlabel('step')
-      plt.legend(loc="upper_left")
+      axarr[5].set_ylabel('flux y', fontsize="x-large")
+      axarr[5].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[5].set_xlabel('step', fontsize="x-large")
+      plt.legend(bbox_to_anchor=(0.40, 0.70), loc="upper_left")
       plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_error_plot.png")
    
 
@@ -201,36 +208,44 @@ def evaluate():
       plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + " 3D Simulation", fontsize="x-large", y=0.94)
   
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
-      axarr[0].set_title('error', y=0.96)
+      axarr[0].set_ylabel('error', fontsize="x-large")
+      axarr[0].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
       axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
-      axarr[1].set_title('divergence', y=0.96)
+      axarr[1].set_ylabel('div', fontsize="x-large")
+      axarr[1].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
       axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
-      axarr[2].set_title('drag x', y=0.96)
+      axarr[2].set_ylabel('drag x', fontsize="x-large")
+      axarr[2].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
       axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
-      axarr[3].set_title('drag y', y=0.96)
+      axarr[3].set_ylabel('drag y', fontsize="x-large")
+      axarr[3].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[4].errorbar(x, drag_true_z_mean, yerr=drag_true_z_std, label='z drag true', c='g', capsize=0, lw=0.3)
       axarr[4].errorbar(x, drag_generated_z_mean, yerr=drag_generated_z_std, label='z drag generated', c='y', capsize=0, lw=0.3)
-      axarr[4].set_title('drag z', y=0.96)
+      axarr[4].set_ylabel('drag z', fontsize="x-large")
+      axarr[4].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[5].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
       axarr[5].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
-      axarr[5].set_title('flux x', y=0.96)
+      axarr[5].set_ylabel('flux x', fontsize="x-large")
+      axarr[5].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[6].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
       axarr[6].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
-      axarr[6].set_title('flux y', y=0.96)
+      axarr[6].set_ylabel('flux y', fontsize="x-large")
+      axarr[6].yaxis.set_label_coords(-0.108, 0.5)
   
       axarr[7].errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='True', c='g', capsize=0, lw=0.3)
       axarr[7].errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='Generated', c='y', capsize=0, lw=0.3)
-      axarr[7].set_title('flux z', y=0.96)
-      axarr[7].set_xlabel('step')
+      axarr[7].set_ylabel('flux z', fontsize="x-large")
+      axarr[7].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[7].set_xlabel('step', fontsize="x-large")
   
       plt.legend(loc="upper_left")
       plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + "_3d_error_plot.png")

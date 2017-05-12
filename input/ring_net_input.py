@@ -26,6 +26,12 @@ tf.app.flags.DEFINE_integer('tf_seq_length', 30,
                            """ seq length of tf saved records """)
 
 
+def image_distortions(image, distortions, d2d=True):
+  if d2d:
+    print(image.get_shape())
+    image = tf.cond(distortions[0]>0.5, lambda: tf.reverse(image, axis=[2]), lambda: image)
+  return image
+
 def read_data(filename_queue, seq_length, shape, num_frames, color, raw_type='uint8'):
   """ reads data from tfrecord files.
 
@@ -262,6 +268,10 @@ def fluid_inputs(batch_size, seq_length, shape, num_frames, train=True):
   filename_queue = tf.train.string_input_producer(tfrecord_filename)
 
   seq_of_flow, seq_of_boundary = read_data_fluid(filename_queue, seq_length, shape, num_frames, False)
+
+  distortions = tf.random_uniform([1], 0, 1.0, dtype=tf.float32)
+  seq_of_flow = image_distortions(seq_of_flow, distortions)
+  seq_of_boundary = image_distortions(seq_of_boundary, distortions)
 
   flows, boundarys = _generate_image_label_batch_fluid(seq_of_flow, seq_of_boundary, batch_size)
 

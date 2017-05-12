@@ -30,17 +30,18 @@ plt.style.use('seaborn-darkgrid')
 
 font = {'family' : 'normal',
     'weight' : 'normal',
-    'size'   : 10}
+    'size'   : 16}
 
 matplotlib.rc('font', **font)
 
 plt.scatter(np.log(compression_factor_2d), np.log(mse_2d), color='red', label="2D")
 plt.scatter(np.log(compression_factor_3d), np.log(mse_3d), color='purple', label="3D")
 
-plt.title('Compression Vs Error', y=0.96)
-plt.xlabel(r'$\log{ \frac{compressed \  size}{state \  size}}$')
-plt.ylabel(r'$\log{(MSError)}$')
+plt.title('Compression Vs Error', y=1.00, fontsize="x-large")
+plt.xlabel(r'$\log{ \frac{compressed \  size}{state \  size}}$', fontsize="x-large", y=2.10)
+plt.ylabel(r'$\log{(MSError)}$', fontsize="x-large")
 plt.legend(loc="upper_left")
+plt.tight_layout()
 plt.savefig("figs/compression_error_plot.png")
 
 plt.show()

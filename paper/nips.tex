@@ -89,7 +89,11 @@ Recently, there have been several papers applying neural network to fluid flow p
 
 There has also been an increasing body of work applying neural networks to other physics modeling problems. For example, neural networks have been readly addopted in many chemisty aplications such as predicting molecular properties from descriptors, protein contact prediction and computational material design \cite{goh2017deep}. Very recently, neural networks have been applied to quantum mechanics problems as seen in Mills ect \cite{mills2017deep} and Giuseppe ect \cite{carleo2017solving} where neural networks are used to approximate solutions to the schodiener equation. In Paganini etc \cite{2017arXiv170502355P}, they use generative advesarial networks \cite{goodfellow2014generative} to model electromagnetic showers in a longitudinally segmented calorimeter. Many of these applications are relatively recent and indecate a resurgance of interest in applications of neural networks to modeling physics.
 
-Reduced order Modeling (ROM) is the method 
+Modeling order Reduction (MOR) is a method to reduce the computational requirments of numerical simulaition
+
+ROMs for nonlinear dynamical systems are a very active field
+Generaly the projection method is relatively simple, as is the case with Glerkin (just PCA)
+Once a ROM is generated it does not extend to other grids
 
 There has been supstantial work in so called Reduced order Modeling (ROM).
 
@@ -165,7 +169,13 @@ Down sampling is produced by 4 by 4 convolutions with stride 2. Some of the simu
 
 \subsection{Training Details}
 
-Lat-Net is trained by unrolling the network and comparing the produced flow to the generated. Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}. The GDL loss is slightly modified to handle 3D inputs and larger filter sizes then images. Lat-Net is trained with the Adam optimizer\cite{kingma2014adam}.
+Lat-Net is trained by unrolling the network and comparing the produced flow to the generated. Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}. The GDL loss is slightly modified to handle 3D inputs and larger filter sizes then images.
+
+%\begin{equation}
+%\mathcal{L}_{IGDL}(\^{f}, f) = \sum_{i,j,k}||f_{i,j,k} - f_{i-1,j,k}| -|\^{f_{i,j,k}} - \^{f_{i-1,j,k}}||^2
+%\end{equation}
+
+Lat-Net is trained with the Adam optimizer\cite{kingma2014adam}.
 
 \section{Experiments}
 

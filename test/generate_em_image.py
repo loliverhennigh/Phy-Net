@@ -70,7 +70,7 @@ def evaluate():
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
     # make plot
-    plt.figure(figsize = (len(time_sample), 3))
+    plt.figure(figsize = (4*len(time_sample), 4*3))
     gs1 = gridspec.GridSpec(len(time_sample), 3)
     gs1.update(wspace=0.025, hspace=0.025)
     index = 0
@@ -78,7 +78,7 @@ def evaluate():
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 6}
+        'size'   : 16}
 
     matplotlib.rc('font', **font)
 
@@ -97,7 +97,7 @@ def evaluate():
         axarr = plt.subplot(gs1[3*(index)+0])
         axarr.imshow(m_f_g, vmin=0.0, vmax=0.20)
         if index == 0:
-          axarr.set_title("Generated", y=0.96)
+          axarr.set_title("Generated", y=0.99)
         axarr.set_ylabel("step " + str(step), y = .5, x = .5)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
@@ -106,20 +106,20 @@ def evaluate():
         axarr = plt.subplot(gs1[(3*index)+1])
         axarr.imshow(m_f_t, vmin=0.0, vmax=0.2)
         if index == 0:
-          axarr.set_title("True", y=0.96)
+          axarr.set_title("True", y=0.99)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 1].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+2])
         axarr.imshow(np.sqrt(np.square(m_f_g-m_f_t)), vmin=0.0, vmax=0.20)
         if index == 0:
-          axarr.set_title("Difference", y=0.96)
+          axarr.set_title("Difference", y=0.99)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 2].set_aspect('equal')
         index += 1
       
-    plt.suptitle("Magnetic Field " + str(shape[0]) + "x" + str(shape[1]) + " Simulation", fontsize="x-large", y=0.98)
+    plt.suptitle("Magnetic Field " + str(shape[0]) + "x" + str(shape[1]) + " Simulation", fontsize="x-large", y=0.94)
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_em_image.png")
     print("made it")
 
