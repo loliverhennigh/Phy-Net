@@ -182,9 +182,9 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.20]{../test/figs/256x256_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.20]{../test/figs/1024x1024_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.45]{../test/figs/80x80x320_3d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.151]{../test/figs/256x256_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.151]{../test/figs/1024x1024_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.151]{../test/figs/160x160x160_3d_flow_image.png}}
 \caption{Accuracy of 2d fluid simulations }
 \label{2d_image_plot}
 \end{figure}
@@ -259,6 +259,8 @@ While Lat-Net does compress the simulation state size by more then an order of m
 Simulation    & Comp. Factor & Comp. Mapping & Full State  & Plane      & Line       & Point   \\ \hline
 (1024, 1024)  & 18                 & 1.042 ms            & 15.832 ms   & na         & 2.647 ms   & 2.490 ms \\ 
 (80, 80, 320) & 15                 & 13.819 ms           & 127.553 ms  & 30.860 ms  & 18.457 ms  & 14.392 ms  
+%[1024, 1024] & 2.703 ms  & 36.249 ms  & na & 6.715 ms  & 6.590 ms \\  
+%[160, 160, 160] & 23.054 ms  & 272.096 ms  & 38.206 ms  & 25.645 ms  & 24.065 ms \\  
 \\ \hline
 \end{tabular}
 \label{computation_table}
