@@ -41,7 +41,7 @@ if len(shape) == 2:
 
 # open video
 if d2d:
-  success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + '_2d_video_.mov', fourcc, 16, (3*shape[0], shape[1]), True)
+  success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + '_2d_video_.mov', fourcc, 16, (3*shape[1], shape[0]), True)
 else:
   success = video.open('figs/' + str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + '_3d_video.mov', fourcc, 16, (3*shape[2], shape[1]), True)
 if success:

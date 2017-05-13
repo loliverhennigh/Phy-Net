@@ -33,7 +33,7 @@ if len(shape) == 2:
   d2d = True
 
 time_sample = [0, 100, 200]
-#time_sample = [0 , 1, 2, 3]
+#time_sample = [0 , 1, 2]
 #time_sample = [0 , 3, 6, 9, 12, 15, 18, 21, 24, 27]
 
 def evaluate():
@@ -70,7 +70,17 @@ def evaluate():
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
     # make plot
-    plt.figure(figsize = (len(time_sample), 3))
+    if len(shape) == 3:
+      ratio = float(shape[1]) / float(shape[2])
+      label_move = .94
+      title_move = 1.0
+      font_size = 10
+    else:
+      label_move = 0.99
+      title_move = 0.94
+      ratio = 1.0
+      font_size = 16
+    plt.figure(figsize = (4*len(time_sample), ratio*4*3))
     gs1 = gridspec.GridSpec(len(time_sample), 3)
     gs1.update(wspace=0.025, hspace=0.025)
     index = 0
@@ -78,7 +88,7 @@ def evaluate():
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 6}
+        'size'   : font_size}
 
     matplotlib.rc('font', **font)
 
@@ -103,7 +113,7 @@ def evaluate():
         axarr = plt.subplot(gs1[3*(index)+0])
         axarr.imshow(v_n_g, vmin=0.0, vmax=0.18)
         if index == 0:
-          axarr.set_title("Generated", y=0.96)
+          axarr.set_title("Generated", y=label_move)
         axarr.set_ylabel("step " + str(step), y = .5, x = .5)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
@@ -112,23 +122,28 @@ def evaluate():
         axarr = plt.subplot(gs1[(3*index)+1])
         axarr.imshow(v_n_t, vmin=0.0, vmax=0.18)
         if index == 0:
-          axarr.set_title("True", y=0.96)
+          axarr.set_title("True", y=label_move)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 1].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+2])
         axarr.imshow(np.sqrt(np.square(v_n_g-v_n_t)), vmin=0.0, vmax=0.18)
         if index == 0:
-          axarr.set_title("Difference", y=0.96)
+          axarr.set_title("Difference", y=label_move)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 2].set_aspect('equal')
         index += 1
-      
-    plt.suptitle(str(shape[0]) + "x" + str(shape[1]) + " 2D Simulation", fontsize="x-large", y=0.98)
-    plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_flow_image.png")
+
+    if len(shape) == 2: 
+      shape_str = str(shape[0]) + "x" + str(shape[1])
+    elif len(shape) == 3: 
+      shape_str = str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2])
+
+    plt.suptitle(shape_str + " " + str(len(shape)) + "D Simulation", fontsize="x-large", y=title_move)
+
+    plt.savefig("figs/" + shape_str + "_" + str(len(shape)) + "d_flow_image.png")
     print("made it")
-    #plt.show()
 
 
        

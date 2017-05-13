@@ -46,6 +46,8 @@ def evaluate_compression_error():
 
     # calc mean squared error
     mean_squared_error = tf.nn.l2_loss(state - x_2)
+    x_2_add = add_lattice(x_2)
+    velocity_generated = lattice_to_vel(x_2_add)
 
     # restore network
     variables_to_restore = tf.all_variables()
@@ -64,9 +66,16 @@ def evaluate_compression_error():
     for sim in tqdm(xrange(FLAGS.test_nr_runs)):
       for step in tqdm(xrange(FLAGS.test_length)):
         # get frame
-        state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, step)
+        state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, step+1)
         fd = {state:state_feed_dict, boundary:boundary_feed_dict}
         mse += sess.run(mean_squared_error, feed_dict=fd)
+        """
+        image = sess.run(velocity_generated, feed_dict=fd)
+        plt.figure()
+        print(image.shape)
+        plt.imshow(image[0,0,:,:,0])
+        plt.show()
+        """
     mse = mse/(FLAGS.test_nr_runs*FLAGS.test_length)
 
     # calc compression factor

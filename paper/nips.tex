@@ -79,6 +79,11 @@ Reduced order Modeling is an area of research that focuses on techniques to redu
 
 While these approaches are centered around the navier stokes equation and thus different then our own, we note that the compression in these methods is typicaly a linear projections. This gives hope 
 
+Modeling order Reduction (MOR) is a method to reduce the computational requirments of numerical simulaition
+
+ROMs for nonlinear dynamical systems are a very active field
+Generaly the projection method is relatively simple, as is the case with Glerkin (just PCA)
+Once a ROM is generated it does not extend to other grids
 
 
 
@@ -152,7 +157,13 @@ Down sampling is produced by 4 by 4 convolutions with stride 2. Some of the simu
 
 \subsection{Training Details}
 
-Lat-Net is trained by unrolling the network and comparing the produced flow to the generated. Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}. The GDL loss is slightly modified to handle 3D inputs and larger filter sizes then images. Lat-Net is trained with the Adam optimizer\cite{kingma2014adam}.
+Lat-Net is trained by unrolling the network and comparing the produced flow to the generated. Our loss function is a combination of Mean Squared Error (MSE) and Image Gradient Difference Loss (GDL)\cite{mathieu2015deep}. The GDL loss is slightly modified to handle 3D inputs and larger filter sizes then images.
+
+%\begin{equation}
+%\mathcal{L}_{IGDL}(\^{f}, f) = \sum_{i,j,k}||f_{i,j,k} - f_{i-1,j,k}| -|\^{f_{i,j,k}} - \^{f_{i-1,j,k}}||^2
+%\end{equation}
+
+Lat-Net is trained with the Adam optimizer\cite{kingma2014adam}.
 
 \section{Experiments}
 

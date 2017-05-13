@@ -87,18 +87,19 @@ def evaluate():
     # mse 
     mse_error_mean, mse_error_std = calc_mean_and_std(mse_error)
 
+    plt.figure(figsize = (6,12))
     plt.style.use('seaborn-darkgrid')
 
     font = {'family' : 'normal',
         'weight' : 'normal',
-        'size'   : 6}
+        'size'   : 16}
 
     matplotlib.rc('font', **font)
 
-    plt.title("Error Plot Electromagnetic " + str(shape[0]) + "x" + str(shape[1]) + " Simulation", y=0.94)
+    plt.title(str(shape[0]) + "x" + str(shape[1]) + " EM Simulation", y=1.00, fontsize="x-large")
     plt.errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
-    plt.xlabel('step')
-    plt.ylabel('Mean Squared Error')
+    plt.xlabel('step', fontsize="x-large")
+    plt.ylabel('MSError', fontsize="x-large")
     plt.legend(loc="upper_left")
     plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_em_error_plot.png")
 
