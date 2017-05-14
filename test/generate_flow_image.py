@@ -33,7 +33,6 @@ if len(shape) == 2:
   d2d = True
 
 time_sample = [0, 100, 200]
-#time_sample = [0 , 1, 2]
 #time_sample = [0 , 3, 6, 9, 12, 15, 18, 21, 24, 27]
 
 def evaluate():
@@ -71,15 +70,17 @@ def evaluate():
 
     # make plot
     if len(shape) == 3:
+      label_move = .99
+      title_move = 0.94
       ratio = float(shape[1]) / float(shape[2])
-      label_move = .94
-      title_move = 1.0
-      font_size = 10
+      font_size = 16
+      vmax = 0.08
     else:
       label_move = 0.99
       title_move = 0.94
       ratio = 1.0
       font_size = 16
+      vmax = 0.18
     plt.figure(figsize = (4*len(time_sample), ratio*4*3))
     gs1 = gridspec.GridSpec(len(time_sample), 3)
     gs1.update(wspace=0.025, hspace=0.025)
@@ -111,7 +112,7 @@ def evaluate():
 
         # make frame for video
         axarr = plt.subplot(gs1[3*(index)+0])
-        axarr.imshow(v_n_g, vmin=0.0, vmax=0.18)
+        axarr.imshow(v_n_g, vmin=0.0, vmax=vmax)
         if index == 0:
           axarr.set_title("Generated", y=label_move)
         axarr.set_ylabel("step " + str(step), y = .5, x = .5)
@@ -120,14 +121,14 @@ def evaluate():
         #axarr.axis('off')
         #axarr[index, 0].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+1])
-        axarr.imshow(v_n_t, vmin=0.0, vmax=0.18)
+        axarr.imshow(v_n_t, vmin=0.0, vmax=vmax)
         if index == 0:
           axarr.set_title("True", y=label_move)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
         #axarr[index, 1].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+2])
-        axarr.imshow(np.sqrt(np.square(v_n_g-v_n_t)), vmin=0.0, vmax=0.18)
+        axarr.imshow(np.sqrt(np.square(v_n_g-v_n_t)), vmin=0.0, vmax=vmax)
         if index == 0:
           axarr.set_title("Difference", y=label_move)
         axarr.get_xaxis().set_ticks([])

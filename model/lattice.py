@@ -30,27 +30,27 @@ BOUNDARY_EDGE_KERNEL_2D[2,0,8,0] = 1.0 # down right
 BOUNDARY_EDGE_KERNEL_3D = np.zeros((3,3,3,15,1))
 
 # maybe correct
-#BOUNDARY_EDGE_KERNEL_3D[0,1,1,3 ,0] = 1.0 # down
-#BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
-#BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # down
-#BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
-#BOUNDARY_EDGE_KERNEL_3D[1,1,2,5 ,0] = 1.0 # down
-#BOUNDARY_EDGE_KERNEL_3D[1,1,0,6 ,0] = 1.0 # up
+BOUNDARY_EDGE_KERNEL_3D[0,1,1,3 ,0] = 1.0 # down
+BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
+BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # down
+BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # up
+BOUNDARY_EDGE_KERNEL_3D[1,1,2,5 ,0] = 1.0 # down
+BOUNDARY_EDGE_KERNEL_3D[1,1,0,6 ,0] = 1.0 # up
 
-BOUNDARY_EDGE_KERNEL_3D[1,1,0,1 ,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_3D[1,1,2,2 ,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # left
-BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # right
-BOUNDARY_EDGE_KERNEL_3D[0,1,1,5 ,0] = 1.0 # out
-BOUNDARY_EDGE_KERNEL_3D[2,1,1,6 ,0] = 1.0 # in
-#BOUNDARY_EDGE_KERNEL_3D[0,0,0,7 ,0] = 1.0 # down left out
-#BOUNDARY_EDGE_KERNEL_3D[2,2,2,8 ,0] = 1.0 # up right in
-#BOUNDARY_EDGE_KERNEL_3D[0,2,0,9 ,0] = 1.0 # down left in 
-#BOUNDARY_EDGE_KERNEL_3D[2,0,2,10,0] = 1.0 # up right out
-#BOUNDARY_EDGE_KERNEL_3D[2,0,0,11,0] = 1.0 # down right out
-#BOUNDARY_EDGE_KERNEL_3D[0,2,2,12,0] = 1.0 # up left in 
-#BOUNDARY_EDGE_KERNEL_3D[2,2,0,13,0] = 1.0 # down right in 
-#BOUNDARY_EDGE_KERNEL_3D[0,0,2,14,0] = 1.0 # up left out
+#BOUNDARY_EDGE_KERNEL_3D[1,1,0,1 ,0] = 1.0 # left
+#BOUNDARY_EDGE_KERNEL_3D[1,1,2,2 ,0] = 1.0 # right
+#BOUNDARY_EDGE_KERNEL_3D[1,0,1,3 ,0] = 1.0 # left
+#BOUNDARY_EDGE_KERNEL_3D[1,2,1,4 ,0] = 1.0 # right
+#BOUNDARY_EDGE_KERNEL_3D[0,1,1,5 ,0] = 1.0 # out
+#BOUNDARY_EDGE_KERNEL_3D[2,1,1,6 ,0] = 1.0 # in
+BOUNDARY_EDGE_KERNEL_3D[0,0,0,7 ,0] = 1.0 # down left out
+BOUNDARY_EDGE_KERNEL_3D[2,2,2,8 ,0] = 1.0 # up right in
+BOUNDARY_EDGE_KERNEL_3D[0,2,0,9 ,0] = 1.0 # down left in 
+BOUNDARY_EDGE_KERNEL_3D[2,0,2,10,0] = 1.0 # up right out
+BOUNDARY_EDGE_KERNEL_3D[2,0,0,11,0] = 1.0 # down right out
+BOUNDARY_EDGE_KERNEL_3D[0,2,2,12,0] = 1.0 # up left in 
+BOUNDARY_EDGE_KERNEL_3D[2,2,0,13,0] = 1.0 # down right in 
+BOUNDARY_EDGE_KERNEL_3D[0,0,2,14,0] = 1.0 # up left out
 
 def simple_conv_2d(x, k):
   """A simplified 2D convolution operation"""

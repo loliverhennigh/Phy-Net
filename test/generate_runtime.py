@@ -78,7 +78,7 @@ def evaluate():
     run_step.run(session=sess)
 
     # open file to log results (this log file will get directly copied into the paper)
-    run_length = 1000
+    run_length = 4000
     with open("figs/" + "runtime_log.txt", "a") as myfile:
       # run just compression
       t = time.time()
@@ -87,7 +87,7 @@ def evaluate():
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
       myfile.write(str(shape) + " & %.3f ms " % (time_per_step*1000))
-  
+ 
       # run with full state out
       t = time.time()
       for step in tqdm(xrange(run_length)):
@@ -95,6 +95,7 @@ def evaluate():
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
       myfile.write(" & %.3f ms " % (time_per_step*1000))
+      """
    
       # run with plane out
       if len(shape) == 3: 
@@ -122,6 +123,7 @@ def evaluate():
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
       myfile.write(" & %.3f ms \\\ \n" % (time_per_step*1000))
+      """
 
        
 def main(argv=None):  # pylint: disable=unused-argument

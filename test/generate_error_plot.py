@@ -16,6 +16,9 @@ import time
 from tqdm import *
 import matplotlib
 import matplotlib.pyplot as plt
+import seaborn
+
+
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -35,6 +38,38 @@ def calc_mean_and_std(values):
     values_mean = np.sum(values, axis=0) / values.shape[0]
     values_std = np.sqrt(np.sum(np.square(values - np.expand_dims(values_mean, axis=0)), axis=0)/values.shape[0])
     return values_mean, values_std
+
+def update_label(old_label, exponent_text):
+    if exponent_text == "":
+        return old_label
+    
+    try:
+        units = old_label[old_label.index("[") + 1:old_label.rindex("]")]
+    except ValueError:
+        units = ""
+    label = old_label.replace("[{}]".format(units), "")
+    
+    exponent_text = exponent_text.replace("\\times", "")
+    
+    return "{} [{} {}]".format(label, exponent_text, units)
+
+def format_label_string_with_exponent(ax, axis='both'):
+    """ Format the label string with the exponent from the ScalarFormatter """
+    ax.ticklabel_format(axis=axis, style='sci')
+
+    axes_instances = []
+    if axis in ['x', 'both']:
+        axes_instances.append(ax.xaxis)
+    if axis in ['y', 'both']:
+        axes_instances.append(ax.yaxis)
+    
+    for ax in axes_instances:
+        ax.major.formatter._useMathText = True
+        plt.draw() # Update the text
+        exponent_text = ax.get_offset_text().get_text()
+        label = ax.get_label().get_text()
+        ax.offsetText.set_visible(False)
+        ax.set_label_text(update_label(label, exponent_text))
 
 def evaluate():
   """ Eval the system"""
@@ -57,10 +92,11 @@ def evaluate():
     div_true = tf.nn.l2_loss(lattice_to_divergence(state_add))
 
     # calc flux
+    flow_size = tf.reduce_sum(1.0 - boundary)
     flux_generated = lattice_to_flux(x_2_add, boundary)
-    flux_generated = tf.reduce_sum(flux_generated, axis=list(xrange(len(shape)+1)))
+    flux_generated = tf.reduce_sum(flux_generated, axis=list(xrange(len(shape)+1))) / flow_size
     flux_true = lattice_to_flux(state_add, boundary)
-    flux_true = tf.reduce_sum(flux_true, axis=list(xrange(len(shape)+1)))
+    flux_true = tf.reduce_sum(flux_true, axis=list(xrange(len(shape)+1))) / flow_size
 
     # calc drag
     drag_generated = lattice_to_force(x_2_add, boundary)
@@ -176,28 +212,42 @@ def evaluate():
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
       axarr[0].set_ylabel('error', fontsize="x-large")
       axarr[0].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[0].tick_params(labelsize=6)
       #axarr[0]
       axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
       axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
       axarr[1].set_ylabel('div', fontsize="x-large")
       axarr[1].yaxis.set_label_coords(-0.108, 0.5)
-      axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
-      axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
+      axarr[1].tick_params(labelsize=6)
+      axarr[2].plot(x, drag_true_x[0], label='x drag true', c='g', lw=0.6)
+      axarr[2].plot(x, drag_generated_x[0], label='x drag generated', c='y', lw=0.6)
+      #axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
+      #axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
       axarr[2].set_ylabel('drag x', fontsize="x-large")
       axarr[2].yaxis.set_label_coords(-0.108, 0.5)
-      axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
-      axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
+      axarr[2].tick_params(labelsize=6)
+      axarr[3].plot(x, drag_true_y[0], label='y drag true', c='g', lw=0.6)
+      axarr[3].plot(x, drag_generated_y[0], label='y drag generated', c='y', lw=0.6)
+      #axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
+      #axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
       axarr[3].set_ylabel('drag y', fontsize="x-large")
       axarr[3].yaxis.set_label_coords(-0.108, 0.5)
-      axarr[4].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
-      axarr[4].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
+      axarr[3].tick_params(labelsize=6)
+      axarr[4].plot(x, flux_true_x[0], label='x flux true', c='g', lw=0.6)
+      axarr[4].plot(x, flux_generated_x[0], label='x flux generated', c='y', lw=0.6)
+      #axarr[4].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
+      #axarr[4].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
       axarr[4].set_ylabel('flux x', fontsize="x-large")
       axarr[4].yaxis.set_label_coords(-0.108, 0.5)
-      axarr[5].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
-      axarr[5].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
+      axarr[4].tick_params(labelsize=6)
+      axarr[5].plot(x, flux_true_y[0], label='True', c='g', lw=0.6)
+      axarr[5].plot(x, flux_generated_y[0], label='Generated', c='y', lw=0.6)
+      #axarr[5].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
+      #axarr[5].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
       axarr[5].set_ylabel('flux y', fontsize="x-large")
       axarr[5].yaxis.set_label_coords(-0.108, 0.5)
       axarr[5].set_xlabel('step', fontsize="x-large")
+      axarr[5].tick_params(labelsize=6)
       plt.legend(bbox_to_anchor=(0.40, 0.70), loc="upper_left")
       plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "_2d_error_plot.png")
    
@@ -210,42 +260,64 @@ def evaluate():
       axarr[0].errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
       axarr[0].set_ylabel('error', fontsize="x-large")
       axarr[0].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[0].tick_params(labelsize=6)
   
       axarr[1].errorbar(x, divergence_true_mean, yerr=divergence_true_std, label='div true', c='g', capsize=0, lw=0.3)
       axarr[1].errorbar(x, divergence_generated_mean, yerr=divergence_generated_std, label='div generated', c='y', capsize=0, lw=0.2)
       axarr[1].set_ylabel('div', fontsize="x-large")
       axarr[1].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[1].tick_params(labelsize=6)
   
-      axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
-      axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
+      axarr[2].plot(x, drag_true_x[0], label='x drag true', c='g', lw=0.6)
+      axarr[2].plot(x, drag_generated_x[0], label='x drag generated', c='y', lw=0.6)
+      #axarr[2].errorbar(x, drag_true_x_mean, yerr=drag_true_x_std, label='x drag true', c='g', capsize=0, lw=0.3)
+      #axarr[2].errorbar(x, drag_generated_x_mean, yerr=drag_generated_x_std, label='x drag generated', c='y', capsize=0, lw=0.3)
       axarr[2].set_ylabel('drag x', fontsize="x-large")
       axarr[2].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[2].tick_params(labelsize=6)
   
-      axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
-      axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
+      axarr[3].plot(x, drag_true_y[0], label='y drag true', c='g', lw=0.6)
+      axarr[3].plot(x, drag_generated_y[0], label='y drag generated', c='y', lw=0.6)
+      #axarr[3].errorbar(x, drag_true_y_mean, yerr=drag_true_y_std, label='y drag true', c='g', capsize=0, lw=0.3)
+      #axarr[3].errorbar(x, drag_generated_y_mean, yerr=drag_generated_y_std, label='y drag generated', c='y', capsize=0, lw=0.3)
       axarr[3].set_ylabel('drag y', fontsize="x-large")
       axarr[3].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[3].tick_params(labelsize=6)
   
-      axarr[4].errorbar(x, drag_true_z_mean, yerr=drag_true_z_std, label='z drag true', c='g', capsize=0, lw=0.3)
-      axarr[4].errorbar(x, drag_generated_z_mean, yerr=drag_generated_z_std, label='z drag generated', c='y', capsize=0, lw=0.3)
+      axarr[4].plot(x, drag_true_z[0], label='z drag true', c='g', lw=0.6)
+      axarr[4].plot(x, drag_generated_z[0], label='z drag generated', c='y', lw=0.6)
+      #axarr[4].errorbar(x, drag_true_z_mean, yerr=drag_true_z_std, label='z drag true', c='g', capsize=0, lw=0.3)
+      #axarr[4].errorbar(x, drag_generated_z_mean, yerr=drag_generated_z_std, label='z drag generated', c='y', capsize=0, lw=0.3)
       axarr[4].set_ylabel('drag z', fontsize="x-large")
       axarr[4].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[4].tick_params(labelsize=6)
   
-      axarr[5].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
-      axarr[5].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
-      axarr[5].set_ylabel('flux x', fontsize="x-large")
+      axarr[5].plot(x, flux_true_x[0], label='x flux true', c='g', lw=0.6)
+      axarr[5].plot(x, flux_generated_x[0], label='x flux generated', c='y', lw=0.6)
+      #axarr[5].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
+      #axarr[5].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
+      axarr[5].set_ylabel("flux x", fontsize="x-large")
+      format_label_string_with_exponent(axarr[5])
       axarr[5].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[5].yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter(useMathText=True, useOffset=False))
+      axarr[5].tick_params(labelsize=6)
   
-      axarr[6].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
-      axarr[6].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
+      axarr[6].plot(x, flux_true_y[0], label='True', c='g', lw=0.6)
+      axarr[6].plot(x, flux_generated_y[0], label='Generated', c='y', lw=0.6)
+      #axarr[6].errorbar(x, flux_true_y_mean, yerr=flux_true_y_std, label='True', c='g', capsize=0, lw=0.3)
+      #axarr[6].errorbar(x, flux_generated_y_mean, yerr=flux_generated_y_std, label='Generated', c='y', capsize=0, lw=0.3)
       axarr[6].set_ylabel('flux y', fontsize="x-large")
       axarr[6].yaxis.set_label_coords(-0.108, 0.5)
+      axarr[6].tick_params(labelsize=6)
   
-      axarr[7].errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='True', c='g', capsize=0, lw=0.3)
-      axarr[7].errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='Generated', c='y', capsize=0, lw=0.3)
+      axarr[7].plot(x, flux_true_z[0], label='True', c='g', lw=0.6)
+      axarr[7].plot(x, flux_generated_z[0], label='Generated', c='y', lw=0.6)
+      #axarr[7].errorbar(x, flux_true_z_mean, yerr=flux_true_z_std, label='True', c='g', capsize=0, lw=0.3)
+      #axarr[7].errorbar(x, flux_generated_z_mean, yerr=flux_generated_z_std, label='Generated', c='y', capsize=0, lw=0.3)
       axarr[7].set_ylabel('flux z', fontsize="x-large")
       axarr[7].yaxis.set_label_coords(-0.108, 0.5)
       axarr[7].set_xlabel('step', fontsize="x-large")
+      axarr[7].tick_params(labelsize=6)
   
       plt.legend(loc="upper_left")
       plt.savefig("figs/" + str(shape[0]) + "x" + str(shape[1]) + "x" + str(shape[2]) + "_3d_error_plot.png")
