@@ -39,38 +39,6 @@ def calc_mean_and_std(values):
     values_std = np.sqrt(np.sum(np.square(values - np.expand_dims(values_mean, axis=0)), axis=0)/values.shape[0])
     return values_mean, values_std
 
-def update_label(old_label, exponent_text):
-    if exponent_text == "":
-        return old_label
-    
-    try:
-        units = old_label[old_label.index("[") + 1:old_label.rindex("]")]
-    except ValueError:
-        units = ""
-    label = old_label.replace("[{}]".format(units), "")
-    
-    exponent_text = exponent_text.replace("\\times", "")
-    
-    return "{} [{} {}]".format(label, exponent_text, units)
-
-def format_label_string_with_exponent(ax, axis='both'):
-    """ Format the label string with the exponent from the ScalarFormatter """
-    ax.ticklabel_format(axis=axis, style='sci')
-
-    axes_instances = []
-    if axis in ['x', 'both']:
-        axes_instances.append(ax.xaxis)
-    if axis in ['y', 'both']:
-        axes_instances.append(ax.yaxis)
-    
-    for ax in axes_instances:
-        ax.major.formatter._useMathText = True
-        plt.draw() # Update the text
-        exponent_text = ax.get_offset_text().get_text()
-        label = ax.get_label().get_text()
-        ax.offsetText.set_visible(False)
-        ax.set_label_text(update_label(label, exponent_text))
-
 def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
@@ -297,9 +265,7 @@ def evaluate():
       #axarr[5].errorbar(x, flux_true_x_mean, yerr=flux_true_x_std, label='x flux true', c='g', capsize=0, lw=0.3)
       #axarr[5].errorbar(x, flux_generated_x_mean, yerr=flux_generated_x_std, label='x flux generated', c='y', capsize=0, lw=0.3)
       axarr[5].set_ylabel("flux x", fontsize="x-large")
-      format_label_string_with_exponent(axarr[5])
       axarr[5].yaxis.set_label_coords(-0.108, 0.5)
-      axarr[5].yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter(useMathText=True, useOffset=False))
       axarr[5].tick_params(labelsize=6)
   
       axarr[6].plot(x, flux_true_y[0], label='True', c='g', lw=0.6)
