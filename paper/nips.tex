@@ -48,7 +48,7 @@
 \maketitle
 
 \begin{abstract}
-Computational Fluid Dynamics (CFD) is a hugely important field with applications in Biomedical, Chemical, and Aronotical engineering, however, it is an extremely computationaly and memory demanding field. To this end, we present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that once Lat-Net is trained, it can generalize to large grid sizes and complex geometyres while maintaining accuracy. We also show that Lat-Net is a general method for compressing other Lattice Boltzmann based simulations such as Electromagnatism.
+Computational Fluid Dynamics (CFD) is a hugely important field with applications in Biomedical, Chemical, and Aronotical engineering, however, it is an extremely computationaly and memory demanding to run simulations. To this end, we present Lat-Net, a method for compressing both the computation time and memory usage of lattice boltzmann flow simulations using deep neural networks. Lat-Net employs convolutional autoencoders and residual connections in a fully differentiable scheme to compress the state size of a simulation and learn the dynamics on this compressed form. The result is a small computationaly and memory effecient neural network that can be itereated and queired to reproduce a fluid simulation. We show that once Lat-Net is trained, it can generalize to large grid sizes and complex geometyres while maintaining accuracy. We also show that Lat-Net is a general method for compressing other Lattice Boltzmann based simulations such as Electromagnatism.
 
 \end{abstract}
 
@@ -89,13 +89,20 @@ In this section, we present our model for compressing Lattice Bolztmann simulati
 
 \subsection{Review: The Lattice Boltzmann Method}
 
-As mentioned above, our method is centered around the LBM. There are several key reasons for doing this but discusing them requires a breif overview of the LBM. While there are many variations of the method we will only discus LBM simulations with the BGKD collision operator. 
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.2]{../test/figs/lattice_boltzmann.pdf}}
+\caption{Illustion of the Lattice Boltzmann update steps}
+\label{lattice_boltzmann}
+\end{figure}
 
-(high level overview of method)
+In Lattice boltzmann simulation, the domain is discrited into an equal sized Cartesian grid. Each cell of this grid contains a velocity ditrobution that corrisponds to the velocity of the flow at that point. 
 
-The Lattice Boltzmann Method has been developled relatively recently having evolved from the Lattice Gas Automata in the late 80s. It has a fundamentaly different approach to modeling fluid then typical PDE approaches. While there are a variety of ways to derive and view the LBM, the simplest discritption is that it models fluid with cells containing a flow flow distrobutions. These cells are updated 
+\begin{equation}
+  f_i(x, t+ \delta{t}) = f_i(x,t) + \frac{1}{\tau} [f_i(x,t) - f_i^{eq}(x,t)]
+\end{equation}
 
-Lattice boltzmann 
+Where $\tau$ is the relaxation constant
 
 \begin{equation}
   f_i(x+c_i \delta{t}, t+ \delta{t}) - f_i(x,t) = -\frac{1}{\tau} [f_i(x,t) - f_i^{eq}(x,t)]
@@ -114,13 +121,6 @@ The important aspect of the LBM for our purposes is that it acts localy on grid 
 
 \subsection{Proposed Architecture}
 
-\begin{figure}[!t]
-\centering
-\subfigure{\includegraphics[scale=0.5]{../test/figs/fig_1.pdf}}
-\caption{Illustion of the Lat-Net architeture}
-\label{fig_1}
-\end{figure}
-
 Figure \ref{fig_1} shows a general scetch of the model. The figure can be understood by following the arrows starting from the flow state $f_t$ and the boundary $b$. Bellow we walk through each step of our method.
 
 First the network compresses both the state of the fluid simulation $f_t$ and a binary representation of the boundary conditions $b$ using two seperate neural networks $\phi_{enc}$ and $\phi'_{enc}$ respectively. The result from $\phi_{enc}$ is a compressed representation of the flow $g_t$ and the result of $\phi'_{enc}$ are two tensors $b_{mul}$ and $b_{add}$ of equal size to $g_t$. These three tensors represent the entirety of the compressed state of the simulation.
@@ -134,6 +134,14 @@ This method has proved extremely succesfull at keeping the boundary firmly plant
 After the boundary is applied to $g_t$ we can run the state through another neural network to emulate the dynamics, ie. $\phi_{comp}:g_{t} \rightarrow g_{t+1}$. Each step in through $\phi_{comp}$ is equivolent to $n$ time step of the Lattice Boltzmann solver.
 
 After $g_t$ is computed we can extract out the generated state of the simulation with a decoder network $\phi_{dec}$. 
+
+\begin{figure}[!t]
+\centering
+\subfigure{\includegraphics[scale=0.3]{../test/figs/fig_1.pdf}}
+\caption{Illustion of the Lat-Net architeture}
+\label{fig_1}
+\end{figure}
+
 
 
 \subsection{Network Implementation}
