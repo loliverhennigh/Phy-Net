@@ -2,15 +2,15 @@
 
 % if you need to pass options to natbib, use, e.g.:
 % \PassOptionsToPackage{numbers, compress}{natbib}
-% before loading nips_2016
+% before loading nips_2017
 %
 % to avoid loading the natbib package, add option nonatbib:
-% \usepackage[nonatbib]{nips_2016}
+% \usepackage[nonatbib]{nips_2017}
 
-% \usepackage{nips_2016}
+\usepackage{nips_2017}
 
 % to compile a camera-ready version, add the [final] option, e.g.:
-\usepackage[final]{nips_2016}
+% \usepackage[final]{nips_2017}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -93,20 +93,25 @@ In this section, we present our model for compressing Lattice Bolztmann simulati
 \label{lattice_boltzmann}
 \end{figure}
 
-In Lattice boltzmann simulation, the domain is discrited into an equal sized Cartesian grid. Each cell of this grid contains a velocity ditrobution that corrisponds to the velocity of the flow at that point. A figure showing this is seen in \ref{lattice_boltzmann}. For 
+In Lattice Boltzmann simulation, the domain is discrited into an equal sized Cartesian grid. Each cell of this grid contains a velocity ditrobution function $f_i$ that corrisponds to the velocity of the flow at that point. $f_i$ has $i$ possible direction of flow in the directions $\{ \vec{c}_i \}$. In our 2 dimentional simulations, there are 9 diffrent directions of flow. A figure showing this grid structur is seen in \ref{lattice_boltzmann}. From the distrobution function $f_i$, one can calculate the density ($p$) and velocity ($\vec{u}$) of the fluid flow with the following equations.
 
 \begin{equation}
-  f_i(x, t+ \delta{t}) = f_i(x,t) + \frac{1}{\tau} [f_i(x,t) - f_i^{eq}(x,t)]
+  p = \sum_i f_i  \qquad\text{and}\qquad \vec{u} = \sum_i \vec{c}_i f_i 
 \end{equation}
 
-Where $\tau$ is the relaxation constant
+The lattice states are updated with two seperate steps, the collision step and the streaming step. The collision step mimics the flow interacting with itself and is updated in the following way,
 
 \begin{equation}
-  f_i(x+c_i \delta{t}, t+ \delta{t}) - f_i(x,t) = -\frac{1}{\tau} [f_i(x,t) - f_i^{eq}(x,t)]
+  f^t_i(x, t + \delta_t) = f_i(x,t) + \frac{1}{\tau} (f_i^{eq} - f_i)
 \end{equation}
 
-where $\tau$ is the relaxation time, $f_i(x,t)$ is the density distribution function for
+where $\tau$ is the relaxation constant and $f_i^{eq}$ is the flow equilibrium. For our simulations, we use the $f_i^{eq}$ from the Lattice Bhatnagar-Gros-Krook (LBGK) scheme. After the collition step is applied, the flow propegates to ajacent cells following the streaming step. 
 
+\begin{equation}
+  f_i(x + c_i, t + \delta_t) = f^t_i(x,t + \delta_t)
+\end{equation}
+
+Figure \ref{lattice_boltzmann} illustrates these steps for the 2 dimensional case. These steps are applied 
 
 The important aspect of the LBM for our purposes is that it acts localy on grid cells. The area of effect a cell is directly proporitional to the number of applications of the evolution equation. This means that in $n$ time steps a cells value can be determinied exaclty with only the infomation of the cells within $n$ distance. This is important to know for our purposes becasue if we expect to treat the lattice boltzmann simulation as deterministic we must make sure our model 
 
@@ -181,8 +186,8 @@ The train set for the electromagnetic simulations are grid size 256 by 256 with 
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.5]{../test/figs/car_2d_flow_image.png}}
-\subfigure{\includegraphics[scale=0.35]{../test/figs/256x512_2d_error_plot.png}}
+\subfigure{\includegraphics[scale=0.4]{../test/figs/car_2d_flow_image.png}}
+\subfigure{\includegraphics[scale=0.3]{../test/figs/256x512_2d_error_plot.png}}
 \caption{Comparison of generated flows for the vehical cross section dataset. The images show the generated and true flow at step 100 for 3 different cars in the dataset. The plot shows the same values as described in \ref{2d_error_plot}.}
 \label{car_dataset}
 \end{figure}
@@ -249,8 +254,8 @@ Finally, we illustrate the generatlity of our method by applying it to electroma
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.20]{../test/figs/512x512_2d_em_image.png}}
-\subfigure{\includegraphics[scale=0.20]{../test/figs/512x512_2d_em_error_plot.png}}
+\subfigure{\includegraphics[scale=0.15]{../test/figs/512x512_2d_em_image.png}}
+\subfigure{\includegraphics[scale=0.15]{../test/figs/512x512_2d_em_error_plot.png}}
 \caption{ Comparison of generated Electromagnetic fields. The images show the true and generated magnetic field a various time steps. The reflection and refraction phemonomeo can clearly be seen in both as the electromagnetic wave interacts with objects of different dielectric constants. The plot shows the mean squared error of the true and generated simulation.}
 \label{em_dataset}
 \end{figure}
@@ -258,7 +263,7 @@ Finally, we illustrate the generatlity of our method by applying it to electroma
 
 \section{Conclusion}
 
-Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory intensive. In this work we have developed a unique method to overcome this using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions with significantly less computation and memory. We have also shown that our method can be readly applied to other physics simulations such as electromagnetic simulations. While our method has proved succesful on the problems in this paper, there is still significant room for improvment. A loss function that either takes into account the statistical nature of the flow or uses recent advances in GANs could produce shaper more realistic flow. Training a network to extract out desired measurements from the compressed state such as average flux would overcome the current memory limitation for such a task. We leave these improvements for future work.
+Fluid Simulations are increadbly important for a variety of tasks however they are extreamely computation and memory intensive. In this work we have developed a unique method to overcome this using deep neural networks. We have demonstrated it is capable of accuratly reconstructing a variety of simulations under different conditions with significantly less computation and memory. We have also shown that our method can be readly applied to other physics simulations such as electromagnetic simulations. While our method has proved succesful on the problems in this paper, there is still significant room for improvment. A loss function that either takes into account the statistical nature of the flow or uses recent advances in GANs could produce shaper more realistic flow. Training a network to extract desired measurements from the compressed state such as average flux would overcome the current memory limitation for such a task. We leave these and other improvements for future work.
 
 \section*{References}
 
