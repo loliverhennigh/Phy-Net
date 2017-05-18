@@ -94,7 +94,7 @@ In this section, we present our model for compressing Lattice Boltzmann simulati
 \label{lattice_boltzmann}
 \end{figure}
 
-In Lattice Boltzmann simulation, the domain is discretized into an equal sized Cartesian grid. Each cell of this grid contains a velocity distribution function $f_i$ that corresponds to the velocity of the flow at that point. $f_i$ has $i$ values that corispond to the $\{ \vec{c}_i \}$ directions of flow. In our 2 dimensional simulations, there are 9 directions of flow. A figure showing this grid structure is seen in \ref{lattice_boltzmann}. From the distribution function $f_i$, one can calculate the density ($p$) and velocity ($\vec{u}$) of the fluid flow with the following equations.
+In Lattice Boltzmann simulation, the domain is discretized into an equal sized Cartesian grid. Each cell of this grid contains a velocity distribution function $f_i$ that corresponds to the velocity of the flow at that point. $f_i$ has $i$ values that corispond to the $\{ \vec{c}_i \}$ directions of flow. In our 2 dimensional simulations, there are 9 such directions. A figure showing this grid structure is seen in \ref{lattice_boltzmann}. From the distribution function $f_i$, one can calculate the density ($p$) and velocity ($\vec{u}$) of the fluid flow with the following equations.
 
 \begin{equation}
   p = \sum_i f_i  \qquad\text{and}\qquad \vec{u} = \sum_i \vec{c}_i f_i 
@@ -244,18 +244,18 @@ Unfortunately, there are some measurements that do require the full state inform
 
 While Lat-Net does compress the simulation state size by more then an order of magnetude, the working memory requirements for the compression network must be considerable. A typical gpu based Lattice Boltzmann solver requires around 1.5 times as much working GPU memory as the memory size of the lattice. For example, the maximum sized D3Q15 lattice that can fit on a GPU with 8 Gigibyte is $446^3$. We have observed that in our implementation of Lat-Net, the working mememory requirement is around 7 times that of a single state. This means that in comparison to the $446^3$ grid size, Lat-Net can simulation a grid 3.2 times larger, i.e. $675^3$. While this is a certantly a nontrivial gain, we feel that futher improvements can be made with an improved implementation of the compression mapping.
 
-\subsection{Memory Compression}
+%\subsection{Memory Compression}
 
-\begin{wrapfigure}{R}{0.5\textwidth}
-  \centering
-  \includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
-  \caption{This figure shows the trade off  of compression and error for 2D and 3D flows. The axis are put on a log scale to better display this trade off.}
-  \label{compression_plot}
-\end{wrapfigure}
+%\begin{wrapfigure}{R}{0.5\textwidth}
+%  \centering
+%  \includegraphics[scale=0.3]{../test/figs/compression_error_plot.png}
+%  \caption{This figure shows the trade off  of compression and error for 2D and 3D flows. The axis are put on a log scale to better display this trade off.}
+%  \label{compression_plot}
+%\end{wrapfigure}
 
-One of the main purposes of Lat-Net is to compress the memory requirement of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unfortunately, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fashion and then measure the reconstruction MSE on the test set. This less computationally expensive approach allows many models to be trained and evaluated.
+%One of the main purposes of Lat-Net is to compress the memory requirement of large simulations and so it is a natural question to ask what effect the compression has on error. The ideal method to test this would be to train many models with different compression ratios and compare their accuracy. Unfortunately, training models is extremely computational intensive and so we propose another approach. We instead train $\phi_{enc}$ and $\phi_{dec}$ in an autoencoder fashion and then measure the reconstruction MSE on the test set. This less computationally expensive approach allows many models to be trained and evaluated.
 
-By keeping the architecture of $\phi_{enc}$ and $\phi_{dec}$ the same and varying the final compressed filter size, we see the trade off between compression and error. The results of this can be seen in figure \ref{compression_plot}. It is interesting to see a slight diminishing return effect for low compression ratios. In choosing a network architecture for Lat-Net, there is always a trade off between compression and error. By plotting the correlation we have demonstrated an effective tool picking a network with the desired trade off.
+%By keeping the architecture of $\phi_{enc}$ and $\phi_{dec}$ the same and varying the final compressed filter size, we see the trade off between compression and error. The results of this can be seen in figure \ref{compression_plot}. It is interesting to see a slight diminishing return effect for low compression ratios. In choosing a network architecture for Lat-Net, there is always a trade off between compression and error. By plotting the correlation we have demonstrated an effective tool picking a network with the desired trade off.
 
 \subsection{Electromagnetic Results}
 
