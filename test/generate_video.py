@@ -92,8 +92,8 @@ def evaluate():
 
       # make frame for video
       if not d2d:
-        v_n_g = v_n_g[:,0]
-        v_n_t = v_n_t[:,0]
+        v_n_g = v_n_g[:,10]
+        v_n_t = v_n_t[:,10]
       frame = np.concatenate([v_n_g, v_n_t, np.abs(v_n_g - v_n_t)], 2)[0]
       frame = np.uint8(255 * frame/min(.25, np.max(frame)))
       frame = cv2.applyColorMap(frame[:,:,0], 2)

@@ -94,7 +94,7 @@ In this section, we present our model for compressing Lattice Boltzmann simulati
 \label{lattice_boltzmann}
 \end{figure}
 
-In Lattice Boltzmann simulation, the domain is discretized into an equal sized Cartesian grid. Each cell of this grid contains a velocity distribution function $f_i$ that corresponds to the velocity of the flow at that point. $f_i$ has $i$ possible direction of flow in the directions $\{ \vec{c}_i \}$. In our 2 dimensional simulations, there are 9 different directions of flow. A figure showing this grid structure is seen in \ref{lattice_boltzmann}. From the distribution function $f_i$, one can calculate the density ($p$) and velocity ($\vec{u}$) of the fluid flow with the following equations.
+In Lattice Boltzmann simulation, the domain is discretized into an equal sized Cartesian grid. Each cell of this grid contains a velocity distribution function $f_i$ that corresponds to the velocity of the flow at that point. $f_i$ has $i$ values that corispond to the $\{ \vec{c}_i \}$ directions of flow. In our 2 dimensional simulations, there are 9 directions of flow. A figure showing this grid structure is seen in \ref{lattice_boltzmann}. From the distribution function $f_i$, one can calculate the density ($p$) and velocity ($\vec{u}$) of the fluid flow with the following equations.
 
 \begin{equation}
   p = \sum_i f_i  \qquad\text{and}\qquad \vec{u} = \sum_i \vec{c}_i f_i 
@@ -112,9 +112,11 @@ where $\tau$ is the relaxation constant and $f_i^{eq}$ is the flow equilibrium. 
   f_i(x + c_i, t + \delta_t) = f^t_i(x,t + \delta_t)
 \end{equation}
 
-Figure \ref{lattice_boltzmann} illustrates these steps for the 2 dimensional case. These steps are applied 
+Figure \ref{lattice_boltzmann} illustrates these steps for the 2 dimensional case.
 
-The important aspect of the LBM for our purposes is that it acts locally on grid cells. The area of effect a cell is directly proportional to the number of applications of the evolution equation. This means that in $n$ time steps a cells value can be determined exactly with only the information of the cells within $n$ distance. This is important to know for our purposes because if we expect to treat the lattice Boltzmann simulation as deterministic we must make sure our model 
+It is interesting to note the simplisity of this method and its similarity to . In fact, the streaming operator can be mimiced with a 3 by 3 convolution and the collision step can be performed with a 1 by 1 convolution. This offers a unique way to view our method. In a some sense, we are taking a large convolutional neural network and compressing it onto a smaller network. This is a different interpretation that
+
+%The important aspect of the LBM for our purposes is that it acts locally on grid cells. The area of effect a cell is directly proportional to the number of applications of the evolution equation. This means that in $n$ time steps a cells value can be determined exactly with only the information of the cells within $n$ distance. This is important to know for our purposes because if we expect to treat the lattice Boltzmann simulation as deterministic we must make sure our model 
 
 \subsection{Proposed Architecture}
 
@@ -240,7 +242,7 @@ As seen in table \ref{computation_table}, the computation time of the compressio
 
 Unfortunately, there are some measurements that do require the full state information to compute such as the average flux seen in our tests. Our method is currently unable to handle these in its current form without requiring high runtimes and large working memory. A possible solution to this is training a separate neural network that takes in the compressed state and predicts the desired measurement. This would negate the need to extract out the full state and keep memory usage low. We leave this and similar ideas for future work.
 
-While Lat-Net does compress the simulation state size by more then an order of magnetude, the working memory requirements for the compression network must be considerable. A typical gpu based Lattice Boltzmann solver requires around 1.5 times as much working GPU memory as the memory size of the lattice. For example, the maximum sized D3Q15 lattice that can fit on a GPU with 8 Gigibyte is $446^3$. We have observed that in our implementation of Lat-Net, the working mememory requirement is around 7 times that of a single state. This means that in comparison to the $446^3$ grid size, Lat-Net can simulation a grid 3.2 times larger, i.e. $643^3$. While this is a certantly a nontrivial gain, we feel that futher improvements can be made with an improved implementation of the compression mapping.
+While Lat-Net does compress the simulation state size by more then an order of magnetude, the working memory requirements for the compression network must be considerable. A typical gpu based Lattice Boltzmann solver requires around 1.5 times as much working GPU memory as the memory size of the lattice. For example, the maximum sized D3Q15 lattice that can fit on a GPU with 8 Gigibyte is $446^3$. We have observed that in our implementation of Lat-Net, the working mememory requirement is around 7 times that of a single state. This means that in comparison to the $446^3$ grid size, Lat-Net can simulation a grid 3.2 times larger, i.e. $675^3$. While this is a certantly a nontrivial gain, we feel that futher improvements can be made with an improved implementation of the compression mapping.
 
 \subsection{Memory Compression}
 

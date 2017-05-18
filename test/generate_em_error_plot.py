@@ -97,7 +97,7 @@ def evaluate():
     matplotlib.rc('font', **font)
 
     plt.title(str(shape[0]) + "x" + str(shape[1]) + " EM Simulation", y=1.00, fontsize="x-large")
-    plt.errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=0.3)
+    plt.errorbar(x, mse_error_mean, yerr=mse_error_std, c='y', capsize=0, lw=1.0)
     plt.xlabel('step', fontsize="x-large")
     plt.ylabel('MSError', fontsize="x-large")
     plt.legend(loc="upper_left")
