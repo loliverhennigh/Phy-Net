@@ -67,9 +67,9 @@ def evaluate():
     flux_true = tf.reduce_sum(flux_true, axis=list(xrange(len(shape)+1))) / flow_size
 
     # calc drag
-    drag_generated = lattice_to_force(x_2_add, boundary)
+    drag_generated, _ = lattice_to_force(x_2_add, boundary)
     drag_generated = tf.reduce_sum(drag_generated, axis=list(xrange(len(shape)+1)))
-    drag_true = lattice_to_force(state_add, boundary)
+    drag_true, edge = lattice_to_force(state_add, boundary)
     drag_true = tf.reduce_sum(drag_true, axis=list(xrange(len(shape)+1)))
 
     # restore network

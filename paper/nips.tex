@@ -113,7 +113,7 @@ where $\tau$ is the relaxation constant and $f_i^{eq}$ is the flow equilibrium. 
 
 This step will contain bounce back if one of the adjacent cells is a boundary. Figure \ref{lattice_boltzmann} illustrates these steps for the 2 dimensional case.
 
-It is interesting to note the simplicity of this method and its similarity to convolutional neural networks. In fact, if we treat the lattice state $f$ as a tensor of size ($n_x$,$n_y$,9), the streaming operator can be mimicked with a 3 by 3 convolution and the collision step can be performed with a 1 by 1 convolution (D2Q9). This offers a unique way to interpret our method. In a some sense, we are taking a large convolutional neural network and compressing it onto a much smaller and more memory efficient network. With this mental picture in mind, we now describe our approach.
+It is interesting to note the simplicity of this method and its similarity to convolutional neural networks. In fact, if we treat the lattice state $f$ as a tensor of size ($n_x$,$n_y$,9), as we do for the remainder of this paper, the streaming operator can be mimicked with a 3 by 3 convolution and the collision step can be performed with a 1 by 1 convolution (D2Q9). This offers a unique way to interpret our method. In a some sense, we are taking a large convolutional neural network and compressing it onto a much smaller and more memory efficient network. With this mental picture in mind, we now describe our approach.
 
 \subsection{Proposed Architecture}
 
