@@ -54,7 +54,7 @@ Computational Fluid Dynamics (CFD) is a hugely important area with applications 
 
 \section{Introduction}
 
-Computational fluid dynamics (CFD) is a branch of fluid mechanics that deals with numerically solving and analyzing fluid flow problems such as those found in aerodynamics, geology, biology, etc. CFD simulations are known for their high computational requirements, memory usage, and run times. Because of this, there is an ever growing body of work using simulation data to create reduced order models that can be evaluated with significantly less resources. Towards this end, we develop a neural network approach that both compresses the computation time and memory usage of fluid simulations.
+Computational fluid dynamics (CFD) is a branch of fluid mechanics that deals with numerically solving and analyzing fluid flow problems such as those found in aerodynamics, geology, biology, etc. CFD simulations are known for their high computational requirements, memory usage, and run times. Because of this, there is an ever growing body of work using simulation data to create reduced order models or surrogate models that can be evaluated with significantly less resources. Towards this end, we develop a neural network approach that both compresses the computation time and memory usage of fluid simulations.
 
 We investigate fluid simulations that contain complex time dependent turbulence. Simulations of this form are difficult because they require fluid solver to have high resolution and small times steps. Never the less, they frequently occur in nature and are an important area of study. Motivated by need for these simulations and the recent success of neural network based models in related areas \cite{tompson2016accelerating} \cite{guo2016convolutional} \cite{yang2016data}, we choice this setting to test our model.
 
@@ -63,18 +63,18 @@ The most popular approach to modeling fluid flow is with the Navier stokes equat
 
 Lat-Net works by compressing the state of a simulation while learning the dynamics of the simulation on this compressed form. The model can be broken up into three pieces, an encoder, compression mapping, and decoder. The encoder compresses both the state of the simulation as well as the given boundary conditions. The compression mapping learns the dynamics on the compressed state that correspond to the dynamics in the fluid simulation. The decoder decompresses the compressed state allowing either the whole simulation state or desired pieces to be extracted.
 
-We focus the content of this paper on LBM fluid simulations because this is the most popular use of the LBM, however, this method for simulation is known to be able to solve a large set of partial differential equations \cite{galindolattice}. In fact, LBM can simulate many physical systems of interest such as Electromagnetism, Plasma, Multiphase flow, Schrödinger equation etc. \cite{mendoza2010three} \cite{kim2008wavelet} \cite{zhong2006lattice} \cite{shan1993lattice}. With this in mind, we keep our method general and show evidence our method works equally well on Electromagnetic simulations. However, because the dominate use of LBM is on fluid flow problems we center discussion on this subject.
+We focus the content of this paper on LBM fluid simulations because this is the most popular use of the LBM, however, this method of simulation is known to be able to solve a large set of partial differential equations \cite{galindolattice}. In fact, LBM can simulate many physical systems of interest such as Electromagnetism, Plasma, Multiphase flow, Schrödinger equation etc. \cite{mendoza2010three} \cite{kim2008wavelet} \cite{zhong2006lattice} \cite{shan1993lattice}. With this in mind, we keep our method general and show evidence our method works equally well on Electromagnetic simulations. However, because the dominate use of LBM is on fluid flow problems we center discussion on this subject.
 
 Our work has the following contributions.
 \begin{itemize}
   \item It allows for simulations to be generated with less memory then the original flow solver. There is a crucial need for such methods because memory requirements grow cubic to grid size in 3D simulations. In practice, this quickly results in the need for large GPU clusters \cite{onodera2013large} \cite{xian2011multi}.
   \item Once our model is trained, it can be used to generate significantly larger simulations. This allows the model to learn from a training set of small simulations and then generate simulations as much as 16 times bigger with little effect in accuracy.
-  \item Our method is directly applicable to a variety of physics simulations, not just fluid flow. We show this with our electromagnetic example and note that the changes to our model to accommodate any Lattice Boltzmann type simulation are trivial.
+  \item Our method is directly applicable to a variety of physics simulations, not just fluid flow. We show this with our electromagnetic example and note that the changes to our model are trivial.
 \end{itemize}
 
 \section{Related Work}
 
-Recently, there has been several papers applying neural networks to fluid flow problems. Guo etc. \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from boundary conditions to steady state flow. Most related to our own work, Yang etc. \cite{yang2016data} and Tompson etc. \cite{tompson2016accelerating} use a neural network to solve the Poisson equation in order to accelerate Eulerian fluid simulations. The key difference between this and Lat-Net is its ability to compress the memory usage and the generality of our method to other physics simulations.
+Recently, there have been several papers applying neural networks to fluid flow problems. Guo etc. \cite{guo2016convolutional} proposed to use a neural network to learn a mapping from boundary conditions to steady state flow. Most related to our own work, Yang etc. \cite{yang2016data} and Tompson etc. \cite{tompson2016accelerating} use a neural network to solve the Poisson equation in order to accelerate Eulerian fluid simulations. The key difference between this and Lat-Net is its ability to compress the memory usage and the generality of our method to other physics simulations.
 
 There has also been an increasing body of work applying neural networks to other physics modeling problems. For example, neural networks have been readily adopted in many chemistry applications such as predicting molecular properties from descriptors, protein contact prediction and computational material design \cite{goh2017deep}. Very recently, neural networks have been applied to quantum mechanics problems as seen in Mills etc. \cite{mills2017deep} and Giuseppe etc. \cite{carleo2017solving} where neural networks are used to approximate solutions to the Schrödinger equation. In high energy Physics, Paganini etc. \cite{2017arXiv170502355P} uses a generative adversarial networks (GAN)\cite{goodfellow2014generative} to model electromagnetic showers in a longitudinally segmented calorimeter. Many of these applications are relatively recent and indicate a resurgence of interest in applications of neural networks to modeling physics.
 
@@ -88,7 +88,7 @@ In this section, we present our model for compressing Lattice Boltzmann simulati
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.2]{../test/figs/lattice_boltzmann.pdf}}
+\subfigure{\includegraphics[scale=0.19]{../test/figs/lattice_boltzmann.pdf}}
 \caption{Illustration of the Lattice Boltzmann update steps}
 \label{lattice_boltzmann}
 \end{figure}
@@ -119,38 +119,38 @@ It is interesting to note the simplicity of this method and its similarity to co
 
 Figure \ref{fig_1} shows a sketch of the model. The figure can be understood by following the arrows starting from the flow state $f_t$ and the boundary $b$. We treat $f_t$ as a tensor with shape ($n_x,n_y,9$) for the 2D case and ($n_x,n_y,n_z,15$) for the 3D case. The boundary is treated as a binary tensor of shape ($n_x,n_y,1$) and ($n_x,n_y,n_z,1$) with the value being 1 if the cell is solid. Bellow we walk through each step of our method.
 
-First, we compress both the state of the fluid simulation $f_t$ and a binary representation of the boundary conditions $b$ using two separate neural networks $\phi_{enc}$ and $\phi'_{enc}$ respectively. The result from $\phi_{enc}$ is a compressed representation of the flow $g_t$ and the result of $\phi'_{enc}$ are two tensors $b_{mul}$ and $b_{add}$ of equal size to $g_t$. These three tensors represent the entirety of the compressed state of the simulation.
+First, we compress both the state of the fluid simulation $f_t$ and the boundary conditions $b$ using two separate neural networks $\phi_{enc}$ and $\phi'_{enc}$ respectively. The result from $\phi_{enc}$ is a compressed representation of the flow $g_t$ and the result of $\phi'_{enc}$ are two tensors $b_{mul}$ and $b_{add}$ of equal size to $g_t$. These three tensors represent the entirety of the compressed state of the simulation.
 
-In a Lattice Boltzmann solver, the boundary conditions are used at each time-step to add collision to the streaming step. In a similar way, our model applies the compressed boundary to the compressed state every time-step. We do this in the following way,
+In a Lattice Boltzmann solver, the boundary conditions are used at each time-step to add bounce back to the streaming step. In a similar way, our model applies the compressed boundary to the compressed state every time-step. We do this in the following way,
 \begin{equation}
   g_t = (g_t \odot b_{mul}) + b_{add}
 \end{equation}
-This method has proved extremely successful at keeping the boundary information firmly planted through the duration of the simulation. This method of applying boundary conditions was inspired by \cite{vondrick2016generating} where they use a similar method to combine foreground and background information in video prediction. After the boundary is applied to $g_t$, we can run the state through another neural network to emulate the dynamics, i.e. $\phi_{comp}:g_{t} \rightarrow g_{t+1}$. Each step of $\phi_{comp}$ is equivalent to $n$ time steps of the Lattice Boltzmann solver. For example, in the 2 dimensional simulation, each step of $\phi_{comp}$ mimics 120 steps of the Lattice Boltzmann solver. Once $g_t$ is computed, we can extract out the generated state of the simulation with a decoder network $\phi_{dec}$. 
+This method proved extremely successful at keeping the boundary information firmly planted through the duration of the simulation. This method of applying boundary conditions was inspired by \cite{vondrick2016generating} where they use a similar method to combine foreground and background information in video prediction. After the boundary is applied to $g_t$, we can run the state through another neural network to emulate the dynamics, i.e. $\phi_{comp}:g_{t} \rightarrow g_{t+1}$. Each step of $\phi_{comp}$ is equivalent to $n$ time steps of the Lattice Boltzmann solver. For example, in the 2 dimensional simulation, each step of $\phi_{comp}$ mimics 120 steps of the Lattice Boltzmann solver. Once $g_t$ is computed, we can extract out the generated state of the simulation with a decoder network $\phi_{dec}$. 
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.3]{../test/figs/fig_1.pdf}}
+\subfigure{\includegraphics[scale=0.28]{../test/figs/fig_1.pdf}}
 \caption{Illustration of the Lat-Net architecture}
 \label{fig_1}
 \end{figure}
 
 \subsection{Network Implementation Details}
 
-We implement 2 networks trained on 2 dimensional and 3 dimensional lattice simulations. The encoder, compression mapping and decoder pieces of the 2D network are each a series of 3x3 residual blocks with the sequences 4x(down res-res)-res, 4x(res), and 3x(transpose conv-res-res)-transpose conv, respectively \cite{he2016deep}. For the 3D network, the sequences are 2x(down res)-res, 3x(res), and (transpose conv-res-transpose conv) where 3x3x3 convolutions are used. The down residual blocks are created by replacing the first convolution to have kernel size 4 by 4, stride 2 and double the filter size. The up sampling is achieved with transpose convolutions of kernel size 4 by 4, stride 2 and half the filter size. For the last residual block on the 3D network, the filter size is halved once again.
+We implement 2 networks trained on 2 dimensional and 3 dimensional lattice simulations. The encoder, compression mapping and decoder pieces of the 2D network are each a series of 3x3 residual blocks with the sequences 4x(down res-res)-res, 4x(res), and 3x(transpose conv-res-res)-transpose conv, respectively \cite{he2016deep}. For the 3D network, the sequences are 2x(down res)-res, 3x(res), and (transpose conv-res-transpose conv) where 3x3x3 convolutions are used. The down residual blocks are created by changing the first convolution to have kernel size 4 by 4, stride 2 and double the filter size. The up sampling is achieved with transpose convolutions of kernel size 4 by 4, stride 2 and half the filter size. For the last residual block on the 3D network, the filter size is halved once again.
 
-As mentioned above, each network is kept entirely convolutional. Fluid flow is inherently spatially correlated so using convlutional layers allows this spatial information to be preserved. Keeping the network convolutional also allows different input sizes to be used. This is how our model is able to train on small simulations and then generate larger simulations. During the course of this work, fully connected layers were explored however they produced extremely poor results.
+As mentioned above, each network is kept entirely convolutional. Fluid flow is inherently spatially correlated so using convlutional layers allows this spatial information to be preserved. Keeping the network convolutional also allows different input sizes to be used. This is how our model is able to train on small simulations and then generate larger simulations.
 
 Residual connections have been used in many deep learning architectures with much success. Adding residual connections allows for much deeper networks to be trained, often resulting in improved results \cite{he2016deep}. When training our model, it is necessary to unroll the compression network over several time-steps. This has the same effect as making the network deeper. For this reason, it seems logical to take advantage of this network architecture. We have seen that removing these residual connections results in much slower convergence and worse accuracy.
 
 \subsection{Training Details}
 
-Lat-Net is trained by unrolling the network and comparing the generated flow with the true. Our loss function is Mean Squared Error (MSE) with a modified version of Image Gradient Difference Loss (GDL) \cite{mathieu2015deep}. We modify it in the following way,
+Lat-Net is trained by unrolling the network and comparing the generated flow with the true. Our loss function is Mean Squared Error (MSE) with Image Gradient Difference Loss (GDL) \cite{mathieu2015deep}. The GDL is multiplied by $\lambda_{GDL}$ and then added to the MES. In all our experiments, $\lambda_{GDL}$ is set to $0.2$. Removing the GDL tended to produce less accurate models. Lat-Net is unrolled 5 time steps and then trained with the Adam optimizer \cite{kingma2014adam}.
 
-\begin{equation}
-  \mathcal{L}_{GDL}(f,f') = \sum_{i,j} \big||f_{i,j} - f_{i+2,j}| - |f'_{i,j} - f'_{i+2,j}| \big|_{2} + \big||f_{i,j} - f_{i,j+2}| - |f'_{i,j} - f'_{i,j+2}| \big|_{2}
-\end{equation}
-
-The 3 dimensional case simply has another term to account for the depth. The GDL is multiplied by $\lambda_{GDL}$ and then added to the MES. In all our experiments, $\lambda_{GDL}$ is set to $0.2$. Removing the GDL tended to produce less accurate models. Lat-Net unrolled 5 time steps and then trained with the Adam optimizer \cite{kingma2014adam}.
+%We modify it in the following way,
+%\begin{equation}
+%  \mathcal{L}_{GDL}(f,f') = \sum_{i,j} \big||f_{i,j} - f_{i+2,j}| - |f'_{i,j} - f'_{i+2,j}| \big|_{2} + \big||f_{i,j} - f_{i,j+2}| - |f'_{i,j} - f'_{i,j+2}| \big|_{2}
+%\end{equation}
+%We compare the state at point ($i,j$) and ($i,j+2$) instead of ($i,j$) and ($i,j+1$) because it is more similar to how the divergence is calculated later on . The 3 dimensional case simply has another term to account for the depth. The GDL is multiplied by $\lambda_{GDL}$ and then added to the MES. In all our experiments, $\lambda_{GDL}$ is set to $0.2$. Removing the GDL tended to produce less accurate models. Lat-Net unrolled 5 time steps and then trained with the Adam optimizer \cite{kingma2014adam}.
 
 \section{Experiments}
 
@@ -159,11 +159,11 @@ In this section, we describe our experiments testing Lat-Net on a variety of pro
 \subsection{Dataset Generation}
 In order to train and test our model, we generate sets of fluid and electromagnetic simulations. All simulations were generated with the MechSys library \cite{mechsys}.
 
-The train set for the 2D fluid simulations are grid size 256 by 256 and use 9 directional flows in the lattice Boltzmann solver (D2Q9 scheme)\cite{guo2013lattice}. The simulations use periodic boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes ranging from 140 to 20 cells. The test set for the 2 dimensional simulations are of size 256 by 256, and 1024 by 1024 with the same boundary conditions and object densities. We also generate a test set of size 256 by 512 with vehicle cross sections as objects. There are 28 cross sections used ranging from trucks to minivans. For all 2 dimensional simulations, the ratio of network steps to Lattice Boltzmann steps is 1 to 120.
+The train set for the 2D fluid simulations consists of 50 runs of grid size 256 by 256 and 9 directional flows in the lattice Boltzmann solver (D2Q9 scheme)\cite{guo2013lattice}. The simulations use periodic boundary conditions on top and bottom as well as uniform inlet flow and outlet flow of 0.04 from the left and right. 8 Objects are placed randomly with height and width sizes ranging from 140 to 20 cells. The test set for the 2 dimensional simulations consists of 10 runs of size 256 by 256, and 5 runs of size 1024 by 1024 with the same boundary conditions and object densities. We also generate a test set of size 256 by 512 with vehicle cross sections as objects. There are 28 cross sections used ranging from trucks to minivans. For all 2 dimensional simulations, the ratio of network steps to Lattice Boltzmann steps is 1 to 120.
 
-The train set for the 3 dimensional fluid simulations are grid size 40 by 40 by 160 and use 15 directional flows in the lattice Boltzmann solver (D3Q15 scheme)\cite{guo2013lattice}. Similar to the 2D simulations, periodic boundary conditions are used with same inlet and outlet flow. 4 spheres are randomly placed with height and width 24. The reason different object geometries and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice Boltzmann solver and larger objects required too large a simulation size. The test set comprises 40 by 40 by 160 and 160 by 160 by 160 simulations with the same object density. The ratio of network steps to Lattice Boltzmann steps is 1 to 60.
+The train set for the 3D fluid simulations consists of 50 runs of grid size 40 by 40 by 160 and 15 directional flows in the lattice Boltzmann solver (D3Q15 scheme)\cite{guo2013lattice}. Similar to the 2D simulations, periodic boundary conditions are used with same inlet and outlet flow. 4 spheres are randomly placed with height and width 24. The reason different object geometries and sizes were not explored was due to the fact that smaller objects or objects with complex geometries tended to have too course a resolution for the lattice Boltzmann solver and larger objects required too large a simulation size. The test set comprises 10 runs of 40 by 40 by 160 and 5 runs of 160 by 160 by 160 simulations with the same object density. The ratio of network steps to Lattice Boltzmann steps is 1 to 60.
 
-The train set for the electromagnetic simulations are grid size 256 by 256 with periodic boundary. An electromagnetic wave is initialized in the top of the simulations and proceeds to interact with randomly placed objects of different dielectric constants. When the wave hits these objects, the reflection and refraction phenomenon is seen. The test set consists of simulations of size 512 by 512 with the same object density.
+The train set for the electromagnetic simulations are grid size 256 by 256 with periodic boundaries. An electromagnetic wave is initialized in the top of the simulations and proceeds to interact with randomly placed objects of different dielectric constants. When the wave hits these objects, the reflection and refraction phenomenon is seen. The test set consists of simulations of size 512 by 512 with the same object density.
 
 \subsection{Generating Simulations}
 
@@ -199,15 +199,15 @@ A key component of our model is its ability to generate larger simulations then 
 
 Comparing the accuracy of our simulations require some consideration. The naive approach is to compare the MSE between the generated and true simulation at various time-steps. The problem with this approach is that fluid flow is a chaotic dynamical system and small perturbations in flow quickly compound leading to dramatic differences at latter times. For this reason, we compare a variety of metrics in evaluating the generated flows accuracy. Similar to \cite{tompson2016accelerating}, we compare the divergence of the generated and true velocity vector field to test our models stability. We also compare the computed values of drag and flux. Flow simulations are often run to calculate such values so comparing this is a strong indicator of our models real world applicability. The drag is calculated directly from the lattice state via the momentum transfer method \cite{guo2013lattice}. The flux value is the average of the flux in each non-boundary cell. These values can be used to calculate important quantities such as the drag coefficient and Reynolds number. Lastly, we visually inspect the produced flow to check for instabilities and blurring effects.
 
-In figure \ref{2d_error_plot}, we see the predicted values for different grid sizes in 2D and 3D simulations. In the 2D simulations, Lat-Net is able to effectively transfer to larger domain sizes with very similar calculated values of drag and flux. The generated flow also maintains its stability even after hundreds of steps. In the 3D simulation we see that, while our model predicts realistic values for the 40x40x160 simulation, it tends to have a bias in the direction of flow that manifests itself in the 160x160x160 simulation.
+In figure \ref{2d_error_plot}, we see the predicted values for different grid sizes in 2D and 3D simulations. In the 2D simulations, Lat-Net is able to effectively transfer to larger domain sizes with very similar calculated values of drag and flux. The generated flow also maintains its stability even after hundreds of steps. In the 3D simulation we see that, while our model predicts realistic values for the 40x40x160 simulation, it tends to have a slight bias in the direction of flow that manifests itself in the 160x160x160 simulation.
 
 When visually inspecting our produced flows (figure \ref{2d_image_plot}), we see a slight blurring effect but overall similar structure in the 2D flows. We attribute this blur effect to the dimensionality reduction and use of MSE. This can possibly be overcome with the use of generative adversarial network \cite{goodfellow2014generative} where the loss is derived from a discriminator network. Another solution may be to craft a loss function that takes advantage of the statistical properties of flow \cite{kim2008wavelet}. We leave these pursuits to future work.
 
-There is a distinct difference in the generated and true flow for the 3D 160x160x160 simulation. While the generated flow appears accurate close to the objects, in regions far between objects the network tends to underestimate the flow. We believe this is due to these types of regions not being present in the train set and is the probable cause for the biases seen in the drag and flux. As mentioned above, our 3D train set is limited due to memory constraints and so developing a diverse train set proved difficult.
+There is a distinct difference in the generated and true flow for the 3D 160x160x160 simulation. While the generated flow appears accurate close to the objects, in regions far between objects the network tends to underestimate the flow velocity. We believe this is due to these types of regions not being present in the train set and is the probable cause for the biases seen in the drag and flux. As mentioned above, our 3D train set is limited due to memory constraints and so developing a diverse train set to overcome this proved difficult.
 
-The boundaries used in the above evaluation are drawn from the same distribution as the train set. This motivates the question of how our model performs on drastically different geometries. To test this, we apply our model to predicting flow around vehicle cross sections. Surprisingly, even though are model is only trained on flows around simple shapes (ovals and rectangles) it can effectively generalize to this distinctly different dataset. In figure \ref{car_dataset}, we see the predicted flows are quite similar but with the same blurring effect. Calculating the same values as above, we see the flow is stable and produces similar drag and flux.
+The boundaries used in the above evaluation are drawn from the same distribution as the train set. This motivates the question of how our model performs on drastically different geometries. To test this, we apply our model to predicting flow around vehicle cross sections. Surprisingly, even though are model is only trained on flows around simple shapes (ovals and rectangles) it can effectively generalize to this distinctly different domain. In figure \ref{car_dataset}, we see the predicted flows are quite similar but with the same blurring effect. Calculating the same values as above, we see the flow is stable and produces similar drag and flux.
 
-\subsection{Computational Speed Up}
+\subsection{Computation and Memory Compression}
 
 \begin{table}[]
 \small
@@ -215,9 +215,9 @@ The boundaries used in the above evaluation are drawn from the same distribution
 \centering
 \begin{tabular}{|c|cccccc|}
 \hline
-Simulation    & Comp. Factor       & Comp. Mapping       & Full State  & Plane      & Line       & Point \\ \hline
-(1024, 1024)  & 18                 & 2.70 ms            & 36.24 ms   & NA         & 6.71 ms   & 6.59 ms \\
-(160, 160, 160) & 15                 & 23.05 ms           & 272.09 ms  & 38.20 ms  & 25.64 ms  & 24.06 ms  
+Simulation    & Com. Factor       & Com. Mapping       & Full State  & Plane      & Line       & Point \\ \hline
+(1024, 1024)  & 18                 & 2.7 ms            & 36.2 ms   & NA         & 6.7 ms   & 6.6 ms \\
+(160, 160, 160) & 15                 & 23.1 ms           & 272.1 ms  & 38.2 ms  & 25.6 ms  & 24.1 ms  
 \\ \hline
 \end{tabular}
 \label{computation_table}
@@ -256,8 +256,8 @@ Finally, we illustrate the generality of our method by applying it to electromag
 
 \begin{figure}[!t]
 \centering
-\subfigure{\includegraphics[scale=0.15]{../test/figs/512x512_2d_em_image.png}}
-\subfigure{\includegraphics[scale=0.15]{../test/figs/512x512_2d_em_error_plot.png}}
+\subfigure{\includegraphics[scale=0.14]{../test/figs/512x512_2d_em_image.png}}
+\subfigure{\includegraphics[scale=0.14]{../test/figs/512x512_2d_em_error_plot.png}}
 \caption{ Comparison of generated Electromagnetic fields. The images show the true and generated magnetic field a various time steps. The reflection and refraction phenomena can clearly be seen in both as the electromagnetic wave interacts with objects of different dielectric constants. The plot shows the mean squared error of the true and generated simulation.}
 \label{em_dataset}
 \end{figure}
