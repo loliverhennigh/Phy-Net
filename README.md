@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository is a look at compressing lattice Boltzmann physics simulations onto neural networks. This approach relies on learning a compressed representation of simulation while learning the dynamics on this compressed form. This allows us to simulate large systems with low memory and computation. We apply this method to Lattice Boltzmann fluid flow simulations. This work is currently being written up.
+This repository is a look at compressing Lattice Boltzmann physics simulations onto neural networks. This approach relies on learning a compressed representation of simulation while learning the dynamics on this compressed form. This allows us to simulate large systems with low memory and computation. Here is a rough draft of the [paper](https://github.com/loliverhennigh/Phy-Net/blob/master/paper/nips.pdf).
 
 ## Related Work
 Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
