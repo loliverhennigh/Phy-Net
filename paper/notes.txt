@@ -1,0 +1,7 @@
+
+- reduced order modeling in related work
+- figure out what to do with the loss 
+- say quantitiy of simulations
+- maybe add more to  3d explination of why its bad
+
+
