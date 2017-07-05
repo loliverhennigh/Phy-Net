@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the code to reproduce results seen in [Lat-Net: Compressing Lattice Boltzmann Flow Simulations using Deep Neural Networks](https://arxiv.org/abs/1705.09036). The premis is to compress Lattice Boltzmann Fluid Flow simulations onto small computationaly efficient neural networks that can be evaluated.
+This repository contains the code to reproduce results seen in [Lat-Net: Compressing Lattice Boltzmann Flow Simulations using Deep Neural Networks](https://arxiv.org/abs/1705.09036). The premise is to compress Lattice Boltzmann Fluid Flow simulations onto small computationally efficient neural networks that can be evaluated.
 
 ## Related Work
 Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
@@ -35,7 +35,7 @@ A few more snap shots of simulations
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_flow_image.png)
 
-Now we can apply it to other datasets. Here is a simulation around a car cross section. This demonstrates that our method generalizes to vastley diffrent geometries.
+Now we can apply it to other datasets. Here is a simulation around a car cross section. This demonstrates that our method generalizes to vastly different geometries.
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x512_2d_flow_image.png)
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/bX0_4zjYtHo/0.jpg)](https://www.youtube.com/watch?v=bX0_4zjYtHo)
@@ -73,7 +73,7 @@ Here are the plots for EM simulations
 
 ## How to run
 
-Running the 2d simulations requires around 100 Gb of hard drive memory, a good gpu (currently using GTX 1080s), and 1 and a half days. The 3d simulations can take substantualy longer.
+Running the 2d simulations requires around 100 Gb of hard drive memory, a good gpu (currently using GTX 1080s), and 1 and a half days. The 3d simulations can take substantially longer.
 
 ### Generating Data
 
@@ -85,7 +85,7 @@ The test and train sets are generated using the [Mechsys library](http://mechsys
 
 This will generate the required train and test set for the 2D simulations and save them to `/data/` (this can be changed in the `run_bunch_2d` script. 3D simulation is commented out for now. Generating the 2D simulation data will require about 12 hours.
 
-Generating the data to train on is by far the most complicated peice of this work. It requires several external packages and considerable memory. I recently wrote a library to generate Lattice Boltzmann simulations entirley in Tensorflow [here](https://github.com/loliverhennigh/Lattice-Boltzmann-fluid-flow-in-Tensorflow). In the future I would like to integrate this library with the train code allowing the data generation to be streamlined.
+Generating the data to train on is by far the most complicated piece of this work. It requires several external packages and considerable memory. I recently wrote a library to generate Lattice Boltzmann simulations entirely in Tensorflow [here](https://github.com/loliverhennigh/Lattice-Boltzmann-fluid-flow-in-Tensorflow). In the future I would like to integrate this library with the train code allowing the data generation to be streamlined.
 
 ### Train Model
 
@@ -100,20 +100,19 @@ This will first generate tfrecords for the generated training data and then begi
 - `--nr_residual=2` Number of residual blocks in each downsample chunk of the encoder and decoder
 - `--nr_downsamples=4` Number of downsamples in the encoder and decoder
 - `--filter_size=8` Number of filters for the first encoder layer. The filters double after each downsample.
-- `--nr_residual_compression=3` Number of residual blocks in compression peice.
-- `--filter_size_compression=64` filter size of residual blocks in compression peice.
+- `--nr_residual_compression=3` Number of residual blocks in compression piece.
+- `--filter_size_compression=64` filter size of residual blocks in compression piece.
 - `--unroll_length=5` Number of steps in the future the network is unrolled.
 
 All flags and their uses can be found in `Phy-Net/model/ring_net.py`.
 
 ### Test Model
 
-There are 4 different tests that can be run.
+There are several different tests that can be run in the test directory. For the 2D simulations, running these scripts will generate the figures and videos above.
 
-- `run_2d_error_script` Generates the error plots seen above
-- `run_2d_image_script` Generates the images seen above
-- `run_2d_video_script` Generates the videos seen above
-- `runtime_script` Generates benchmarks for run times
+- `2d_error_test.txt` Generates the error plots seen above
+- `2d_image_test.txt` Generates the images seen above
+- `2d_video_test.txt` Generates the videos seen above
 
 ### Contact
 
