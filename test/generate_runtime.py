@@ -1,17 +1,19 @@
-import math
+
+import os
+import time
 
 import numpy as np
 import tensorflow as tf
+import cv2
 
 import sys
 sys.path.append('../')
 
-from model.ring_net import *
+from model.lat_net import *
 from model.loss import *
-from utils.experiment_manager import make_checkpoint_path
-from systems.fluid_createTFRecords import generate_feed_dict
-import random
-import time
+from model.lattice import *
+from utils.experiment_manager import *
+
 from tqdm import *
 
 FLAGS = tf.app.flags.FLAGS
@@ -53,19 +55,10 @@ def evaluate():
     state_out_line = decoding_template(compressed_state_2, extract_type='line')
     state_out_point = decoding_template(compressed_state_2, extract_type='point')
     
-    # restore network
+    # rand init
     init = tf.global_variables_initializer()
-    #variables_to_restore = tf.trainable_variables()
-    #saver = tf.train.Saver(variables_to_restore)
     sess = tf.Session()
     sess.run(init)
-    #ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
-    #if ckpt and ckpt.model_checkpoint_path:
-    #  print("restoring file from " + ckpt.model_checkpoint_path)
-    #  saver.restore(sess, ckpt.model_checkpoint_path)
-    #else:
-    #  print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
-    #  exit()
 
     # make fake zero frame to test on
     state_feed_dict = np.zeros([1]+shape+[FLAGS.lattice_size])
@@ -95,7 +88,6 @@ def evaluate():
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
       myfile.write(" & %.3f ms " % (time_per_step*1000))
-      """
    
       # run with plane out
       if len(shape) == 3: 
@@ -123,7 +115,6 @@ def evaluate():
       elapsed = time.time() - t
       time_per_step = elapsed/run_length
       myfile.write(" & %.3f ms \\\ \n" % (time_per_step*1000))
-      """
 
        
 def main(argv=None):  # pylint: disable=unused-argument

@@ -1,4 +1,6 @@
-import math
+
+import os
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -7,18 +9,14 @@ import cv2
 import sys
 sys.path.append('../')
 
-import os
-
-from model.ring_net import *
+from model.lat_net import *
 from model.loss import *
 from model.lattice import *
 from utils.experiment_manager import *
-import random
-import time
+
 from tqdm import *
 import matplotlib
 import matplotlib.pyplot as plt
-from multiprocessing.pool import ThreadPool
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -69,13 +67,6 @@ def evaluate_compression_error():
         state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, sim, step+1)
         fd = {state:state_feed_dict, boundary:boundary_feed_dict}
         mse += sess.run(mean_squared_error, feed_dict=fd)
-        """
-        image = sess.run(velocity_generated, feed_dict=fd)
-        plt.figure()
-        print(image.shape)
-        plt.imshow(image[0,0,:,:,0])
-        plt.show()
-        """
     mse = mse/(FLAGS.test_nr_runs*FLAGS.test_length)
 
     # calc compression factor

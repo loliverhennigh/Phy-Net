@@ -23,6 +23,7 @@ FLAGS = tf.app.flags.FLAGS
 
 # get restore dir
 RESTORE_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
+
 # shape of test simulation
 shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
@@ -32,8 +33,8 @@ d2d = False
 if len(shape) == 2:
   d2d = True
 
+# time steps to make images from
 time_sample = [0, 100, 200]
-#time_sample = [0 , 3, 6, 9, 12, 15, 18, 21, 24, 27]
 
 def evaluate():
   """ Eval the system"""
@@ -108,9 +109,8 @@ def evaluate():
           
         v_n_g = v_n_g[0,:,:,0]
         v_n_t = v_n_t[0,:,:,0]
-        #v_n_t = boundary_feed_dict[0,:,:,0]
 
-        # make frame for video
+        # make images for plot
         axarr = plt.subplot(gs1[3*(index)+0])
         axarr.imshow(v_n_g, vmin=0.0, vmax=vmax)
         if index == 0:
@@ -118,22 +118,18 @@ def evaluate():
         axarr.set_ylabel("step " + str(step), y = .5, x = .5)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
-        #axarr.axis('off')
-        #axarr[index, 0].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+1])
         axarr.imshow(v_n_t, vmin=0.0, vmax=vmax)
         if index == 0:
           axarr.set_title("True", y=label_move)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
-        #axarr[index, 1].set_aspect('equal')
         axarr = plt.subplot(gs1[(3*index)+2])
         axarr.imshow(np.sqrt(np.square(v_n_g-v_n_t)), vmin=0.0, vmax=vmax)
         if index == 0:
           axarr.set_title("Difference", y=label_move)
         axarr.get_xaxis().set_ticks([])
         axarr.get_yaxis().set_ticks([])
-        #axarr[index, 2].set_aspect('equal')
         index += 1
 
     if len(shape) == 2: 

@@ -566,6 +566,7 @@ inline void Domain::WriteXDMF(char const * FileKey)
         delete [] Density ;
         delete [] Gamma   ;
         delete [] Vvec    ;
+        delete [] Sstate  ;
     }
 
     //Closing the file

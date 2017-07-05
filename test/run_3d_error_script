@@ -1,6 +1,0 @@
-
-# generate values for current best 2d simulation
-python generate_error_plot_2d.py --dimensions=40x40x160 --test_dimensions=40x40x160 --nr_downsamples=2 --filter_size_compression=128  --base_dir=../checkpoints_3d --lattice_size=15 --filter_size=64 --reconstruction_lr=0.00005 --nr_residual_compression=3 --nr_residual=1 --test_nr_runs=1 --test_length=150
-#python generate_error_plot_3d.py --dimensions=40x40x160 --test_dimensions=40x40x160 --nr_downsamples=3 --filter_size_compression=64  --base_dir=../checkpoints_compression --lattice_size=4 --filter_size=16 --reconstruction_lr=0.0003 --nr_residual_compression=3 --nr_residual=1 --test_nr_runs=4
-
-

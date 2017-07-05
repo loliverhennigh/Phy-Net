@@ -1,4 +1,6 @@
-import math
+
+import os
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -7,12 +9,11 @@ import cv2
 import sys
 sys.path.append('../')
 
-from model.ring_net import *
+from model.lat_net import *
 from model.loss import *
 from model.lattice import *
-from utils.experiment_manager import make_checkpoint_path
-import random
-import time
+from utils.experiment_manager import *
+
 from tqdm import *
 import matplotlib
 import matplotlib.pyplot as plt
@@ -28,10 +29,6 @@ shape = FLAGS.test_dimensions.split('x')
 shape = map(int, shape)
 
 # 2d or not
-d2d = False
-if len(shape) == 2:
-  d2d = True
-
 def calc_mean_and_std(values):
     values_mean = np.sum(values, axis=0) / values.shape[0]
     values_std = np.sqrt(np.sum(np.square(values - np.expand_dims(values_mean, axis=0)), axis=0)/values.shape[0])

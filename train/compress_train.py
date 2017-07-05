@@ -8,34 +8,35 @@ import tensorflow as tf
 
 import sys
 sys.path.append('../')
-from model.ring_net import *
+from model.lat_net import *
 from model.loss import *
 from model.optimizer import *
 from utils.experiment_manager import make_checkpoint_path
-
-import matplotlib.pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 
 def train():
-  """Train ring_net for a number of steps."""
+  """Train lat net for a number of steps."""
 
   with tf.Graph().as_default():
-    # global step counter
-    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
     # print important params
-    print(FLAGS.system + " system!")
-    print("dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
+    print("Training on " + FLAGS.system + " system...")
+    print("Dimensions are " + FLAGS.dimensions + "x" + str(FLAGS.lattice_size))
 
     # store grad and loss values
     grads = []
     loss_gen = []
 
+    # global step counter
+    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+
     # do for all gpus
-    print("unrolling network on all gpus...")
+    print("Unrolling network on all gpus...")
     for i in range(FLAGS.nr_gpus):
+      print("Unrolling on gpu:" + str(i))
+
       # make input que runner for gpu
       state, boundary = inputs() 
 
@@ -106,7 +107,7 @@ def train():
     # initalize
     sess.run(init)
 
-    # init from seq 1 model
+    # init from checkpoint dir
     saver_restore = tf.train.Saver(variables)
     ckpt = tf.train.get_checkpoint_state(TRAIN_DIR)
     if ckpt is not None:
@@ -114,11 +115,7 @@ def train():
       try:
          saver_restore.restore(sess, ckpt.model_checkpoint_path)
       except:
-         print("there was a problem using all variables in checkpoint, We will try just restoring encoder and decoder")
-      try:
-         autoencoder_variables = [variable for i, variable in enumerate(variables_to_restore) if (("decoding_template" in variable.name[:variable.name.index(':')]) or ("encode_state_template" in variable.name[:variable.name.index(':')]) or ("encode_boundary_template" in variable.name[:variable.name.index(':')]))]
-      except:
-         print("there was a problem using that checkpoint! We will just use random init")
+         print("No usable checkpoing found here. Now using random init")
 
     # Start que runner
     tf.train.start_queue_runners(sess=sess)
@@ -145,7 +142,7 @@ def train():
         t = time.time()
 
       if (current_step+1)%2000 == 0:
-        time.sleep(60)
+        time.sleep(10) # helps queue not get stuck (newer versions of tf should fix this)
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, current_step) 
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')

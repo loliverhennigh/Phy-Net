@@ -14,7 +14,7 @@ def make_checkpoint_path(base_path, FLAGS):
   # run through all params and add them to the base path
   for k, v in FLAGS.__dict__['__flags'].items():
     if k not in non_checkpoint_flags:
-      base_path = base_path + '/' + k + '_' + str(v)
+      base_path = base_path + '/' + k + '.' + str(v)
 
   return base_path
 
@@ -34,14 +34,9 @@ def set_flags_given_checkpoint_path(path, FLAGS):
   # run through all params and add them to the base path
   split_path = path.split('/')
   for param in split_path:
-    split_param = param.split('_')
-    # really bad programming here :( need to get this done so hard coded for now
-    if split_param[0] == 'system':
-      param_name = split_param[0]
-      param_value = '_'.join(split_param[1:])
-    else:
-      param_name = '_'.join(split_param[0:-1])
-      param_value = split_param[-1]
+    split_param = param.split('.')
+    param_name = split_param[0]
+    param_value = '.'.join(split_param[1:])
     param_type = type(FLAGS.__dict__['__flags'][param_name])
     if param_type == bool:
       param_type = str2bool
@@ -52,18 +47,9 @@ def make_flags_string_given_checkpoint_path(path):
   flag_string = ''
   split_path = path.split('/')
   for param in split_path:
-    split_param = param.split('_')
-    # really bad programming here :( need to get this done so hard coded for now
-    if split_param[0] == 'system':
-      param_name = split_param[0]
-      param_value = '_'.join(split_param[1:])
-    else:
-      param_name = '_'.join(split_param[0:-1])
-      param_value = split_param[-1]
+    split_param = param.split('.')
+    param_name = split_param[0]
+    param_value = '.'.join(split_param[1:])
     flag_string += ' --' + param_name + '=' + param_value
   return flag_string
-
-
-
-
 

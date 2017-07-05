@@ -43,14 +43,14 @@ class Process:
     return self.gpu
 
   def print_info(self):
-    print_string = (colored('cmd is ', 'blue') + ' '.join(self.cmd)).ljust(40)
-    print_string = print_string + (colored('status ', 'blue') + self.status).ljust(30)
+    print_string = (colored('cmd is ', 'blue') + ' '.join(self.cmd) + '\n').ljust(40)
+    print_string = print_string + (colored('status ', 'blue') + self.status + '\n').ljust(30)
     if self.return_status == "SUCCESS":
-      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'green')).ljust(40)
+      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'green') + '\n').ljust(40)
     elif self.return_status == "FAIL":
-      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'red')).ljust(40)
+      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'red') + '\n').ljust(40)
     else:
-      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'yellow')).ljust(40)
+      print_string = print_string + (colored('return status ', 'blue') + colored(self.return_status, 'yellow') + '\n').ljust(40)
     print_string = print_string + (colored('run time ', 'blue') + str(self.run_time)).ljust(40)
     print(print_string)
 

@@ -1,8 +1,8 @@
-# Phy-Net
+# Lat-Net: Compressing Lattice Boltzmann Flow Simulations using Deep Neural Networks
 
 ## Introduction
 
-This repository is a look at compressing Lattice Boltzmann physics simulations onto neural networks. This approach relies on learning a compressed representation of simulation while learning the dynamics on this compressed form. This allows us to simulate large systems with low memory and computation. Here is a rough draft of the [paper](https://github.com/loliverhennigh/Phy-Net/blob/master/paper/nips.pdf).
+This repository contains the code to reproduce results seen in [Lat-Net: Compressing Lattice Boltzmann Flow Simulations using Deep Neural Networks](https://arxiv.org/abs/1705.09036). The premis is to compress Lattice Boltzmann Fluid Flow simulations onto small computationaly efficient neural networks that can be evaluated.
 
 ## Related Work
 Similar works can be found in "[Accelerating Eulerian Fluid Simulation With Convolutional Networks](https://arxiv.org/pdf/1607.03597.pdf)" and "[Convolutional Neural Networks for steady Flow Approximation](https://autodeskresearch.com/publications/convolutional-neural-networks-steady-flow-approximation)".
@@ -15,7 +15,7 @@ The network learns a encoding, compression, and decoding piece. The encoding pie
 
 ## Lattice Boltzmann Fluid Flow
 
-Using the Mechsys library we generated 2D and 3D fluid simulations to train our model. For the 2D case we simulate a variety of random objects interacting with a steady flow and periodic boundary conditions. The simulation is a 256 by 256 grid. Using the trained model we evaluate on grid size 256 by 256, 512 by 512, and 1024 by 1024. Here are examples of generated simulations (network design is being iterated on).
+Using the Mechsys library we generated 2D and 3D fluid simulations to train our model. For the 2D case we simulate a variety of random objects interacting with a steady flow and periodic boundary conditions. The simulation is a 256 by 256 grid. Using the trained model we evaluate on grid size 256 by 256, 512 by 512, and 1024 by 1024. Here are examples of generated simulations.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/Nuf_Jw4fGFk/0.jpg)](https://www.youtube.com/watch?v=Nuf_Jw4fGFk)
 
@@ -29,28 +29,25 @@ We can look at various properties of the true versus generated simulations such 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_error_plot.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_error_plot.png)
 
-We notice that the model produces lower then expected y flux for both the 512 and 1024 simulations. This is understandable because the larger simulations tend to have higher y flows then smaller simulations due to the distribution of objects being more clumped. It appears that this effect can be mitigated by changing the object density and distribution (under investigation).
-
 A few more snap shots of simulations
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x256_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/512x512_2d_flow_image.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/1024x1024_2d_flow_image.png)
 
-Now we can apply it to other datasets. Check this out!
+Now we can apply it to other datasets. Here is a simulation around a car cross section. This demonstrates that our method generalizes to vastley diffrent geometries.
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/256x512_2d_flow_image.png)
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/bX0_4zjYtHo/0.jpg)](https://www.youtube.com/watch?v=bX0_4zjYtHo)
 
-
-Here are some 3D simulations
+Here are some 3D simulations.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/ZG_gmkFbE2I/0.jpg)](https://www.youtube.com/watch?v=ZG_gmkFbE2I)
 
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/ilCuHTo0Ul4/0.jpg)](https://www.youtube.com/watch?v=ilCuHTo0Ul4)
 
-Here are the plots for the 3D simulations. There may be a bug in how the drag is calculated right now.
+Here are the plots for the 3D simulations.
 
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/40x40x160_3d_error_plot.png)
 ![alt tag](https://github.com/loliverhennigh/Phy-Net/blob/master/test/figs/80x80x320_3d_error_plot.png)
@@ -60,7 +57,7 @@ Here are the plots for the 3D simulations. There may be a bug in how the drag is
 
 
 ## Lattice Boltzmann Electromagnetic Waves
-Well the Lattice Boltzmann method is actually a general partial differential equation solver (of a particular form) so why stop at fluid flow! Here are some fun electromagnetic simulations that the model learns! These simulations are of a wave hitting randomly placed objects with different dielectric constants. You can see fun effects such as reflection and refraction when the wave interacts with the surface.
+Well the Lattice Boltzmann method is actually a general partial differential equation solver (of a particular form) so why stop at fluid flow! Here are some fun electromagnetic simulations that the model learns. These simulations are of a wave hitting randomly placed objects with different dielectric constants. You can see fun effects such as reflection and refraction when the wave interacts with the surface.
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/s57No66p_40/0.jpg)](https://www.youtube.com/watch?v=s57No66p_40)
 
@@ -76,17 +73,19 @@ Here are the plots for EM simulations
 
 ## How to run
 
-Running the 2d simulations requires around 100 Gb of hard drive memory, a good gpu (currently using GTX 1080s), and 1 and a half days.
+Running the 2d simulations requires around 100 Gb of hard drive memory, a good gpu (currently using GTX 1080s), and 1 and a half days. The 3d simulations can take substantualy longer.
 
 ### Generating Data
 
-The test and train sets are generated using the [Mechsys library](http://mechsys.nongnu.org/index.html). Follow the installation guild found [here](http://mechsys.nongnu.org/installation.html). Once the directory is unpacked run `ccmake .` followed by `c`. Then scroll to the flag that says `A_USE_OCL` and hit enter to raise the flag. Press `c` again to configure followed by `g` to generate (I found ccmake to be confusing at first). Quit the prompt and run `make`. Now copy the contents of `Phy-Net/systems/mechsys_fluid_flow` to the directory `mechsys/tflbm`. Now enter `mechsys/tflbm` and run `make` followed by 
+The test and train sets are generated using the [Mechsys library](http://mechsys.nongnu.org/index.html). Follow the installation guild found [here](http://mechsys.nongnu.org/installation.html). Once the directory is unpacked run `ccmake .` followed by `c`. Then scroll to the flag that says `A_USE_OCL` and hit enter to raise the flag. Press `c` again to configure followed by `g` to generate (I found ccmake to be confusing at first). Quit the prompt and run `make`. Now copy the contents of `Phy-Net/systems/mechsys_fluid_flow` to the directory `mechsys/tflbm` as well as replace `mechsys/lib/flbm/Domain.h` with the one found in this directory. Now enter `mechsys/tflbm` and run `make` followed by 
 
 `
 ./generate_data
 `. 
 
 This will generate the required train and test set for the 2D simulations and save them to `/data/` (this can be changed in the `run_bunch_2d` script. 3D simulation is commented out for now. Generating the 2D simulation data will require about 12 hours.
+
+Generating the data to train on is by far the most complicated peice of this work. It requires several external packages and considerable memory. I recently wrote a library to generate Lattice Boltzmann simulations entirley in Tensorflow [here](https://github.com/loliverhennigh/Lattice-Boltzmann-fluid-flow-in-Tensorflow). In the future I would like to integrate this library with the train code allowing the data generation to be streamlined.
 
 ### Train Model
 
@@ -116,30 +115,8 @@ There are 4 different tests that can be run.
 - `run_2d_video_script` Generates the videos seen above
 - `runtime_script` Generates benchmarks for run times
 
-## TODO
+### Contact
 
-- Stream line data generation process
-
-Simplifing the data generation process with a script would be nice. It seems reasonable that there could be a script that downloads and compiles `mechsys` as well as moves the necessary files around.
-
-- Train model effectively on 3D simulations
-
-The 3D simulations are not training effectively yet. The attempts made so far are, 
-
-1. Reducing Reynolds number. The Reynolds number appeared to be to high making the simulations extremely chaotic and thus hard to learn. Lowering it seems to have helped convergence and accuracy.
-2. Made all objects spheres of the same size. Not sure how much of an effect this has had. Once the network trains on these simulations effectively we will try more diverse datasets.
-3. larger network with filter size 64 and compression filter size 256. Seems to slow down training and cause over fitting.
-
-- Test extracting state
-
-A key peice of this work is the ability to extract out only a desired part of the compressed state to make measurements on. This is required because extracting the full state requires just as much memory as simulating and thus makes the compression aspect of this method useless. You should be able to extract small chunch of the full simulation from the compressed state.
-
-Still flushing out list
-
-## Conclusion
-
-This project is under active development.
-
-
+For any questions regarding the project please email me at loliverhennigh101@gmail.com.
 
 
