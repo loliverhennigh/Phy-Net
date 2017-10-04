@@ -25,7 +25,9 @@ tf.app.flags.DEFINE_string('system', 'fluid_flow',
                            """ system to compress """)
 tf.app.flags.DEFINE_integer('lattice_size', 9,
                            """ size of lattice """)
-tf.app.flags.DEFINE_string('dimensions', '256x256',
+tf.app.flags.DEFINE_integer('boundary_size', 4,
+                           """ size of boundary """)
+tf.app.flags.DEFINE_string('dimensions', '512x512',
                            """ dimension of simulation with x between value """)
 
 ################# running params
@@ -116,7 +118,7 @@ tf.app.flags.DEFINE_integer('extract_pos', 5,
                            """ where to extract in decoder for timing tests """)
 
 ####### inputs #######
-def inputs(empty=False, name="inputs", shape=None):
+def inputs(empty=False, name="inputs", shape=None, batch_size=1):
   """makes input vector
   Args:
     empty: will just return an empty state to fill with a feed dict
@@ -130,9 +132,10 @@ def inputs(empty=False, name="inputs", shape=None):
     shape = FLAGS.dimensions.split('x')
     shape = map(int, shape)
   frame_num = FLAGS.lattice_size
+  boundary_num = FLAGS.boundary_size
   if empty:
-    state = tf.placeholder(tf.float32, [1] + shape + [frame_num], name=name)
-    boundary = tf.placeholder(tf.float32, [1] + shape + [1], name=name)
+    state = tf.placeholder(tf.float32, [batch_size, FLAGS.unroll_length] + shape + [frame_num], name=name)
+    boundary = tf.placeholder(tf.float32, [batch_size, 1] + shape + [boundary_num], name=name)
   elif FLAGS.system == "fluid_flow":
     state, boundary = lat_inputs.fluid_inputs(FLAGS.batch_size, FLAGS.init_unroll_length + FLAGS.unroll_length, shape, frame_num, FLAGS.train)
   elif FLAGS.system == "em":
@@ -188,12 +191,12 @@ def encoding(inputs, name='', boundary=False):
   elif FLAGS.system == "em":
     padding = ["mobius", "mobius"]
 
+  print("encoding input shape " + str(x_i.get_shape()))
   for i in xrange(FLAGS.nr_downsamples):
 
     filter_size = FLAGS.filter_size*(pow(2,i))
-    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size) + " with shape " + str(x_i.get_shape()))
-
     x_i = res_block(x_i, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=FLAGS.keep_p, stride=2, gated=FLAGS.gated, padding=padding, name=name + "resnet_down_sampled_" + str(i) + "_nr_residual_0", begin_nonlinearity=False) 
+    print("filter size for layer " + str(i) + " of encoding is " + str(filter_size) + " with shape " + str(x_i.get_shape()))
 
 
     for j in xrange(FLAGS.nr_residual - 1):
