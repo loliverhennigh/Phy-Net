@@ -45,7 +45,11 @@ class Sailfish_data:
     self.queue_batches = []
     with self.queue.mutex:
       self.queue.queue.clear()
-    print(self.queue.qsize())
+    with open(os.devnull, 'w') as devnull:
+      print('rm -r ' + self.base_dir + "size_" + str(self.size) + "/dim_" + str(self.dim) + "/*")
+      p = ps.subprocess.Popen(('rm -r ' + self.base_dir + "size_" + str(self.size) + "/dim_" + str(self.dim) + "/*").split(' '), stdout=devnull, stderr=devnull)
+      p.communicate()
+
     time.sleep(1.0)
 
     print("generating simulations...")
@@ -56,13 +60,13 @@ class Sailfish_data:
            + "--sim_size=" + str(self.size) + " "
            + "--checkpoint_every=120 "
            + "--max_iters=" + str(num_steps))
+      print(cmd)
 
       with open(os.devnull, 'w') as devnull:
-        p = ps.subprocess.Popen(('rm -r ' + save_dir).split(' '), stdout=devnull, stderr=devnull)
-        p.communicate()
         p = ps.subprocess.Popen(('mkdir -p ' + save_dir).split(' '), stdout=devnull, stderr=devnull)
         p.communicate()
         p = ps.subprocess.Popen(cmd.split(' '), stdout=devnull, stderr=devnull)
+        print(p)
         p.communicate()
 
     print("parsing new data")

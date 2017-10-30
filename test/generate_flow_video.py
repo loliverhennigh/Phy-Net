@@ -15,6 +15,7 @@ from model.lattice import *
 from utils.experiment_manager import *
 import systems.fluid_createTFRecords as fluid_record
 import systems.em_createTFRecords as em_record
+from input.sailfish_data_queue import Sailfish_data
 
 from tqdm import *
 
@@ -51,7 +52,7 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state, boundary = inputs(empty=True, shape=shape)
+    state, boundary = inputs(empty=True, shape=shape, single_step=True)
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
@@ -67,7 +68,8 @@ def evaluate():
     # restore network
     variables_to_restore = tf.all_variables()
     saver = tf.train.Saver(variables_to_restore)
-    sess = tf.Session()
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     ckpt = tf.train.get_checkpoint_state(RESTORE_DIR)
     if ckpt and ckpt.model_checkpoint_path:
       print("restoring file from " + ckpt.model_checkpoint_path)
@@ -76,15 +78,19 @@ def evaluate():
       print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
       exit()
 
-    state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, 0)
-    fd = {state:state_feed_dict, boundary:boundary_feed_dict}
+    # start up queue runner for dataset loader
+    dataset = Sailfish_data("/data/sailfish_flows/", size=512, dim=2)
+    dataset.create_dataset(num_sim=1)
+
+    batch_boundary, batch_state = dataset.minibatch(batch_size=1, seq_length=1, train=False)
+    fd = {state:batch_state[:,0], boundary:batch_boundary[:,0]}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
     # generate video
     for step in tqdm(xrange(FLAGS.video_length)):
       # calc generated frame compressed state
-      state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, step)
-      fd = {state:state_feed_dict, boundary:boundary_feed_dict, y_1:y_1_g, small_boundary_mul:small_boundary_mul_g, small_boundary_add:small_boundary_add_g}
+      batch_boundary, batch_state = dataset.minibatch(batch_size=1, seq_length=1)
+      fd = {state:batch_state[:,0], boundary:batch_boundary[:,0]}
       v_n_g, v_n_t, y_1_g = sess.run([velocity_norm_generated, velocity_norm_true, y_2],feed_dict=fd)
 
       # make frame for video

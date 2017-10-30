@@ -6,10 +6,11 @@ import tensorflow as tf
 import sys
 sys.path.append('../')
 
-from model.ring_net import *
+from model.lat_net import *
 from model.loss import *
 from model.lattice import *
 from utils.experiment_manager import make_checkpoint_path
+from input.sailfish_data_queue import Sailfish_data
 import systems.fluid_createTFRecords as fluid_record
 import systems.em_createTFRecords as em_record
 import random
@@ -40,7 +41,7 @@ def evaluate():
   """ Eval the system"""
   with tf.Graph().as_default():
     # make inputs
-    state, boundary = inputs(empty=True, shape=shape)
+    state, boundary = inputs(empty=True, shape=shape, single_step=True)
 
     # unwrap
     y_1, small_boundary_mul, small_boundary_add, x_2, y_2 = continual_unroll_template(state, boundary)
@@ -65,7 +66,12 @@ def evaluate():
       print("no chekcpoint file found from " + RESTORE_DIR + ", this is an error")
       exit()
 
-    state_feed_dict, boundary_feed_dict = feed_dict(1, shape, FLAGS.lattice_size, 0, 0)
+    # start up queue runner for dataset loader
+    dataset = Sailfish_data("/data/sailfish_flows/", size=512, dim=2)
+    dataset.create_dataset(num_sim=1, num_steps=1000)
+    state_feed_dict
+
+    state_feed_dict, boundary_feed_dict = dataset.minibatch(1, 
     fd = {state:state_feed_dict, boundary:boundary_feed_dict}
     y_1_g, small_boundary_mul_g, small_boundary_add_g = sess.run([y_1, small_boundary_mul, small_boundary_add], feed_dict=fd)
 
