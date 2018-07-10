@@ -12,9 +12,12 @@ def make_checkpoint_path(base_path, FLAGS):
   # make checkpoint path with all the flags specifing different directories
 
   # run through all params and add them to the base path
-  for k, v in FLAGS.__dict__['__flags'].items():
-    if k not in non_checkpoint_flags:
-      base_path = base_path + '/' + k + '.' + str(v)
+  # run through all params and add them to the base path
+  keys = FLAGS.flag_values_dict().keys()
+  keys.sort()
+  for k in keys:
+    if k not in NOT_PATH:
+      base_path = base_path + '/' + k + '.' + str(FLAGS.flag_values_dict()[k])
 
   return base_path
 
